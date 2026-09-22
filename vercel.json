@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    {
+      "source": "/owner",
+      "destination": "/"
+    },
+    {
+      "source": "/owner/(.*)",
+      "destination": "/"
+    }
+  ]
+}
+
