@@ -489,20 +489,33 @@ export default function App() {
         if (stored) {
           const saved: ProjectData = JSON.parse(stored);
           setProject(saved);
-          const premiumRequest = await fetch(`${API_URL}?action=generate-premium`, {
+
+          const problematicsResponse = await fetchWithTimeout(PROBLEMATICS_API, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ project: saved }),
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ project: saved, count: 3 }),
           });
-          const premiumData = await readApiResponse(premiumRequest);
-          const rawProblematicList = premiumData.problematics || premiumData.problematiques || [];
-          const rawPlanList = premiumData.plans || premiumData.data?.plans || premiumData.data || [];
-          setPremium({
-            problematics: Array.isArray(rawProblematicList) ? rawProblematicList.map((item: any, index: number) => normalizeProblematic(item, index)) : [],
-            plans: Array.isArray(rawPlanList) ? rawPlanList.map((item: any, index: number) => normalizePlan(item, index)) : []
-          });
+          const problematicsData = await readApiResponse(problematicsResponse);
+          const rawProblematicList =
+            problematicsData.problematiques ||
+            problematicsData.problematics ||
+            problematicsData.data ||
+            [];
+
+          const problematics = Array.isArray(rawProblematicList)
+            ? rawProblematicList.slice(0, 3).map((item: any, index: number) => normalizeProblematic(item, index))
+            : [];
+
+          if (!problematics.length) {
+            throw new Error("Le paiement est confirmé, mais aucune problématique n’a pu être générée.");
+          }
+
+          setPremium({ problematics, plans: [] });
+          setSelectedProblematic(null);
+          setSelectedPlan(null);
+          setBlocks([]);
           setView("premium");
-          pushToast("success", "Paiement confirmé. Les trois problématiques et trois plans sont disponibles.");
+          pushToast("success", "Paiement confirmé. Les trois problématiques sont disponibles. Sélectionnez-en une pour générer les trois plans.");
         }
       } catch (error) {
         pushToast("error", error instanceof Error ? error.message : "Vérification du paiement impossible.");
@@ -715,43 +728,70 @@ export default function App() {
     }
   }
 
-  async function generateOwnerPlans(problematic: Problematic) {
-    if (!ownerSessionValid || !premium) return;
+  async function generatePlansForProblematic(problematic: Problematic, ownerMode = false) {
+    if (ownerMode && !ownerSessionValid) {
+      pushToast("error", "Connectez-vous à l’espace administrateur.");
+      return;
+    }
+    if (!premium && !ownerMode) {
+      pushToast("error", "Le projet premium n’est pas encore disponible.");
+      return;
+    }
+
+    const requestProject: ProjectData = {
+      ...project,
+      email: project.email || (ownerMode ? "owner@trimemo.local" : project.email),
+    };
+
     setLoading(true);
     try {
       const response = await fetchWithTimeout(PLANS_API, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
-          project,
+          project: requestProject,
           problematic,
           count: 3,
-          ownerMode: true,
+          ownerMode,
         }),
       });
+
       const data = await readApiResponse(response);
-      const rawList = data.plans || data.data || [];
+      const rawList = data.plans || data.data?.plans || data.data || [];
       const generatedPlans = Array.isArray(rawList)
         ? rawList.slice(0, 3).map((item: any, index: number) => normalizePlan(item, index))
         : [];
-      const personalPlan = project.planPersonnel.trim()
-        ? [createManualPlan(project.planPersonnel, project)]
+
+      const personalPlan = requestProject.planPersonnel.trim()
+        ? [createManualPlan(requestProject.planPersonnel, requestProject)]
         : [];
+
       const plans = [...personalPlan, ...generatedPlans];
+
       if (!plans.length) {
         throw new Error("Aucun plan n’a été généré et aucun plan personnel n’a été fourni.");
       }
+
+      if (plans.length > 3 && !requestProject.planPersonnel.trim()) {
+        plans.splice(3);
+      }
+
       setSelectedProblematic(problematic);
-      setPremium((current) => current ? { ...current, plans } : current);
+      setPremium((current) => current ? { ...current, plans } : { problematics: [problematic], plans });
       setSelectedPlan(null);
       setBlocks([]);
-      pushToast("success", "Les trois plans ont été générés pour la problématique sélectionnée.");
+      pushToast("success", "Les trois plans académiques sont disponibles pour cette problématique.");
     } catch (error) {
       pushToast("error", error instanceof Error ? error.message : "Impossible de générer les plans.");
     } finally {
       setLoading(false);
     }
   }
+
+  async function generateOwnerPlans(problematic: Problematic) {
+    return generatePlansForProblematic(problematic, true);
+  }
+
   function simulateOwnerPayment() {
     if (!ownerSessionValid) {
       pushToast("error", "Connectez-vous à l’espace propriétaire.");
@@ -988,7 +1028,7 @@ export default function App() {
         .slice(-2)
         .map((item) => ({ title: item.title, content: item.content }));
 
-      const response = await fetch(BLOCK_API, {
+      const response = await fetchWithTimeout(BLOCK_API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1039,8 +1079,13 @@ export default function App() {
 
   async function exportDocument() {
     const doneBlocks = blocks.filter((block) => block.status === "done" && block.content.trim());
+    const pendingBlocks = blocks.filter((block) => block.status !== "done");
     if (!doneBlocks.length) {
       pushToast("error", "Rédigez au moins un bloc avant l’exportation.");
+      return;
+    }
+    if (pendingBlocks.length > 0) {
+      pushToast("error", `Le mémoire n’est pas terminé. ${pendingBlocks.length} bloc(s) restent à rédiger avant l’export final.`);
       return;
     }
     if (!selectedPlan || !selectedProblematic) {
@@ -1499,7 +1544,7 @@ export default function App() {
                   ) : (
                     <Sparkles className="h-4 w-4 text-[#D4A23A]" />
                   )}
-                  Générer 3 problématiques et 3 plans
+                  Lancer le test complet : problématiques → plans → rédaction
                 </button>
               </div>
 
@@ -1555,10 +1600,12 @@ export default function App() {
                     type="button"
                     key={item.id}
                     onClick={() => {
+                      if (loading) return;
                       setSelectedProblematic(item);
                       setPremium((current) => current ? { ...current, plans: [] } : current);
                       setSelectedPlan(null);
                       setBlocks([]);
+                      void generatePlansForProblematic(item, true);
                     }}
                     className={`rounded-[24px] border p-5 text-left shadow-sm transition ${
                       selectedProblematic?.id === item.id
@@ -1587,37 +1634,13 @@ export default function App() {
                 ))}
               </div>
 
-              {selectedProblematic && premium.plans.length === 0 && (
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => void generateOwnerPlans(selectedProblematic)}
-                  className="mt-5 rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50"
-                >
-                  {loading ? "Génération..." : "Générer les plans pour cette problématique"}
-                </button>
-              )}
-
               <div className="mt-8">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
-                      Plans académiques
-                    </div>
-                    <div className="mt-1 font-inter text-xs text-[#172554]/60">
-                      Sélectionnez une problématique puis générez trois structures complètes.
-                    </div>
-                  </div>
-                  {selectedProblematic && (
-                    <button
-                      type="button"
-                      disabled={loading}
-                      onClick={() => void generateOwnerPlans(selectedProblematic)}
-                      className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50"
-                    >
-                      {loading ? "Génération des 3 plans..." : "Générer les 3 plans"}
-                    </button>
-                  )}
+                <div className="rounded-2xl bg-[#F7FAF8] p-4 font-inter text-xs leading-[1.7] text-[#172554]/70">
+                  {loading && selectedProblematic
+                    ? "Génération des trois plans en cours. La structure complète sera affichée automatiquement."
+                    : selectedProblematic
+                      ? "La problématique sélectionnée est liée aux plans affichés ci-dessous."
+                      : "Sélectionnez une problématique. Trimémo générera automatiquement les trois plans."}
                 </div>
 
                 {premium.plans.length > 0 && (
@@ -1704,6 +1727,33 @@ export default function App() {
                   className="h-full bg-[#D4A23A] transition-all"
                   style={{ width: `${progress}%` }}
                 />
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={loading || !blocks.some((block) => block.status === "pending")}
+                  onClick={() => {
+                    const next = blocks.find((block) => block.status === "pending");
+                    if (next) void generateBlock(next.id);
+                  }}
+                  className="rounded-full bg-[#172554] px-4 py-2 font-inter text-xs font-semibold text-white disabled:opacity-40"
+                >
+                  Rédiger le prochain bloc
+                </button>
+                <button
+                  type="button"
+                  disabled={loading || !blocks.some((block) => block.status === "pending")}
+                  onClick={async () => {
+                    const pendingIds = blocks.filter((block) => block.status === "pending").map((block) => block.id);
+                    for (const id of pendingIds) {
+                      await generateBlock(id);
+                    }
+                  }}
+                  className="rounded-full border border-[#172554]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#172554] disabled:opacity-40"
+                >
+                  Rédiger tous les blocs
+                </button>
               </div>
 
               <div className="mt-6 space-y-4">
@@ -2329,7 +2379,13 @@ export default function App() {
               <div>
                 <section className="grid gap-6 lg:grid-cols-3">
                   {premium.problematics.map((item) => (
-                    <button key={item.id} onClick={() => { setSelectedProblematic(item); if (ownerSessionValid && premium && premium.plans.length === 0) void generateOwnerPlans(item); }} className={`rounded-[24px] border p-7 text-left ${selectedProblematic?.id === item.id ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/5 bg-white"}`}>
+                    <button key={item.id} onClick={() => {
+                        if (loading) return;
+                        setSelectedProblematic(item);
+                        setSelectedPlan(null);
+                        setBlocks([]);
+                        void generatePlansForProblematic(item, ownerRoute);
+                      }} className={`rounded-[24px] border p-7 text-left ${selectedProblematic?.id === item.id ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/5 bg-white"}`}>
                       <div className={`font-inter text-[11px] uppercase tracking-[0.2em] ${selectedProblematic?.id === item.id ? "text-[#D4A23A]" : "text-[#D4A23A]"}`}>Problématique {item.id}</div>
                       <h3 className="mt-4 font-playfair text-xl">{item.title}</h3>
                       <p className={`mt-4 font-inter text-sm leading-[1.7] ${selectedProblematic?.id === item.id ? "text-white/70" : "text-[#172554]/75"}`}>{item.question}</p>
@@ -2341,9 +2397,8 @@ export default function App() {
                   {premium.plans.map((plan) => {
                     const isCompatible = Boolean(selectedProblematic);
                     return <button key={plan.id} disabled={!isCompatible} onClick={() => selectedProblematic && selectPremiumPlan(selectedProblematic, plan)} className={`rounded-[24px] border p-7 text-left ${selectedPlan?.id === plan.id ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/5 bg-white"}`}>
-                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">{plan.approach}</div>
+                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Plan académique {plan.id}</div>
                       <h3 className="mt-4 font-playfair text-xl">{plan.title}</h3>
-                      <p className={`mt-3 font-inter text-sm leading-[1.7] ${selectedPlan?.id === plan.id ? "text-white/70" : "text-[#172554]/75"}`}>{plan.description}</p>
                       <div className={`mt-5 font-inter text-xs ${selectedPlan?.id === plan.id ? "text-white/50" : "text-[#172554]/75"}`}>{plan.totalWords.toLocaleString("fr-FR")} mots · {wordsToPages(plan.totalWords).toFixed(1)} pages</div>
                       <div className="mt-5 space-y-2">{plan.parts.map((part) => <div key={part.id} className={`rounded-[12px] p-3 ${selectedPlan?.id === plan.id ? "bg-white/10" : "bg-[#EAF7EE]"}`}><div className="font-inter text-xs font-semibold">{part.number}. {part.title}</div>{part.description && <div className="mt-1 font-inter text-[10px] leading-[1.5] text-[#172554]/60">{part.description}</div>}{part.chapters.slice(0, 3).map((chapter) => <div key={chapter.id} className="mt-2"><div className="font-inter text-[11px] font-semibold">{chapter.title}</div>{chapter.sections.map((section) => <div key={section.id} className={`pl-2 font-inter text-[10px] ${selectedPlan?.id === plan.id ? "text-white/50" : "text-[#172554]/50"}`}>{section.number}. {section.title}{section.description ? ` : ${section.description}` : ""}{section.subsections.length ? ` · ${section.subsections.map((subsection) => `${subsection.number}. ${subsection.title}`).join(" · ")}` : ""}</div>)}</div>)}</div>)}</div>
                       <div className="mt-5 font-inter text-xs font-semibold">{selectedProblematic ? "Choisir ce plan et rédiger" : "Sélectionnez une problématique"}</div>
