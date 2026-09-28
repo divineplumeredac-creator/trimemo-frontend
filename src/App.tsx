@@ -2372,10 +2372,16 @@ export default function App() {
                       {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
                       Payer avec PayPal
                     </button>
-                    <button onClick={() => void startPayment("mobile-money")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 font-inter text-sm font-semibold text-white disabled:opacity-60">
-                      {paymentLoading === "mobile-money" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                      Payer par Mobile Money
-                    </button>
+                    {String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true" ? (
+                      <button onClick={() => void startPayment("mobile-money")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 font-inter text-sm font-semibold text-white disabled:opacity-60">
+                        {paymentLoading === "mobile-money" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
+                        Payer par Mobile Money
+                      </button>
+                    ) : (
+                      <div className="rounded-full border border-white/15 bg-white/5 px-4 py-3 text-center font-inter text-xs text-white/60">
+                        Mobile Money : prestataire à connecter
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
