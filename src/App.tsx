@@ -2203,10 +2203,28 @@ export default function App() {
                       <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Plan gratuit</div>
                       <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.plan.title}</h3>
                       <p className="mt-5 font-inter text-base leading-[1.9] text-[#172554]/80">{preview.plan.description}</p>
-                      <div className="mt-7 space-y-4">
-                        <div className="rounded-[14px] bg-[#EAF7EE] p-4"><div className="font-inter text-sm font-semibold text-[#172554]">{preview.plan.introduction.title}</div><div className="mt-2 font-inter text-sm leading-[1.7] text-[#172554]/75">{preview.plan.introduction.description}</div></div>
-                        {preview.plan.parts.map((part) => <div key={part.id} className="rounded-[14px] border border-[#172554]/10 p-4"><div className="font-inter text-sm font-bold text-[#172554]">{part.number}. {part.title}</div>{part.description && <div className="mt-2 font-inter text-sm leading-[1.7] text-[#172554]/70">{part.description}</div>}<div className="mt-4 space-y-3">{part.chapters.map((chapter) => <div key={chapter.id} className="rounded-[12px] bg-[#EAF7EE] p-4"><div className="font-inter text-sm font-semibold text-[#172554]">{chapter.number}. {chapter.title}</div>{chapter.description && <div className="mt-2 font-inter text-sm leading-[1.7] text-[#172554]/75">{chapter.description}</div>}<div className="mt-4 space-y-3">{chapter.sections.map((section) => <div key={section.id} className="font-inter text-sm text-[#172554]/80"><div className="font-semibold">{section.number}. {section.title}</div>{section.description && <div className="mt-1 leading-[1.7]">{section.description}</div>}{section.subsections.length > 0 && <div className="mt-2 space-y-1 pl-4">{section.subsections.map((subsection) => <div key={subsection.id} className="text-xs leading-[1.6] text-[#172554]/70">{subsection.number}. {subsection.title}{subsection.description ? ` : ${subsection.description}` : ""}</div>)}</div>}</div>)}</div><div className="mt-3 font-inter text-xs text-[#172554]/70">{chapter.wordCount.toLocaleString("fr-FR")} mots</div></div>)}</div></div>)}
-                        <div className="rounded-[14px] bg-[#EAF7EE] p-4"><div className="font-inter text-sm font-semibold text-[#172554]">{preview.plan.conclusion.title}</div><div className="mt-2 font-inter text-sm leading-[1.7] text-[#172554]/75">{preview.plan.conclusion.description}</div></div>
+                      <div className="mt-7 font-inter text-[#172554]">
+                        <div className="border-b border-[#172554]/10 pb-4 text-base font-semibold">Introduction générale</div>
+                        <div className="mt-5 space-y-5">
+                          {preview.plan.parts.map((part) => <div key={part.id}>
+                            <div className="text-base font-bold uppercase">PARTIE {part.number}. {part.title}</div>
+                            <div className="mt-3 space-y-3 pl-4">
+                              {part.chapters.map((chapter) => <div key={chapter.id}>
+                                <div className="text-sm font-bold">Chapitre {part.number}.{chapter.number}. {chapter.title}</div>
+                                <div className="mt-2 space-y-1 pl-5">
+                                  {chapter.sections.map((section) => <div key={section.id}>
+                                    <div className="text-sm font-semibold">Section {part.number}.{chapter.number}.{section.number}. {section.title}</div>
+                                    <div className="mt-1 space-y-1 pl-5">
+                                      {section.subsections.map((subsection) => <div key={subsection.id} className="text-xs">§ {part.number}.{chapter.number}.{section.number}.{subsection.number} {subsection.title}</div>)}
+                                    </div>
+                                  </div>)}
+                                </div>
+                              </div>)}
+                            </div>
+                          </div>)}
+                        </div>
+                        <div className="mt-6 border-t border-[#172554]/10 pt-4 text-base font-semibold">Conclusion générale</div>
+                        <div className="mt-4 rounded-xl bg-[#FFF8E7] p-3 text-xs text-[#6B4B08]">Aperçu gratuit : la structure complète est visible, mais la rédaction intégrale reste limitée.</div>
                       </div>
                     </div>
                   )}
@@ -2248,7 +2266,7 @@ export default function App() {
               <div>
                 <section className="grid gap-6 lg:grid-cols-3">
                   {premium.problematics.map((item) => (
-                    <button key={item.id} onClick={() => setSelectedProblematic(item)} className={`rounded-[24px] border p-7 text-left ${selectedProblematic?.id === item.id ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/5 bg-white"}`}>
+                    <button key={item.id} onClick={() => { setSelectedProblematic(item); if (ownerSessionValid && premium && premium.plans.length === 0) void generateOwnerPlans(item); }} className={`rounded-[24px] border p-7 text-left ${selectedProblematic?.id === item.id ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/5 bg-white"}`}>
                       <div className={`font-inter text-[11px] uppercase tracking-[0.2em] ${selectedProblematic?.id === item.id ? "text-[#D4A23A]" : "text-[#D4A23A]"}`}>Problématique {item.id}</div>
                       <h3 className="mt-4 font-playfair text-xl">{item.title}</h3>
                       <p className={`mt-4 font-inter text-sm leading-[1.7] ${selectedProblematic?.id === item.id ? "text-white/70" : "text-[#172554]/75"}`}>{item.question}</p>
