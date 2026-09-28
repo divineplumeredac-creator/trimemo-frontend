@@ -263,53 +263,90 @@ function normalizeProblematic(value: any, index = 0): Problematic {
 }
 
 function normalizePlan(value: any, index = 0): Plan {
-  const normalizeSubsection = (item: any, subsectionIndex: number, sectionIndex: number, chapterIndex: number, partIndex: number): PlanSubsection => ({
-    id: String(item?.id || `subsection-${partIndex + 1}-${chapterIndex + 1}-${sectionIndex + 1}-${subsectionIndex + 1}`),
-    number: Number(item?.number || subsectionIndex + 1),
-    title: String(typeof item === "string" ? item : item?.title || item?.titre || `Sous-section ${subsectionIndex + 1}`),
-    description: String(typeof item === "string" ? "" : item?.description || "")
-  });
+  const rawParts = Array.isArray(value?.parts)
+    ? value.parts
+    : Array.isArray(value?.parties)
+      ? value.parties
+      : [];
 
-  const rawParts = Array.isArray(value?.parts) ? value.parts : Array.isArray(value?.parties) ? value.parties : [];
-  const parts: PlanPart[] = rawParts.map((part: any, partIndex: number) => ({
-    id: String(part?.id || `part-${partIndex + 1}`),
-    number: Number(part?.number || partIndex + 1),
-    title: String(part?.title || part?.titre || `Partie ${partIndex + 1}`),
-    description: String(part?.description || ""),
-    chapters: (Array.isArray(part?.chapters) ? part.chapters : Array.isArray(part?.chapitres) ? part.chapitres : []).map((chapter: any, chapterIndex: number) => ({
-      id: String(chapter?.id || `chapter-${partIndex + 1}-${chapterIndex + 1}`),
-      number: Number(chapter?.number || chapterIndex + 1),
-      title: String(chapter?.title || chapter?.titre || `Chapitre ${chapterIndex + 1}`),
-      description: String(chapter?.description || ""),
-      wordCount: Number(chapter?.wordCount || 0),
-      sections: (Array.isArray(chapter?.sections) ? chapter.sections : Array.isArray(chapter?.sectionsList) ? chapter.sectionsList : []).map((section: any, sectionIndex: number) => ({
-        id: String(section?.id || `section-${partIndex + 1}-${chapterIndex + 1}-${sectionIndex + 1}`),
-        number: Number(section?.number || sectionIndex + 1),
-        title: String(section?.title || section?.titre || `Section ${sectionIndex + 1}`),
-        description: String(section?.description || ""),
-        subsections: (Array.isArray(section?.subsections) ? section.subsections : Array.isArray(section?.sousSections) ? section.sousSections : []).map((item: any, subsectionIndex: number) => normalizeSubsection(item, subsectionIndex, sectionIndex, chapterIndex, partIndex))
-      }))
-    }))
-  }));
+  let globalChapter = 0;
+
+  const parts: PlanPart[] = rawParts.map((part: any, partIndex: number) => {
+    const partNumber = partIndex + 1;
+    const rawChapters = Array.isArray(part?.chapters)
+      ? part.chapters
+      : Array.isArray(part?.chapitres)
+        ? part.chapitres
+        : [];
+
+    const chapters: PlanChapter[] = rawChapters.map((chapter: any, chapterIndex: number) => {
+      globalChapter += 1;
+      const chapterNumber = globalChapter;
+      const rawSections = Array.isArray(chapter?.sections)
+        ? chapter.sections
+        : Array.isArray(chapter?.sectionsList)
+          ? chapter.sectionsList
+          : [];
+
+      const sections: PlanSection[] = rawSections.map((section: any, sectionIndex: number) => {
+        const sectionNumber = sectionIndex + 1;
+        const rawSubsections = Array.isArray(section?.subsections)
+          ? section.subsections
+          : Array.isArray(section?.sousSections)
+            ? section.sousSections
+            : [];
+
+        return {
+          id: String(section?.id || `section-${partNumber}-${chapterNumber}-${sectionNumber}`),
+          number: sectionNumber,
+          title: String(section?.title || section?.titre || `Section ${sectionNumber}`),
+          description: "",
+          subsections: rawSubsections.map((item: any, subsectionIndex: number) => ({
+            id: String(item?.id || `subsection-${partNumber}-${chapterNumber}-${sectionNumber}-${subsectionIndex + 1}`),
+            number: subsectionIndex + 1,
+            title: String(typeof item === "string" ? item : item?.title || item?.titre || `Sous-section ${subsectionIndex + 1}`),
+            description: ""
+          }))
+        };
+      });
+
+      return {
+        id: String(chapter?.id || `chapter-${chapterNumber}`),
+        number: chapterNumber,
+        title: String(chapter?.title || chapter?.titre || `Chapitre ${chapterNumber}`),
+        description: "",
+        wordCount: Number(chapter?.wordCount || 0),
+        sections
+      };
+    });
+
+    return {
+      id: String(part?.id || `part-${partNumber}`),
+      number: partNumber,
+      title: String(part?.title || part?.titre || `Partie ${partNumber}`),
+      description: "",
+      chapters
+    };
+  });
 
   const introSource = value?.introductionGeneral || value?.introduction || {};
   const conclusionSource = value?.conclusionGeneral || value?.conclusion || {};
   const intro: PlanIntroConclusion = {
-    title: String(introSource?.title || "Introduction générale"),
-    description: String(introSource?.description || (Array.isArray(introSource?.elements) ? introSource.elements.join(" ") : "")),
+    title: "Introduction générale",
+    description: "",
     wordCount: Number(introSource?.wordCount || 0)
   };
   const conclusion: PlanIntroConclusion = {
-    title: String(conclusionSource?.title || "Conclusion générale"),
-    description: String(conclusionSource?.description || (Array.isArray(conclusionSource?.elements) ? conclusionSource.elements.join(" ") : "")),
+    title: "Conclusion générale",
+    description: "",
     wordCount: Number(conclusionSource?.wordCount || 0)
   };
 
   return {
     id: String(value?.id || `plan-${index + 1}`),
     title: String(value?.title || value?.titre || `Plan ${index + 1}`),
-    description: String(value?.description || ""),
-    approach: String(value?.approach || value?.approche || ""),
+    description: "",
+    approach: "",
     totalWords: Number(value?.totalWords || 0),
     introductionGeneral: intro,
     parts,
@@ -1561,71 +1598,82 @@ export default function App() {
                 </button>
               )}
 
-              {premium.plans.length > 0 && <div className="mt-8">
-                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
-                  Plans générés
-                </div>
-                <div className="mt-4 grid gap-4 lg:grid-cols-3">
-                  {premium.plans.map((plan, index) => (
-                    <article
-                      key={plan.id}
-                      className="rounded-[24px] border border-[#172554]/10 bg-white p-5 shadow-sm"
+              <div className="mt-8">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                      Plans académiques
+                    </div>
+                    <div className="mt-1 font-inter text-xs text-[#172554]/60">
+                      Sélectionnez une problématique puis générez trois structures complètes.
+                    </div>
+                  </div>
+                  {selectedProblematic && (
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => void generateOwnerPlans(selectedProblematic)}
+                      className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50"
                     >
-                      <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#172554]/50">
-                        Plan {index + 1}
-                      </div>
-                      <h2 className="mt-2 font-playfair text-xl text-[#172554]">
-                        {plan.title}
-                      </h2>
-
-                      <div className="mt-4 space-y-2">
-                        {plan.parts.map((part) => (
-                          <div
-                            key={part.id}
-                            className="rounded-2xl bg-[#F7FAF8] p-3"
-                          >
-                            <div className="font-inter text-sm font-bold text-[#172554]">
-                              Partie {part.number} : {part.title}
-                            </div>
-                            <div className="mt-3 space-y-3">
-                              {part.chapters.map((chapter) => (
-                                <div key={chapter.id} className="rounded-xl bg-white p-3">
-                                  <div className="font-inter text-xs font-bold text-[#172554]">
-                                    Chapitre {chapter.number} : {chapter.title}
-                                  </div>
-                                  <div className="mt-2 space-y-1">
-                                    {chapter.sections.map((section) => (
-                                      <div key={section.id} className="text-xs leading-[1.6] text-[#172554]/70">
-                                        {section.number}. {section.title}
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <div className="mt-2 text-[10px] text-[#172554]/50">
-                                    {chapter.wordCount} mots
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          selectPremiumPlan(
-                            selectedProblematic || premium.problematics[0],
-                            plan,
-                          )
-                        }
-                        className="mt-5 h-11 w-full rounded-full bg-[#172554] font-inter text-xs font-semibold text-white"
-                      >
-                        Choisir ce plan et rédiger
-                      </button>
-                    </article>
-                  ))}
+                      {loading ? "Génération des 3 plans..." : "Générer les 3 plans"}
+                    </button>
+                  )}
                 </div>
-              </div>}
-            </section>
+
+                {premium.plans.length > 0 && (
+                  <div className="mt-5 space-y-5">
+                    {premium.plans.map((plan, index) => (
+                      <article key={plan.id} className="rounded-[24px] border border-[#172554]/10 bg-white p-6 shadow-sm">
+                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#172554]/50">
+                          Plan {index + 1}
+                        </div>
+                        <h2 className="mt-2 font-playfair text-2xl text-[#172554]">{plan.title}</h2>
+
+                        <div className="mt-6 border-t border-[#172554]/10 pt-5 font-inter text-[#172554]">
+                          <div className="text-base font-semibold">Introduction générale</div>
+                          <div className="mt-5 space-y-5">
+                            {plan.parts.map((part) => (
+                              <div key={part.id}>
+                                <div className="text-base font-bold uppercase">PARTIE {part.number}. {part.title}</div>
+                                <div className="mt-3 space-y-3 pl-4">
+                                  {part.chapters.map((chapter) => (
+                                    <div key={chapter.id}>
+                                      <div className="text-sm font-bold">Chapitre {chapter.number}. {chapter.title}</div>
+                                      <div className="mt-2 space-y-2 pl-5">
+                                        {chapter.sections.map((section) => (
+                                          <div key={section.id}>
+                                            <div className="text-sm font-semibold">Section {chapter.number}.{section.number}. {section.title}</div>
+                                            <div className="mt-1 space-y-1 pl-5">
+                                              {section.subsections.map((subsection) => (
+                                                <div key={subsection.id} className="text-xs leading-[1.6]">
+                                                  § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-6 border-t border-[#172554]/10 pt-4 text-base font-semibold">Conclusion générale</div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => selectPremiumPlan(selectedProblematic || premium.problematics[0], plan)}
+                          className="mt-6 h-11 w-full rounded-full bg-[#172554] font-inter text-xs font-semibold text-white"
+                        >
+                          Choisir ce plan et rédiger
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div></section>
           )}
 
           {view === "writing" && selectedProblematic && selectedPlan && (
