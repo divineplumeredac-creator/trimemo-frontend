@@ -2321,7 +2321,6 @@ export default function App() {
                     <div>
                       <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Plan gratuit</div>
                       <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.plan.title}</h3>
-                      <p className="mt-5 font-inter text-base leading-[1.9] text-[#172554]/80">{preview.plan.description}</p>
                       <div className="mt-7 font-inter text-[#172554]">
                         <div className="border-b border-[#172554]/10 pb-4 text-base font-semibold">Introduction générale</div>
                         <div className="mt-5 space-y-5">
@@ -2329,12 +2328,12 @@ export default function App() {
                             <div className="text-base font-bold uppercase">PARTIE {part.number}. {part.title}</div>
                             <div className="mt-3 space-y-3 pl-4">
                               {part.chapters.map((chapter) => <div key={chapter.id}>
-                                <div className="text-sm font-bold">Chapitre {part.number}.{chapter.number}. {chapter.title}</div>
+                                <div className="text-sm font-bold">Chapitre {chapter.number}. {chapter.title}</div>
                                 <div className="mt-2 space-y-1 pl-5">
                                   {chapter.sections.map((section) => <div key={section.id}>
-                                    <div className="text-sm font-semibold">Section {part.number}.{chapter.number}.{section.number}. {section.title}</div>
+                                    <div className="text-sm font-semibold">Section {chapter.number}.{section.number}. {section.title}</div>
                                     <div className="mt-1 space-y-1 pl-5">
-                                      {section.subsections.map((subsection) => <div key={subsection.id} className="text-xs">§ {part.number}.{chapter.number}.{section.number}.{subsection.number} {subsection.title}</div>)}
+                                      {section.subsections.map((subsection) => <div key={subsection.id} className="text-xs">§ {chapter.number}.{section.number}.{subsection.number} {subsection.title}</div>)}
                                     </div>
                                   </div>)}
                                 </div>
