@@ -570,6 +570,11 @@ export default function App() {
   }
 
 
+  function ownerAuthHeaders(): Record<string, string> {
+    const token = window.sessionStorage.getItem("trimemo_owner_session");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
   async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 60000) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -688,7 +693,7 @@ export default function App() {
     try {
       const response = await fetch(PROBLEMATICS_API, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...ownerAuthHeaders() },
         body: JSON.stringify({ project: ownerProject, count: 3, ownerMode: true }),
       });
       const data = await readApiResponse(response);
@@ -1032,6 +1037,7 @@ export default function App() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...ownerAuthHeaders(),
         },
         body: JSON.stringify({
           project,
