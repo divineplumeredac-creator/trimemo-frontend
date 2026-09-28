@@ -520,6 +520,21 @@ export default function App() {
   }
 
 
+  async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 60000) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(input, { ...init, signal: controller.signal });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new Error("La génération a dépassé le délai prévu. Vérifiez le déploiement de l’API et réessayez.");
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
   async function readApiResponse(response: Response) {
     const raw = await response.text();
     let data: any = null;
@@ -667,7 +682,7 @@ export default function App() {
     if (!ownerSessionValid || !premium) return;
     setLoading(true);
     try {
-      const response = await fetch(PLANS_API, {
+      const response = await fetchWithTimeout(PLANS_API, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
@@ -741,7 +756,7 @@ export default function App() {
 
       const problematic = normalizeProblematic(problematics[0], 0);
 
-      const plansResponse = await fetch(PLANS_API, {
+      const plansResponse = await fetchWithTimeout(PLANS_API, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
