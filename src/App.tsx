@@ -767,7 +767,11 @@ export default function App() {
     try {
       const response = await fetchWithTimeout(PLANS_API, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(ownerMode ? ownerAuthHeaders() : {}),
+        },
         body: JSON.stringify({
           project: requestProject,
           problematic,
@@ -1215,7 +1219,7 @@ export default function App() {
     }
 
     return (
-      <div className="min-h-screen bg-[#F7FAF8] text-[#172554]">
+      <div className="min-h-screen bg-[#EAF7EE] text-[#172554]">
         <div className="border-b border-[#172554]/10 bg-[#172554] text-white">
           <div className="mx-auto flex min-h-[76px] max-w-[1280px] items-center justify-between gap-4 px-5 lg:px-8">
             <div className="flex items-center gap-3">
@@ -1268,8 +1272,8 @@ export default function App() {
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-[1440px]">
-          <aside className="hidden min-h-[calc(100vh-76px)] w-64 shrink-0 border-r border-[#172554]/10 bg-white p-5 lg:block">
+        <div className="mx-auto flex max-w-[1280px]">
+          <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#172554]/10 bg-white p-5 lg:block">
             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigation</div>
             <nav className="mt-5 space-y-2">
               {[
@@ -1300,7 +1304,7 @@ export default function App() {
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
                       Test sans paiement
                     </div>
-                    <h1 className="mt-2 font-playfair text-3xl text-[#172554]">
+                    <h1 className="mt-2 font-playfair text-4xl leading-tight text-[#172554]">
                       Préparer une génération
                     </h1>
                     <p className="mt-2 max-w-2xl font-inter text-sm leading-[1.7] text-[#172554]/65">
@@ -1583,7 +1587,7 @@ export default function App() {
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">
                       Problématique {index + 1}
                     </div>
-                    <h2 className="mt-3 font-inter text-base font-semibold text-[#172554]">
+                    <h2 className="mt-3 font-playfair text-xl leading-tight text-[#172554]">
                       {item.title}
                     </h2>
                     <p className="mt-3 font-inter text-sm leading-[1.75] text-[#172554]/75">
