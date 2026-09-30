@@ -1545,7 +1545,7 @@ export default function App() {
                   <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
                     Résultats du test
                   </div>
-                  <h1 className="mt-2 font-playfair text-3xl text-[#172554]">
+                  <h1 className="mt-2 font-playfair text-4xl leading-tight text-[#172554]">
                     Problématiques et plans
                   </h1>
                   <p className="mt-2 max-w-3xl font-inter text-sm leading-[1.7] text-[#172554]/65">
@@ -1573,7 +1573,6 @@ export default function App() {
                       setPremium((current) => current ? { ...current, plans: [] } : current);
                       setSelectedPlan(null);
                       setBlocks([]);
-                      void generatePlansForProblematic(item, true);
                     }}
                     className={`rounded-[24px] border p-5 text-left shadow-sm transition ${
                       selectedProblematic?.id === item.id
@@ -1605,11 +1604,29 @@ export default function App() {
               <div className="mt-8">
                 <div className="rounded-2xl bg-[#F7FAF8] p-4 font-inter text-xs leading-[1.7] text-[#172554]/70">
                   {loading && selectedProblematic
-                    ? "Génération des trois plans en cours. La structure complète sera affichée automatiquement."
+                    ? "Génération des trois plans en cours. Cette étape tient compte du sujet, du niveau, du volume et de la problématique."
                     : selectedProblematic
-                      ? "La problématique sélectionnée est liée aux plans affichés ci-dessous."
-                      : "Sélectionnez une problématique. Trimémo générera automatiquement les trois plans."}
+                      ? "Problématique sélectionnée. Cliquez sur le bouton ci-dessous pour générer les trois plans distincts."
+                      : "Sélectionnez une problématique pour poursuivre le test."}
                 </div>
+
+                {selectedProblematic && premium.plans.length === 0 && (
+                  <div className="mt-4 rounded-[20px] border border-[#172554]/10 bg-white p-5 shadow-sm">
+                    <div className="font-playfair text-xl text-[#172554]">Étape suivante</div>
+                    <p className="mt-2 font-inter text-sm leading-[1.7] text-[#172554]/65">
+                      Générer trois plans distincts construits pour cette problématique.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => void generatePlansForProblematic(selectedProblematic, true)}
+                      className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#1D78C1] px-6 font-inter text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#D4A23A]" />}
+                      Générer les 3 plans
+                    </button>
+                  </div>
+                )}
 
                 {premium.plans.length > 0 && (
                   <div className="mt-5 space-y-5">
@@ -1674,7 +1691,7 @@ export default function App() {
                   <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
                     Rédaction par blocs
                   </div>
-                  <h1 className="mt-2 font-playfair text-3xl text-[#172554]">
+                  <h1 className="mt-2 font-playfair text-4xl leading-tight text-[#172554]">
                     {selectedPlan.title}
                   </h1>
                   <p className="mt-2 max-w-3xl font-inter text-sm leading-[1.7] text-[#172554]/65">
