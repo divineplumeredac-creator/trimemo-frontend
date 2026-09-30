@@ -1295,10 +1295,10 @@ export default function App() {
               ))}
             </nav>
           </aside>
-          <main className="min-w-0 flex-1 px-5 py-8 lg:px-8">
+          <main className="min-w-0 flex-1 px-6 py-8 lg:px-8 lg:py-10">
           {view === "project" && (
             <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
-              <div className="rounded-[28px] border border-[#172554]/10 bg-white p-6 shadow-sm">
+              <div className="rounded-[24px] border border-[#172554]/5 bg-white p-7 shadow-sm lg:p-9">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
@@ -1520,7 +1520,7 @@ export default function App() {
                 </button>
               </div>
 
-              <aside className="h-fit rounded-[28px] border border-[#172554]/10 bg-white p-5 shadow-sm">
+              <aside className="h-fit rounded-[24px] border border-[#172554]/5 bg-white p-6 shadow-sm lg:sticky lg:top-[96px]">
                 <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
                   Pipeline de test
                 </div>
