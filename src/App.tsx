@@ -21,6 +21,7 @@ const API_URL = `${API_BASE_URL}/api/academic`;
 const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
 const PLANS_API = `${API_BASE_URL}/api/generate-plans`;
 const INTRO_PREVIEW_API = `${API_BASE_URL}/api/generate-introduction-preview`;
+const FREE_PREVIEW_API = `${API_BASE_URL}/api/generate-free-preview`;
 const BLOCK_API = `${API_BASE_URL}/api/generate-block`;
 const WORDS_PER_PAGE = 320;
 const FREE_INTRO_WORDS = 300;
@@ -816,75 +817,24 @@ export default function App() {
     }
 
     setLoading(true);
-
     try {
-      const basePayload = { project };
-
-      const problematicsResponse = await fetch(PROBLEMATICS_API, {
+      const response = await fetchWithTimeout(FREE_PREVIEW_API, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ ...basePayload, count: 1 }),
+        body: JSON.stringify({ project }),
       });
-      const problematicsData = await readApiResponse(problematicsResponse);
-      const problematics: Problematic[] =
-        problematicsData.problematiques ||
-        problematicsData.problematics ||
-        problematicsData.data ||
-        [];
-
-      if (!Array.isArray(problematics) || !problematics[0]) {
-        throw new Error("Aucune problématique n’a été générée.");
-      }
-
-      const problematic = normalizeProblematic(problematics[0], 0);
-
-      const plansResponse = await fetchWithTimeout(PLANS_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          ...basePayload,
-          problematic,
-          count: 1,
-        }),
-      });
-      const plansData = await readApiResponse(plansResponse);
-      const rawPlans = plansData.plans || plansData.data?.plans || plansData.data || [];
-      const plans: Plan[] = Array.isArray(rawPlans) ? rawPlans.map((item: any, index: number) => normalizePlan(item, index)) : [];
-
-      if (!Array.isArray(plans) || !plans[0]) {
-        throw new Error("Aucun plan n’a été généré.");
-      }
-
-      const plan = normalizePlan(plans[0], 0);
-
-      const introResponse = await fetch(INTRO_PREVIEW_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          ...basePayload,
-          problematic,
-          plan,
-          targetWords: FREE_INTRO_WORDS,
-        }),
-      });
-      const introductionData = await readApiResponse(introResponse);
-
-      const introduction =
-        introductionData.introduction ||
-        introductionData.data?.introduction ||
-        introductionData.data;
-
-      if (!introduction?.content) {
-        throw new Error("L’introduction d’aperçu n’a pas été générée.");
+      const data = await readApiResponse(response);
+      if (!data?.problematic?.question || !data?.plan?.parts?.length || !data?.introduction?.content) {
+        throw new Error("L’aperçu retourné est incomplet.");
       }
 
       const previewData: Preview = {
-        problematic,
-        plan,
+        problematic: normalizeProblematic(data.problematic, 0),
+        plan: normalizePlan(data.plan, 0),
         introduction: {
-          title: introduction.title || "Introduction",
-          content: introduction.content,
-          wordCount: introduction.wordCount || countWords(introduction.content),
+          title: data.introduction.title || "Introduction",
+          content: data.introduction.content,
+          wordCount: Number(data.introduction.wordCount || countWords(data.introduction.content)),
           incomplete: true,
         },
       };
@@ -895,9 +845,7 @@ export default function App() {
     } catch (error) {
       pushToast(
         "error",
-        error instanceof Error
-          ? error.message
-          : "Impossible de générer l’aperçu."
+        error instanceof Error ? error.message : "Impossible de générer l’aperçu."
       );
     } finally {
       setLoading(false);
@@ -1550,7 +1498,7 @@ export default function App() {
                   ) : (
                     <Sparkles className="h-4 w-4 text-[#D4A23A]" />
                   )}
-                  Lancer le test complet : problématiques → plans → rédaction
+                  Générer les problématiques
                 </button>
               </div>
 
