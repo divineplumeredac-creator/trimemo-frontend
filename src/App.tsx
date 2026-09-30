@@ -253,6 +253,20 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+function normalizeStructuralTitle(value: any, kind: "part" | "chapter" | "section" | "subsection", fallback: string) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return fallback;
+
+  const patterns: Record<string, RegExp> = {
+    part: /^part(?:ie)?\s+(?:[IVXLCDM]+|\d+)\s*[.\-–—:]?\s*/i,
+    chapter: /^chap(?:itre|ter)?\s+\d+(?:\.\d+)?\s*[.\-–—:]?\s*/i,
+    section: /^section\s+\d+(?:\.\d+)?\s*[.\-–—:]?\s*/i,
+    subsection: /^sous[- ]section\s+\d+(?:\.\d+)*\s*[.\-–—:]?\s*/i,
+  };
+
+  return raw.replace(patterns[kind], "").trim() || fallback;
+}
+
 function normalizeProblematic(value: any, index = 0): Problematic {
   return {
     id: String(value?.id || `problematic-${index + 1}`),
@@ -300,12 +314,12 @@ function normalizePlan(value: any, index = 0): Plan {
         return {
           id: String(section?.id || `section-${partNumber}-${chapterNumber}-${sectionNumber}`),
           number: sectionNumber,
-          title: String(section?.title || section?.titre || `Section ${sectionNumber}`),
+          title: normalizeStructuralTitle(section?.title || section?.titre, "section", `Section ${sectionNumber}`),
           description: "",
           subsections: rawSubsections.map((item: any, subsectionIndex: number) => ({
             id: String(item?.id || `subsection-${partNumber}-${chapterNumber}-${sectionNumber}-${subsectionIndex + 1}`),
             number: subsectionIndex + 1,
-            title: String(typeof item === "string" ? item : item?.title || item?.titre || `Sous-section ${subsectionIndex + 1}`),
+            title: normalizeStructuralTitle(typeof item === "string" ? item : item?.title || item?.titre, "subsection", `Sous-section ${subsectionIndex + 1}`),
             description: ""
           }))
         };
@@ -314,7 +328,7 @@ function normalizePlan(value: any, index = 0): Plan {
       return {
         id: String(chapter?.id || `chapter-${chapterNumber}`),
         number: chapterNumber,
-        title: String(chapter?.title || chapter?.titre || `Chapitre ${chapterNumber}`),
+        title: normalizeStructuralTitle(chapter?.title || chapter?.titre, "chapter", `Chapitre ${chapterNumber}`),
         description: "",
         wordCount: Number(chapter?.wordCount || 0),
         sections
@@ -324,7 +338,7 @@ function normalizePlan(value: any, index = 0): Plan {
     return {
       id: String(part?.id || `part-${partNumber}`),
       number: partNumber,
-      title: String(part?.title || part?.titre || `Partie ${partNumber}`),
+      title: normalizeStructuralTitle(part?.title || part?.titre, "part", `Partie ${partNumber}`),
       description: "",
       chapters
     };
@@ -1850,7 +1864,7 @@ export default function App() {
           </div>
           <button onClick={() => void generateOwnerPremium()} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#172554] font-inter text-xs font-semibold text-white disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#D4A23A]" />}
-            Tester problématiques et plans
+            Générer les problématiques
           </button>
           <button onClick={() => simulateOwnerPayment()} className="mt-2 flex h-10 w-full items-center justify-center rounded-full border border-[#172554]/10 font-inter text-xs font-semibold text-[#172554]">
             Simuler un paiement
