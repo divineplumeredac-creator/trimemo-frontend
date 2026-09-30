@@ -2284,7 +2284,7 @@ export default function App() {
                       <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Plan gratuit</div>
                       <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.plan.title}</h3>
                       <div className="mt-7 font-inter text-[#172554]">
-                        <div className="border-b border-[#172554]/10 pb-4 text-base font-semibold">Introduction générale</div>
+                        <div className="border-b border-[#172554]/10 pb-4 text-base font-semibold">Introduction générale <span className="text-xs font-normal text-[#172554]/60">≈ {Number(preview.plan.introductionGeneral?.wordCount || Math.round(project.pages * WORDS_PER_PAGE * 0.1)).toLocaleString("fr-FR")} mots (10 % du volume)</span></div>
                         <div className="mt-5 space-y-5">
                           {preview.plan.parts.map((part) => <div key={part.id}>
                             <div className="text-base font-bold uppercase">PARTIE {part.number}. {part.title}</div>
@@ -2304,16 +2304,16 @@ export default function App() {
                           </div>)}
                         </div>
                         <div className="mt-6 border-t border-[#172554]/10 pt-4 text-base font-semibold">Conclusion générale</div>
-                        <div className="mt-4 rounded-xl bg-[#FFF8E7] p-3 text-xs text-[#6B4B08]">Aperçu gratuit : la structure complète est visible, mais la rédaction intégrale reste limitée.</div>
+                        <div className="mt-4 rounded-xl bg-[#FFF8E7] p-3 text-xs leading-[1.7] text-[#6B4B08]">Aperçu gratuit : le plan présente la structure du mémoire. Les 300 mots affichés dans l’onglet Introduction constituent seulement un extrait de l’introduction générale. Celle-ci représente environ 10 % du volume total.</div>
                       </div>
                     </div>
                   )}
                   {previewTab === "introduction" && (
                     <div>
-                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Introduction · 300 mots</div>
+                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Extrait de l’introduction générale · 300 mots</div>
                       <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.introduction.title}</h3>
                       <p className="mt-6 whitespace-pre-wrap font-inter text-base leading-[1.95] text-[#172554]/80">{preview.introduction.content}</p>
-                      <div className="mt-6 rounded-[14px] bg-[#FFF8E7] p-4 font-inter text-sm leading-[1.7] text-[#6B4B08]">La version complète est accessible après paiement.</div>
+                      <div className="mt-6 rounded-[14px] bg-[#FFF8E7] p-4 font-inter text-sm leading-[1.7] text-[#6B4B08]"><strong>Extrait gratuit :</strong> environ 300 mots affichés sur une introduction générale cible d’environ {Number(preview.plan.introductionGeneral?.wordCount || Math.round(project.pages * WORDS_PER_PAGE * 0.1)).toLocaleString("fr-FR")} mots, soit 10 % du volume prévu.</div>
                     </div>
                   )}
                 </section>
