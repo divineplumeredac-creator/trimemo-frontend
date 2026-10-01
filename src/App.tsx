@@ -1023,7 +1023,7 @@ export default function App() {
           preceding,
           ownerMode: ownerRoute === true,
         }),
-      }, 240000      });
+      }, 240000);
 
       const data = await readApiResponse(response);
       const result = data.block || data.data || data;
