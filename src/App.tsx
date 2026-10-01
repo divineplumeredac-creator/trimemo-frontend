@@ -438,6 +438,7 @@ export default function App() {
   const [view, setView] = useState<"home" | "project" | "preview" | "premium" | "writing">("home");
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction">("problematic");
   const [loading, setLoading] = useState(false);
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -621,7 +622,8 @@ export default function App() {
     }
 
     if (!response.ok) {
-      throw new Error(data?.error || data?.message || `Erreur serveur HTTP ${response.status}.`);
+      const detail = data?.details ? " — " + String(data.details) : "";
+      throw new Error((data?.error || data?.message || `Erreur serveur HTTP ${response.status}.`) + detail);
     }
 
     return data;
@@ -1004,7 +1006,12 @@ export default function App() {
     }
 
     if (block.status === "generating") return;
+    if (activeBlockId && activeBlockId !== blockId) {
+      pushToast("info", "Un seul bloc peut être rédigé à la fois. Attendez la fin du bloc en cours.");
+      return;
+    }
 
+    setActiveBlockId(blockId);
     setBlocks((current) => current.map((item) =>
       item.id === blockId
         ? { ...item, status: "generating", error: undefined }
@@ -1088,6 +1095,8 @@ export default function App() {
       ));
 
       pushToast("error", message);
+    } finally {
+      setActiveBlockId(null);
     }
   }
 
@@ -1777,19 +1786,7 @@ export default function App() {
                 >
                   Rédiger le prochain bloc
                 </button>
-                <button
-                  type="button"
-                  disabled={loading || !blocks.some((block) => block.status === "pending")}
-                  onClick={async () => {
-                    const pendingIds = blocks.filter((block) => block.status === "pending").map((block) => block.id);
-                    for (const id of pendingIds) {
-                      await generateBlock(id);
-                    }
-                  }}
-                  className="rounded-full border border-[#172554]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#172554] disabled:opacity-40"
-                >
-                  Rédiger tous les blocs
-                </button>
+                <div className="rounded-full border border-[#172554]/10 bg-white px-4 py-2 font-inter text-xs text-[#172554]/70">Rédaction séquentielle : un seul bloc à la fois</div>
               </div>
 
               <div className="mt-6 space-y-4">
@@ -1820,7 +1817,7 @@ export default function App() {
                       </div>
                       <button
                         type="button"
-                        disabled={block.status === "generating"}
+                        disabled={block.status === "generating" || (activeBlockId !== null && activeBlockId !== block.id)}
                         onClick={() => void generateBlock(block.id)}
                         className="rounded-full bg-[#172554] px-4 py-2 font-inter text-xs font-semibold text-white disabled:opacity-50"
                       >
