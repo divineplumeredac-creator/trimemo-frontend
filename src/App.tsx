@@ -150,11 +150,18 @@ type Problematic = {
   angle: string;
 };
 
+type PlanInternalTitle = {
+  id: string;
+  number: number;
+  title: string;
+};
+
 type PlanSubsection = {
   id: string;
   number: number;
   title: string;
   description: string;
+  internalTitles: PlanInternalTitle[];
 };
 
 type PlanSection = {
@@ -321,7 +328,14 @@ function normalizePlan(value: any, index = 0): Plan {
             id: String(item?.id || `subsection-${partNumber}-${chapterNumber}-${sectionNumber}-${subsectionIndex + 1}`),
             number: subsectionIndex + 1,
             title: normalizeStructuralTitle(typeof item === "string" ? item : item?.title || item?.titre, "subsection", `Sous-section ${subsectionIndex + 1}`),
-            description: ""
+            description: "",
+            internalTitles: Array.isArray(item?.internalTitles)
+              ? item.internalTitles.map((internal: any, internalIndex: number) => ({
+                  id: String(internal?.id || `internal-${partNumber}-${chapterNumber}-${sectionNumber}-${subsectionIndex + 1}-${internalIndex + 1}`),
+                  number: internalIndex + 1,
+                  title: String(internal?.title || internal?.titre || `Titre interne ${internalIndex + 1}`).trim()
+                }))
+              : []
           }))
         };
       });
@@ -385,6 +399,7 @@ function createManualPlan(rawPlan: string, project: ProjectData): Plan {
     number: 1,
     title: firstLine.slice(0, 180),
     description: cleanPlan,
+    internalTitles: [],
   };
   const section: PlanSection = {
     id: "manual-section-1",
@@ -892,6 +907,8 @@ export default function App() {
   }
 
   function prepareBlocks(plan: Plan) {
+    // Le seuil de 320 mots impose une profondeur supplémentaire lorsque nécessaire.
+    // Les titres internes sont transmis explicitement au moteur et à l'export Word.
     const createSegmentedBlocks = (
       baseId: string,
       title: string,
@@ -938,6 +955,7 @@ export default function App() {
                   `Chapitre ${chapter.number} : ${chapter.title}`,
                   `Section ${section.number} : ${section.title}`,
                   `Sous-section ${section.number}.${subsection.number} : ${subsection.title}`,
+                  ...subsection.internalTitles.map((internal) => `Titre interne ${section.number}.${subsection.number}.${internal.number} : ${internal.title}`),
                 ],
               }))
             : [{
