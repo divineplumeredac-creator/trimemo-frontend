@@ -223,6 +223,7 @@ type Block = {
   footnotes: string[];
   structure: string[];
   kind: "introduction" | "chapter" | "conclusion";
+  error?: string;
 };
 
 type PremiumOptions = {
@@ -988,16 +989,59 @@ export default function App() {
   }
 
   async function generateBlock(blockId: string) {
-    if (!selectedProblematic || !selectedPlan) return;
-    const block = blocks.find((item) => item.id === blockId);
-    if (!block || block.status === "generating") return;
+    if (!selectedProblematic || !selectedPlan) {
+      const message = "Sélectionnez une problématique et un plan avant de rédiger.";
+      pushToast("error", message);
+      setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "pending", error: message } : item));
+      return;
+    }
 
-    setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "generating" } : item));
+    const block = blocks.find((item) => item.id === blockId);
+    if (!block) {
+      const message = "Bloc introuvable dans la structure de rédaction.";
+      pushToast("error", message);
+      return;
+    }
+
+    if (block.status === "generating") return;
+
+    setBlocks((current) => current.map((item) =>
+      item.id === blockId
+        ? { ...item, status: "generating", error: undefined }
+        : item
+    ));
+
     try {
       const preceding = blocks
         .filter((item) => item.status === "done")
         .slice(-2)
         .map((item) => ({ title: item.title, content: item.content }));
+
+      const payload = {
+        project,
+        problematic: selectedProblematic,
+        plan: selectedPlan,
+        block: {
+          id: block.id,
+          title: block.title,
+          expectedWords: block.expectedWords,
+          structure: block.structure,
+          kind: block.kind,
+        },
+        blockTitle: block.title,
+        structure: block.structure,
+        kind: block.kind,
+        targetWords: block.expectedWords,
+        preceding,
+        ownerMode: ownerRoute === true,
+      };
+
+      console.log("[Trimémo] génération bloc", {
+        blockId,
+        blockTitle: block.title,
+        api: BLOCK_API,
+        ownerMode: ownerRoute === true,
+      });
 
       const response = await fetchWithTimeout(BLOCK_API, {
         method: "POST",
@@ -1005,42 +1049,45 @@ export default function App() {
           "Content-Type": "application/json",
           ...ownerAuthHeaders(),
         },
-        body: JSON.stringify({
-          project,
-          problematic: selectedProblematic,
-          plan: selectedPlan,
-          block: {
-            id: block.id,
-            title: block.title,
-            expectedWords: block.expectedWords,
-            structure: block.structure,
-            kind: block.kind,
-          },
-          blockTitle: block.title,
-          structure: block.structure,
-          kind: block.kind,
-          targetWords: block.expectedWords,
-          preceding,
-          ownerMode: ownerRoute === true,
-        }),
+        body: JSON.stringify(payload),
       }, 240000);
 
       const data = await readApiResponse(response);
       const result = data.block || data.data || data;
       const content = String(result.content || result.text || result.body || "");
-      if (!content.trim()) throw new Error("Le serveur n’a retourné aucun contenu pour ce bloc.");
-      setBlocks((current) => current.map((item) => item.id === blockId ? {
-        ...item,
-        ...result,
-        content,
-        wordCount: Number(result.wordCount || countWords(content)),
-        sources: Array.isArray(result.sources) ? result.sources : [],
-        footnotes: Array.isArray(result.footnotes) ? result.footnotes : [],
-        status: "done",
-      } : item));
+
+      if (!content.trim()) {
+        throw new Error("Le serveur a répondu sans contenu pour ce bloc.");
+      }
+
+      setBlocks((current) => current.map((item) =>
+        item.id === blockId
+          ? {
+              ...item,
+              ...result,
+              content,
+              wordCount: Number(result.wordCount || countWords(content)),
+              sources: Array.isArray(result.sources) ? result.sources : [],
+              footnotes: Array.isArray(result.footnotes) ? result.footnotes : [],
+              status: "done",
+              error: undefined,
+            }
+          : item
+      ));
     } catch (error) {
-      setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "pending" } : item));
-      pushToast("error", error instanceof Error ? error.message : "Impossible de générer ce bloc.");
+      const message = error instanceof Error
+        ? error.message
+        : "Impossible de générer ce bloc.";
+
+      console.error("[Trimémo] erreur génération bloc", error);
+
+      setBlocks((current) => current.map((item) =>
+        item.id === blockId
+          ? { ...item, status: "pending", error: message }
+          : item
+      ));
+
+      pushToast("error", message);
     }
   }
 
@@ -1759,6 +1806,11 @@ export default function App() {
                         <h2 className="mt-2 font-inter text-base font-semibold">
                           {block.title}
                         </h2>
+                        {block.error && (
+                          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 font-inter text-xs leading-5 text-red-700">
+                            <strong>Erreur de rédaction :</strong> {block.error}
+                          </div>
+                        )}
                         <div className="mt-2 rounded-xl bg-[#EAF7EE] p-3 font-inter text-[11px] leading-[1.6] text-[#172554]/75">
                           {block.structure.join(" › ")}
                         </div>
