@@ -454,6 +454,7 @@ export default function App() {
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
+  const [selectedWritingBlockId, setSelectedWritingBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
@@ -492,6 +493,7 @@ export default function App() {
       if (saved?.previewTab) setPreviewTab(saved.previewTab);
       if (saved?.premiumNav) setPremiumNav(saved.premiumNav);
       if (saved?.premiumSection === "problematic" || saved?.premiumSection === "plan" || saved?.premiumSection === "writing") setPremiumSection(saved.premiumSection);
+      if (saved?.selectedWritingBlockId) setSelectedWritingBlockId(saved.selectedWritingBlockId);
     } catch {
       window.localStorage.removeItem("trimemo_state_v3");
     }
@@ -512,9 +514,10 @@ export default function App() {
         previewTab,
         premiumNav,
         premiumSection,
+        selectedWritingBlockId,
       }));
     } catch {}
-  }, [ownerRoute, ownerSessionValid, project, formula, preview, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection]);
+  }, [ownerRoute, ownerSessionValid, project, formula, preview, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId]);
 
   useEffect(() => {
     if (!ownerRoute) return;
@@ -1879,134 +1882,56 @@ export default function App() {
 
           {view === "writing" && selectedProblematic && selectedPlan && (
             <section>
-              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+              <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
                 <div>
-                  <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
-                    Rédaction par blocs
-                  </div>
-                  <h1 className="mt-2 font-playfair text-4xl leading-tight text-[#172554]">
-                    {selectedPlan.title}
-                  </h1>
-                  <p className="mt-2 max-w-3xl font-inter text-sm leading-[1.7] text-[#172554]/65">
-                    La rédaction est séquentielle et chaque unité reçoit une longueur adaptée à sa densité.
-                    La structure complète du mémoire est affichée pour chaque unité.
-                  </p>
-                  <button type="button" onClick={exportDocument} className="mt-4 rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
-                    Exporter le document Word
-                  </button>
+                  <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Rédaction</div>
+                  <h1 className="mt-2 font-playfair text-4xl text-[#172554]">{selectedPlan.title}</h1>
                 </div>
-                <div className="rounded-2xl bg-white px-4 py-3 font-inter text-xs shadow-sm">
-                  {totalDoneWords} / {targetWords} mots · {progress} %
-                </div>
+                <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">Exporter le document Word</button>
               </div>
 
-              <div className="mt-6 h-2 overflow-hidden rounded-full bg-white">
-                <div
-                  className="h-full bg-[#D4A23A] transition-all"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  disabled={loading || !blocks.some((block) => block.status === "pending")}
-                  onClick={() => {
-                    const next = blocks.find((block) => block.status === "pending");
-                    if (next) void generateBlock(next.id);
-                  }}
-                  className="rounded-full bg-[#172554] px-4 py-2 font-inter text-xs font-semibold text-white disabled:opacity-40"
-                >
-                  Rédiger le prochain bloc
-                </button>
-                <div className="rounded-full border border-[#172554]/10 bg-white px-4 py-2 font-inter text-xs text-[#172554]/70">Rédaction séquentielle : un seul bloc à la fois</div>
-              </div>
-
-              <div className="mt-6 space-y-4">
-                {blocks.map((block, index) => (
-                  <article
-                    key={block.id}
-                    className="rounded-[24px] border border-[#172554]/10 bg-white p-5 shadow-sm"
-                  >
-                    <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
-                      <div>
-                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">
-                          Bloc {index + 1}
-                        </div>
-                        <h2 className="mt-2 font-inter text-base font-semibold">
-                          {block.title}
-                        </h2>
-                        {block.error && (
-                          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 font-inter text-xs leading-5 text-red-700">
-                            <strong>Erreur de rédaction :</strong> {block.error}
-                          </div>
-                        )}
-                        <div className="mt-2 rounded-xl bg-[#EAF7EE] p-3 font-inter text-[11px] leading-[1.6] text-[#172554]/75">
-                          {block.structure.join(" › ")}
-                        </div>
-                        <div className="mt-1 font-inter text-xs text-[#172554]/55">
-                          Objectif : {block.expectedWords} mots
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={block.status === "generating" || (activeBlockId !== null && activeBlockId !== block.id)}
-                        onClick={() => void generateBlock(block.id)}
-                        className="rounded-full bg-[#172554] px-4 py-2 font-inter text-xs font-semibold text-white disabled:opacity-50"
-                      >
-                        {block.status === "generating" ? (
-                          <span className="inline-flex items-center gap-2">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            Rédaction...
-                          </span>
-                        ) : block.status === "done" ? (
-                          "Régénérer le bloc"
-                        ) : (
-                          "Rédiger ce bloc"
-                        )}
+              <div className="mb-6 rounded-[18px] border border-[#172554]/10 bg-white p-3">
+                <div className="mb-2 px-2 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">Blocs de rédaction</div>
+                <div className="flex flex-wrap gap-2">
+                  {blocks.map((block, index) => {
+                    const selected = (selectedWritingBlockId || blocks[0]?.id) === block.id;
+                    return (
+                      <button key={block.id} type="button" onClick={() => setSelectedWritingBlockId(block.id)} className={`rounded-xl border px-4 py-2.5 text-left font-inter text-xs font-semibold ${selected ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/10 bg-white text-[#172554] hover:bg-[#F7FAF8]"}`}>
+                        Bloc {index + 1}<span className={`ml-2 font-normal ${selected ? "text-white/70" : "text-[#172554]/50"}`}>{block.status === "done" ? `${block.wordCount} mots` : `${block.expectedWords} mots`}</span>
                       </button>
-                    </div>
-
-                    {block.content && (
-                      <div className="mt-5 whitespace-pre-wrap rounded-2xl bg-[#F7FAF8] p-5 font-inter text-sm leading-[1.8] text-[#172554]/85">
-                        {block.content}
-                      </div>
-                    )}
-
-                    {block.status === "done" && block.sources.length > 0 && (
-                      <div className="mt-4 rounded-2xl border border-[#172554]/10 p-4">
-                        <div className="font-inter text-xs font-semibold">
-                          Sources retournées
-                        </div>
-                        <div className="mt-2 space-y-2">
-                          {block.sources.map((source, sourceIndex) => (
-                            <div
-                              key={`${source.title}-${sourceIndex}`}
-                              className="font-inter text-xs leading-[1.6] text-[#172554]/70"
-                            >
-                              {source.author ? `${source.author} · ` : ""}
-                              {source.year ? `${source.year} · ` : ""}
-                              {source.title}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )} 
-                    {block.footnotes.length > 0 && (
-                      <div className="mt-4 rounded-2xl border border-[#172554]/10 p-4">
-                        <div className="font-inter text-xs font-semibold">Notes de bas de page</div>
-                        <ol className="mt-2 list-decimal space-y-1 pl-5 font-inter text-xs leading-[1.6] text-[#172554]/70">
-                          {block.footnotes.map((note, noteIndex) => <li key={noteIndex}>{note}</li>)}
-                        </ol>
-                      </div>
-                    )}
-                  </article>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
+
+              {(() => {
+                const current = blocks.find((block) => block.id === (selectedWritingBlockId || blocks[0]?.id)) || blocks[0];
+                if (!current) return null;
+                const index = blocks.findIndex((block) => block.id === current.id);
+                return (
+                  <article className="mx-auto max-w-[900px] overflow-hidden border border-[#D9D9D9] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
+                    <div className="border-b border-[#E5E5E5] px-10 py-5 md:px-16">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="font-inter text-[10px] uppercase tracking-[0.18em] text-[#777]">Bloc {index + 1}</div>
+                        <button type="button" disabled={current.status === "generating" || (activeBlockId !== null && activeBlockId !== current.id)} onClick={() => void generateBlock(current.id)} className="rounded-full bg-[#172554] px-4 py-2 font-inter text-[11px] font-semibold text-white disabled:opacity-50">
+                          {current.status === "generating" ? "Rédaction..." : current.status === "done" ? "Régénérer" : "Rédiger ce bloc"}
+                        </button>
+                      </div>
+                      <h2 className="mt-4 font-playfair text-2xl text-[#172554]">{current.title}</h2>
+                      <div className="mt-3 font-inter text-[11px] leading-5 text-[#666]">{current.structure.join(" › ")}</div>
+                    </div>
+                    <div className="min-h-[1120px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
+                      {current.content ? <div className="whitespace-pre-wrap">{current.content}</div> : <div className="flex min-h-[500px] items-center justify-center text-center font-inter text-sm text-[#777]">Ce bloc n'est pas encore rédigé. Cliquez sur « Rédiger ce bloc ».</div>}
+                      {current.footnotes.length > 0 && <div className="mt-12 border-t border-[#222] pt-5 text-[11px] leading-[1.6]"><div className="mb-2 font-bold">Notes</div><ol className="list-decimal space-y-1 pl-5">{current.footnotes.map((note, index) => <li key={index}>{note}</li>)}</ol></div>}
+                      {current.sources.length > 0 && <div className="mt-10 border-t border-[#DDD] pt-5 font-inter text-[11px] leading-[1.6] text-[#555]"><div className="mb-2 font-semibold uppercase tracking-[0.12em]">Sources utilisées</div>{current.sources.map((source, sourceIndex) => <div key={`${source.title}-${sourceIndex}`}>{source.author ? `${source.author}. ` : ""}{source.title}{source.year ? ` (${source.year})` : ""}</div>)}</div>}
+                    </div>
+                  </article>
+                );
+              })()}
             </section>
           )}
 
-          {view !== "project" && view !== "premium" && view !== "writing" && (
+{view !== "project" && view !== "premium" && view !== "writing" && (
             <section className="rounded-[28px] border border-[#172554]/10 bg-white p-6 shadow-sm">
               <h1 className="font-playfair text-3xl">Tableau de bord</h1>
               <p className="mt-2 font-inter text-sm text-[#172554]/65">
@@ -2722,52 +2647,128 @@ export default function App() {
             </section>
           )}
           {view === "writing" && selectedPlan && selectedProblematic && (
-              <div className="grid gap-8 lg:grid-cols-[310px_1fr]">
-                <aside className="h-fit rounded-[24px] border border-[#172554]/5 bg-white p-6 lg:sticky lg:top-[98px]">
-                  <div className="font-playfair text-xl">Rédaction complète</div>
-                  <div className="mt-2 font-inter text-xs text-[#172554]/75">Objectif : {targetWords.toLocaleString("fr-FR")} mots</div>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#EAF7EE]"><div className="h-full rounded-full bg-[#D4A23A]" style={{ width: `${progress}%` }} /></div>
-                  <div className="mt-2 font-inter text-[11px] text-[#172554]/75">{totalDoneWords.toLocaleString("fr-FR")} / {targetWords.toLocaleString("fr-FR")} mots</div>
-                  <div className="mt-6 space-y-2">
-                    {blocks.map((block) => (
-                      <button key={block.id} onClick={() => void generateBlock(block.id)} disabled={block.status === "generating"} className={`w-full rounded-[13px] border p-3 text-left ${block.status === "done" ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/5 bg-[#EAF7EE]"}`}>
-                        <div className="flex items-center justify-between gap-2"><span className="font-inter text-xs leading-[1.4]">{block.title}</span>{block.status === "generating" ? <Loader2 className="h-4 w-4 animate-spin" /> : block.status === "done" ? <Check className="h-4 w-4 text-[#D4A23A]" /> : <span className="font-inter text-[10px]">{block.expectedWords} mots</span>}</div>
-                      </button>
-                    ))}
+              <section>
+                <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+                  <div>
+                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Rédaction</div>
+                    <h1 className="mt-2 font-playfair text-4xl text-[#172554]">{selectedPlan.title}</h1>
+                    <p className="mt-2 font-inter text-sm text-[#172554]/60">
+                      Sélectionnez un bloc dans cette zone. Le contenu sélectionné est présenté comme une page Word.
+                    </p>
                   </div>
-                </aside>
+                  <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
+                    Exporter le document Word
+                  </button>
+                </div>
 
-                <section className="space-y-6">
-                  <div className="rounded-[24px] border border-[#172554]/5 bg-white p-7">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Paramètres verrouillés</div>
-                      <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-4 py-2 font-inter text-xs font-semibold text-white">
-                        Exporter le document Word
-                      </button>
-                      <a href={!CONTACT_EMAIL ? "#" : `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande de correction de mémoire")}`} onClick={(event) => { if (!CONTACT_EMAIL) { event.preventDefault(); pushToast("info", "L’adresse e-mail de contact doit encore être configurée."); } }} className="rounded-full border border-[#172554]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#172554]">
-                        Contacter MSF
-                      </a>
-                      <a href={!CONTACT_EMAIL ? "#" : `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande d’avis sur mon mémoire")}`} onClick={(event) => { if (!CONTACT_EMAIL) { event.preventDefault(); pushToast("info", "L’adresse e-mail de contact doit encore être configurée."); } }} className="rounded-full border border-[#172554]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#172554]">
-                        Demander un avis
-                      </a>
+                <div className="mb-6 rounded-[18px] border border-[#172554]/10 bg-white p-3">
+                  <div className="mb-2 px-2 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">
+                    Blocs de rédaction
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {blocks.map((block, index) => {
+                      const selected = (selectedWritingBlockId || blocks[0]?.id) === block.id;
+                      return (
+                        <button
+                          key={block.id}
+                          type="button"
+                          onClick={() => setSelectedWritingBlockId(block.id)}
+                          className={`rounded-xl border px-4 py-2.5 text-left font-inter text-xs font-semibold ${selected ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/10 bg-white text-[#172554] hover:bg-[#F7FAF8]"}`}
+                        >
+                          Bloc {index + 1}
+                          <span className={`ml-2 font-normal ${selected ? "text-white/70" : "text-[#172554]/50"}`}>
+                            {block.status === "done" ? `${block.wordCount} mots` : `${block.expectedWords} mots`}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#172554]/10 pt-3">
+                    <div className="font-inter text-xs text-[#172554]/60">
+                      {totalDoneWords.toLocaleString("fr-FR")} / {targetWords.toLocaleString("fr-FR")} mots · {progress} %
                     </div>
-                    <h3 className="mt-3 font-playfair text-2xl">{selectedProblematic.title}</h3>
-                    <p className="mt-2 font-inter text-sm text-[#172554]/60">{selectedPlan.title}</p>
-                    <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-[12px] bg-[#EAF7EE] p-3 font-inter text-xs">Contexte : {project.contexte ? "fourni" : "non précisé"}</div><div className="rounded-[12px] bg-[#EAF7EE] p-3 font-inter text-xs">Consignes : {project.consignes ? "fournies" : "non précisées"}</div><div className="rounded-[12px] bg-[#EAF7EE] p-3 font-inter text-xs">Documents : {project.files.length}</div></div>
+                    <button
+                      type="button"
+                      disabled={loading || !blocks.some((block) => block.status === "pending")}
+                      onClick={() => {
+                        const next = blocks.find((block) => block.status === "pending");
+                        if (next) {
+                          setSelectedWritingBlockId(next.id);
+                          void generateBlock(next.id);
+                        }
+                      }}
+                      className="rounded-full bg-[#1D78C1] px-4 py-2 font-inter text-xs font-semibold text-white disabled:opacity-40"
+                    >
+                      Rédiger le prochain bloc
+                    </button>
                   </div>
+                </div>
 
-                  {blocks.filter((block) => block.status === "done").map((block) => (
-                    <article key={block.id} className="rounded-[24px] border border-[#172554]/5 bg-white p-7 lg:p-9">
-                      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-playfair text-2xl">{block.title}</h3><span className="rounded-full bg-[#172554] px-3 py-1 font-inter text-[11px] text-white">{block.wordCount} mots</span></div>
-                      <div className="mt-4 rounded-xl bg-[#EAF7EE] p-3 font-inter text-xs leading-[1.6] text-[#172554]/75">{block.structure.join(" › ")}</div>
-                      <div className="mt-6 whitespace-pre-wrap font-inter text-[14px] leading-[1.9] text-[#172554]/80">{block.content}</div>
-                      {block.sources.length > 0 && <div className="mt-8 border-t border-[#172554]/5 pt-6"><div className="font-inter text-[11px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">Sources utilisées</div><div className="mt-3 space-y-2">{block.sources.map((source, index) => <div key={index} className="font-inter text-xs text-[#172554]/70">{source.author ? `${source.author}. ` : ""}{source.title}{source.year ? ` (${source.year})` : ""}{source.url ? ` · ${source.url}` : ""}</div>)}</div></div>}
-                      {block.footnotes.length > 0 && <div className="mt-6 border-t border-[#172554]/5 pt-5"><div className="font-inter text-[11px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">Notes de bas de page</div><ol className="mt-3 list-decimal space-y-1 pl-5 font-inter text-xs text-[#172554]/70">{block.footnotes.map((note, index) => <li key={index}>{note}</li>)}</ol></div>}
-                      <button onClick={() => void copy(block.content)} className="mt-7 rounded-full border border-[#172554]/10 px-4 py-2 font-inter text-xs">Copier le bloc</button>
+                {(() => {
+                  const current = blocks.find((block) => block.id === (selectedWritingBlockId || blocks[0]?.id)) || blocks[0];
+                  if (!current) return null;
+                  const index = blocks.findIndex((block) => block.id === current.id);
+                  return (
+                    <article className="mx-auto max-w-[900px] overflow-hidden border border-[#D9D9D9] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
+                      <div className="border-b border-[#E5E5E5] bg-white px-10 py-5 md:px-16">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="font-inter text-[10px] uppercase tracking-[0.18em] text-[#777]">Bloc {index + 1}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-inter text-[11px] text-[#777]">{current.status === "done" ? current.wordCount : current.expectedWords} mots</span>
+                            <button
+                              type="button"
+                              disabled={current.status === "generating" || (activeBlockId !== null && activeBlockId !== current.id)}
+                              onClick={() => void generateBlock(current.id)}
+                              className="rounded-full bg-[#172554] px-4 py-2 font-inter text-[11px] font-semibold text-white disabled:opacity-50"
+                            >
+                              {current.status === "generating" ? "Rédaction..." : current.status === "done" ? "Régénérer" : "Rédiger ce bloc"}
+                            </button>
+                          </div>
+                        </div>
+                        <h2 className="mt-4 font-playfair text-2xl text-[#172554]">{current.title}</h2>
+                        <div className="mt-3 font-inter text-[11px] leading-5 text-[#666]">{current.structure.join(" › ")}</div>
+                      </div>
+
+                      <div className="min-h-[1120px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
+                        {current.error && (
+                          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
+                            <strong>Erreur de rédaction :</strong> {current.error}
+                          </div>
+                        )}
+                        {current.content ? (
+                          <div className="whitespace-pre-wrap">{current.content}</div>
+                        ) : (
+                          <div className="flex min-h-[500px] items-center justify-center text-center font-inter text-sm text-[#777]">
+                            Ce bloc n'est pas encore rédigé. Cliquez sur « Rédiger ce bloc ».
+                          </div>
+                        )}
+
+                        {current.footnotes.length > 0 && (
+                          <div className="mt-12 border-t border-[#222] pt-5 font-['Times_New_Roman'] text-[11px] leading-[1.6]">
+                            <div className="mb-2 font-bold">Notes</div>
+                            <ol className="list-decimal space-y-1 pl-5">
+                              {current.footnotes.map((note, noteIndex) => <li key={noteIndex}>{note}</li>)}
+                            </ol>
+                          </div>
+                        )}
+
+                        {current.sources.length > 0 && (
+                          <div className="mt-10 border-t border-[#DDD] pt-5 font-inter text-[11px] leading-[1.6] text-[#555]">
+                            <div className="mb-2 font-semibold uppercase tracking-[0.12em]">Sources utilisées</div>
+                            <div className="space-y-1">
+                              {current.sources.map((source, sourceIndex) => (
+                                <div key={`${source.title}-${sourceIndex}`}>
+                                  {source.author ? `${source.author}. ` : ""}{source.title}{source.year ? ` (${source.year})` : ""}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </article>
-                  ))}
-                </section>
-              </div>
+                  );
+                })()}
+              </section>
             )}
 
             {(view === "premium" || view === "writing") && !premium && loading && (
