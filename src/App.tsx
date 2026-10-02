@@ -115,7 +115,7 @@ const pricing = {
 
 const pricingInclusions = [
   "3 problématiques + 3 plans",
-  "Rédaction de 900 mots par bloc",
+  "Rédaction séquentielle par blocs de longueur variable",
   "Sources avec DOI",
   "Export Word",
   "Facture groupée pour les packs",
