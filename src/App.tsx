@@ -2240,7 +2240,7 @@ export default function App() {
                   ["01", "Votre formule", "Vous choisissez la formule qui correspond à votre niveau ou à votre besoin."],
                   ["02", "Votre dossier", "Sujet, contexte, consignes et documents sont transmis au moteur de génération."],
                   ["03", "Aperçu gratuit", "Une problématique, un plan et une introduction incomplète de 300 mots."],
-                  ["04", "Accès complet", "Après paiement : trois problématiques, trois plans puis la rédaction par blocs de 900 mots."],
+                  ["04", "Accès complet", "Après paiement : trois problématiques, trois plans puis la rédaction séquentielle par blocs de longueur variable."],
                 ].map(([n, title, text]) => (
                   <div key={n} className="rounded-[20px] border border-[#172554]/5 bg-white p-6">
                     <div className="font-inter text-[11px] tracking-[0.2em] text-[#D4A23A]">{n}</div>
