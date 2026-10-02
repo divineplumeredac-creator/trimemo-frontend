@@ -25,7 +25,7 @@ const FREE_PREVIEW_API = `${API_BASE_URL}/api/generate-free-preview`;
 const BLOCK_API = `${API_BASE_URL}/api/generate-block`;
 const WORDS_PER_PAGE = 320;
 const FREE_INTRO_WORDS = 300;
-const BLOCK_WORDS = 900;
+const BLOCK_WORDS = 320;
 const LOGO_SRC = "/trimemo-logo.webp";
 const OWNER_AUTH_API = `${API_BASE_URL}/api/owner-auth`;
 const EXPORT_API = `${API_BASE_URL}/api/export`;
@@ -949,24 +949,55 @@ export default function App() {
   }
 
   function prepareBlocks(plan: Plan) {
-    // Le seuil de 320 mots impose une profondeur supplémentaire lorsque nécessaire.
-    // Les titres internes sont transmis explicitement au moteur et à l'export Word.
-    const createSegmentedBlocks = (
+    const distributeVariableWords = (totalWords: number, count: number, seed: number) => {
+      const total = Math.max(count, Math.round(Number(totalWords) || 0));
+      if (count <= 1) return [total];
+
+      const patterns = [
+        [0.88, 1.12, 0.96, 1.04, 1.08, 0.92],
+        [1.10, 0.90, 1.05, 0.95, 1.08, 0.92],
+        [0.94, 1.08, 0.90, 1.12, 0.98, 1.06],
+        [1.06, 0.98, 1.12, 0.90, 1.04, 0.94],
+      ];
+      const pattern = patterns[seed % patterns.length];
+      const average = total / count;
+      const raw = Array.from({ length: count }, (_, index) =>
+        Math.max(1, Math.round(average * pattern[(index + seed) % pattern.length]))
+      );
+      const rawSum = raw.reduce((sum, value) => sum + value, 0);
+      const scaled = raw.map((value) => Math.max(1, Math.round(value * total / rawSum)));
+      let delta = total - scaled.reduce((sum, value) => sum + value, 0);
+      let cursor = 0;
+      while (delta !== 0 && cursor < 10000) {
+        const index = cursor % scaled.length;
+        if (delta > 0) {
+          scaled[index] += 1;
+          delta -= 1;
+        } else if (scaled[index] > 1) {
+          scaled[index] -= 1;
+          delta += 1;
+        }
+        cursor += 1;
+      }
+      return scaled;
+    };
+
+    const createVariableBlocks = (
       baseId: string,
       title: string,
       totalWords: number,
       structure: string[],
       kind: Block["kind"],
+      seed: number,
     ): Block[] => {
-      const safeTotal = Math.max(1, Number(totalWords || 0));
-      const count = Math.max(1, Math.ceil(safeTotal / BLOCK_WORDS));
-      const base = Math.floor(safeTotal / count);
-      const remainder = safeTotal - base * count;
+      const safeTotal = Math.max(1, Math.round(Number(totalWords) || 0));
+      const count = safeTotal <= 320 ? 1 : Math.max(2, Math.ceil(safeTotal / 280));
+      const targets = distributeVariableWords(safeTotal, count, seed);
 
-      return Array.from({ length: count }, (_, index) => ({
+      return targets.map((expectedWords, index) => ({
         id: `${baseId}-${index + 1}`,
-        title: `${title} — Bloc ${index + 1}`,
-        expectedWords: base + (index < remainder ? 1 : 0),
+        title: count === 1 ? title : `${title} · Développement ${index + 1}`,
+        expectedWords,
         content: "",
         wordCount: 0,
         status: "pending" as const,
@@ -977,29 +1008,43 @@ export default function App() {
       }));
     };
 
-    const introductionBlocks = createSegmentedBlocks(
+    const introductionBlocks = createVariableBlocks(
       `${plan.id}-introduction-generale`,
       plan.introductionGeneral.title || "Introduction générale",
       plan.introductionGeneral.wordCount || 900,
       ["Introduction générale"],
       "introduction",
+      1,
     );
 
-    const chapterBlocks = plan.parts.flatMap((part) =>
-      part.chapters.flatMap((chapter) => {
+    const chapterBlocks = plan.parts.flatMap((part, partIndex) =>
+      part.chapters.flatMap((chapter, chapterIndex) => {
         const units = chapter.sections.flatMap((section) =>
           section.subsections.length
-            ? section.subsections.map((subsection) => ({
-                id: subsection.id,
-                title: `${section.number}.${subsection.number} ${subsection.title}`,
-                structure: [
-                  `Partie ${part.number} : ${part.title}`,
-                  `Chapitre ${chapter.number} : ${chapter.title}`,
-                  `Section ${section.number} : ${section.title}`,
-                  `Sous-section ${section.number}.${subsection.number} : ${subsection.title}`,
-                  ...subsection.internalTitles.map((internal) => `Titre interne ${section.number}.${subsection.number}.${internal.number} : ${internal.title}`),
-                ],
-              }))
+            ? section.subsections.flatMap((subsection) =>
+                subsection.internalTitles.length
+                  ? subsection.internalTitles.map((internal) => ({
+                      id: internal.id,
+                      title: internal.title,
+                      structure: [
+                        `Partie ${part.number} : ${part.title}`,
+                        `Chapitre ${chapter.number} : ${chapter.title}`,
+                        `Section ${section.number} : ${section.title}`,
+                        `Sous-section ${section.number}.${subsection.number} : ${subsection.title}`,
+                        `Titre interne ${section.number}.${subsection.number}.${internal.number} : ${internal.title}`,
+                      ],
+                    }))
+                  : [{
+                      id: subsection.id,
+                      title: `${section.number}.${subsection.number} ${subsection.title}`,
+                      structure: [
+                        `Partie ${part.number} : ${part.title}`,
+                        `Chapitre ${chapter.number} : ${chapter.title}`,
+                        `Section ${section.number} : ${section.title}`,
+                        `Sous-section ${section.number}.${subsection.number} : ${subsection.title}`,
+                      ],
+                    }]
+              )
             : [{
                 id: section.id,
                 title: `${section.number}. ${section.title}`,
@@ -1008,32 +1053,35 @@ export default function App() {
                   `Chapitre ${chapter.number} : ${chapter.title}`,
                   `Section ${section.number} : ${section.title}`,
                 ],
-              }],
+              }]
         );
 
-        const totalWords = Math.max(1, Number(chapter.wordCount || BLOCK_WORDS));
-        const unitCount = Math.max(1, units.length);
-        const base = Math.floor(totalWords / unitCount);
-        const remainder = totalWords - base * unitCount;
+        const unitTargets = distributeVariableWords(
+          Number(chapter.wordCount || 0),
+          Math.max(1, units.length),
+          partIndex + chapterIndex + 2,
+        );
 
         return units.flatMap((unit, unitIndex) =>
-          createSegmentedBlocks(
+          createVariableBlocks(
             `${chapter.id}-${unit.id}`,
             unit.title,
-            base + (unitIndex < remainder ? 1 : 0),
+            unitTargets[unitIndex] || 1,
             unit.structure,
             "chapter",
+            partIndex + chapterIndex + unitIndex + 3,
           ),
         );
       }),
     );
 
-    const conclusionBlocks = createSegmentedBlocks(
+    const conclusionBlocks = createVariableBlocks(
       `${plan.id}-conclusion-generale`,
       plan.conclusionGeneral.title || "Conclusion générale",
       plan.conclusionGeneral.wordCount || 600,
       ["Conclusion générale"],
       "conclusion",
+      4,
     );
 
     setBlocks([
