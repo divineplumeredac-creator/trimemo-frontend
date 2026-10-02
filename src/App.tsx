@@ -1263,6 +1263,7 @@ export default function App() {
         },
         body: JSON.stringify({
           format: "docx",
+          ownerMode: ownerRoute === true,
           title: project.sujet || "Document académique",
           project,
           problematic: selectedProblematic,
