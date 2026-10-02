@@ -1446,23 +1446,65 @@ export default function App() {
           <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#172554]/10 bg-white p-5 lg:block">
             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigation</div>
             <nav className="mt-5 space-y-2">
-              {[
-                ["project", "Nouveau projet"],
-                ["premium", "Problématiques et plans"],
-                ["writing", "Rédaction par blocs"],
-              ].map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setView(key as typeof view)}
-                  disabled={key !== "project" && !premium}
-                  className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${
-                    view === key ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"
-                  } disabled:opacity-40`}
-                >
-                  {label}
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setView("project");
+                  setPremiumSection("problematic");
+                }}
+                className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${
+                  view === "project" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"
+                }`}
+              >
+                Nouveau projet
+              </button>
+
+              {premium && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setView("premium");
+                      setPremiumSection("problematic");
+                      setPremiumNav("problematic-0");
+                    }}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${
+                      view === "premium" && premiumSection === "problematic" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"
+                    }`}
+                  >
+                    Problématique
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={!premium.plans.length}
+                    onClick={() => {
+                      setView("premium");
+                      setPremiumSection("plan");
+                      setPremiumNav("plan-0");
+                    }}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${
+                      view === "premium" && premiumSection === "plan" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"
+                    } disabled:opacity-40`}
+                  >
+                    Plan
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={!selectedPlan}
+                    onClick={() => {
+                      setPremiumSection("writing");
+                      setView("writing");
+                    }}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${
+                      view === "writing" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"
+                    } disabled:opacity-40`}
+                  >
+                    Rédaction
+                  </button>
+                </>
+              )}
             </nav>
           </aside>
           <main className="min-w-0 flex-1 px-6 py-8 lg:px-8 lg:py-10">
