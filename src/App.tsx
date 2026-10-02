@@ -1003,7 +1003,7 @@ export default function App() {
 
       return targets.map((expectedWords, index) => ({
         id: `${baseId}-${index + 1}`,
-        title: count === 1 ? title : `${title} · Développement ${index + 1}`,
+        title,
         expectedWords,
         content: "",
         wordCount: 0,
@@ -1887,7 +1887,7 @@ export default function App() {
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Rédaction</div>
                     <h1 className="mt-2 font-playfair text-4xl text-[#172554]">{selectedPlan.title}</h1>
                     <p className="mt-2 font-inter text-sm text-[#172554]/60">
-                      Les blocs sont rédigés un par un dans une présentation proche d'une page Word.
+                      Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
                     </p>
                   </div>
                   <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
@@ -1895,100 +1895,94 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className="mb-6 rounded-[18px] border border-[#172554]/10 bg-white p-4">
-                  <div className="mb-3 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">
-                    Blocs de rédaction
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {blocks.map((block, index) => {
-                      const selected = (selectedWritingBlockId || blocks[0]?.id) === block.id;
-                      return (
-                        <button
-                          key={block.id}
-                          type="button"
-                          onClick={() => setSelectedWritingBlockId(block.id)}
-                          className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left font-inter text-xs font-semibold transition ${selected ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/10 bg-white text-[#172554] hover:bg-[#F7FAF8]"}`}
-                        >
-                          <span>Bloc {index + 1}</span>
-                          <span className={`text-[11px] font-normal ${selected ? "text-white/70" : "text-[#172554]/45"}`}>
-                            {block.status === "done" ? `${block.wordCount} mots · terminé` : block.status === "generating" ? "rédaction en cours…" : `${block.expectedWords} mots prévus`}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-4 border-t border-[#172554]/10 pt-3 font-inter text-xs text-[#172554]/60">
-                    {totalDoneWords.toLocaleString("fr-FR")} / {targetWords.toLocaleString("fr-FR")} mots · {progress} %
-                  </div>
-                </div>
-
-                {(() => {
-                  const current = blocks.find((block) => block.id === (selectedWritingBlockId || blocks[0]?.id)) || blocks[0];
-                  if (!current) return null;
-                  const index = blocks.findIndex((block) => block.id === current.id);
-                  const next = blocks[index + 1];
-                  return (
-                    <div className="pb-16">
-                      <article className="mx-auto max-w-[900px] overflow-hidden border border-[#D9D9D9] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
-                        <div className="border-b border-[#E5E5E5] bg-white px-10 py-5 md:px-16">
+                <div className="space-y-8 pb-20">
+                  {blocks.map((block, index) => {
+                    const isLast = index === blocks.length - 1;
+                    const isGenerating = block.status === "generating";
+                    return (
+                      <article
+                        key={block.id}
+                        id={`writing-block-${block.id}`}
+                        className="mx-auto max-w-[900px] overflow-hidden border border-[#D9D9D9] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+                      >
+                        <div className="border-b border-[#E5E5E5] px-10 py-6 md:px-16">
                           <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="font-inter text-[10px] uppercase tracking-[0.18em] text-[#777]">Bloc {index + 1}</div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-inter text-[11px] text-[#777]">{current.status === "done" ? current.wordCount : current.expectedWords} mots</span>
-                              <button
-                                type="button"
-                                disabled={current.status === "generating" || (activeBlockId !== null && activeBlockId !== current.id)}
-                                onClick={() => void generateBlock(current.id)}
-                                className="rounded-full bg-[#172554] px-4 py-2 font-inter text-[11px] font-semibold text-white disabled:opacity-50"
-                              >
-                                {current.status === "generating" ? "Rédaction..." : current.status === "done" ? "Régénérer" : "Rédiger ce bloc"}
-                              </button>
+                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#777]">
+                              Bloc {index + 1}
+                            </div>
+                            <button
+                              type="button"
+                              disabled={isGenerating || (activeBlockId !== null && activeBlockId !== block.id)}
+                              onClick={() => {
+                                setSelectedWritingBlockId(block.id);
+                                void generateBlock(block.id);
+                              }}
+                              className="rounded-full bg-[#172554] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {isGenerating ? "Rédaction en cours…" : block.status === "done" ? "Régénérer ce bloc" : "Rédiger ce bloc"}
+                            </button>
+                          </div>
+
+                          <h2 className="mt-4 font-playfair text-2xl text-[#172554]">{block.title}</h2>
+
+                          <div className="mt-5 border-l-2 border-[#D4A23A] pl-4">
+                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777]">
+                              Trame du plan sélectionné
+                            </div>
+                            <div className="mt-2 space-y-1 font-inter text-[11px] leading-5 text-[#555]">
+                              {block.structure.map((item, structureIndex) => (
+                                <div key={`${block.id}-structure-${structureIndex}`}>{item}</div>
+                              ))}
                             </div>
                           </div>
-                          <h2 className="mt-4 font-playfair text-2xl text-[#172554]">{current.title}</h2>
-                          <div className="mt-3 font-inter text-[11px] leading-5 text-[#666]">{current.structure.join(" › ")}</div>
                         </div>
 
-                        <div className="min-h-[1120px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
-                          {current.error && (
+                        <div className="min-h-[720px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
+                          {block.error && (
                             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
-                              <strong>Erreur de rédaction :</strong> {current.error}
+                              <strong>Erreur de rédaction :</strong> {block.error}
                             </div>
                           )}
-                          {current.content ? (
-                            <div className="whitespace-pre-wrap">{current.content}</div>
+
+                          {block.content ? (
+                            <div className="whitespace-pre-wrap">{block.content}</div>
                           ) : (
-                            <div className="flex min-h-[500px] items-center justify-center text-center text-sm text-[#777]">
+                            <div className="flex min-h-[420px] items-center justify-center text-center">
                               <div>
-                                <div className="font-playfair text-xl text-[#172554]">Bloc {index + 1}</div>
-                                <div className="mt-3 font-inter text-sm">Ce bloc n'est pas encore rédigé.</div>
+                                <div className="font-playfair text-2xl text-[#172554]">{block.title}</div>
+                                <div className="mt-3 font-inter text-sm text-[#777]">
+                                  Ce bloc attend sa rédaction.
+                                </div>
                                 <button
                                   type="button"
-                                  disabled={current.status === "generating" || activeBlockId !== null}
-                                  onClick={() => void generateBlock(current.id)}
-                                  className="mt-5 rounded-full bg-[#1D78C1] px-5 py-2.5 font-inter text-xs font-semibold text-white disabled:opacity-40"
+                                  disabled={isGenerating || activeBlockId !== null}
+                                  onClick={() => {
+                                    setSelectedWritingBlockId(block.id);
+                                    void generateBlock(block.id);
+                                  }}
+                                  className="mt-5 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
                                 >
-                                  {current.status === "generating" ? "Rédaction en cours…" : "Rédiger ce bloc"}
+                                  {isGenerating ? "Rédaction en cours…" : "Rédiger ce bloc"}
                                 </button>
                               </div>
                             </div>
                           )}
 
-                          {current.footnotes.length > 0 && (
-                            <div className="mt-12 border-t border-[#222] pt-5 font-['Times_New_Roman'] text-[11px] leading-[1.6]">
+                          {block.footnotes.length > 0 && (
+                            <div className="mt-12 border-t border-[#222] pt-5 text-[11px] leading-[1.6]">
                               <div className="mb-2 font-bold">Notes</div>
                               <ol className="list-decimal space-y-1 pl-5">
-                                {current.footnotes.map((note, noteIndex) => <li key={noteIndex}>{note}</li>)}
+                                {block.footnotes.map((note, noteIndex) => <li key={noteIndex}>{note}</li>)}
                               </ol>
                             </div>
                           )}
 
-                          {current.sources.length > 0 && (
+                          {block.sources.length > 0 && (
                             <div className="mt-10 border-t border-[#DDD] pt-5 font-inter text-[11px] leading-[1.6] text-[#555]">
                               <div className="mb-2 font-semibold uppercase tracking-[0.12em]">Sources utilisées</div>
                               <div className="space-y-1">
-                                {current.sources.map((source, sourceIndex) => (
-                                  <div key={`${source.title}-${sourceIndex}`}>
+                                {block.sources.map((source, sourceIndex) => (
+                                  <div key={`${block.id}-source-${sourceIndex}`}>
                                     {source.author ? `${source.author}. ` : ""}{source.title}{source.year ? ` (${source.year})` : ""}
                                   </div>
                                 ))}
@@ -1996,30 +1990,27 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                      </article>
 
-                      <div className="mx-auto mt-5 flex max-w-[900px] justify-center">
-                        {next ? (
-                          <button
-                            type="button"
-                            disabled={activeBlockId !== null}
-                            onClick={() => {
-                              setSelectedWritingBlockId(next.id);
-                              if (next.status === "pending") void generateBlock(next.id);
-                            }}
-                            className="rounded-full bg-[#172554] px-7 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
-                          >
-                            Bloc suivant · {index + 2}
-                          </button>
-                        ) : (
-                          <div className="rounded-full border border-[#172554]/10 bg-white px-6 py-3 font-inter text-xs font-semibold text-[#172554]">
-                            Dernier bloc
+                        {!isLast && (
+                          <div className="border-t border-[#E5E5E5] bg-white px-10 py-5 text-center md:px-16">
+                            <button
+                              type="button"
+                              disabled={activeBlockId !== null}
+                              onClick={() => {
+                                const next = blocks[index + 1];
+                                setSelectedWritingBlockId(next.id);
+                                document.getElementById(`writing-block-${next.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }}
+                              className="rounded-full border border-[#172554]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#172554] hover:bg-[#F7FAF8] disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Bloc suivant · {index + 2}
+                            </button>
                           </div>
                         )}
-                      </div>
-                    </div>
-                  );
-                })()}
+                      </article>
+                    );
+                  })}
+                </div>
               </section>
             )}
 
@@ -2745,7 +2736,7 @@ export default function App() {
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Rédaction</div>
                     <h1 className="mt-2 font-playfair text-4xl text-[#172554]">{selectedPlan.title}</h1>
                     <p className="mt-2 font-inter text-sm text-[#172554]/60">
-                      Les blocs sont rédigés un par un dans une présentation proche d'une page Word.
+                      Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
                     </p>
                   </div>
                   <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
@@ -2753,100 +2744,94 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className="mb-6 rounded-[18px] border border-[#172554]/10 bg-white p-4">
-                  <div className="mb-3 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">
-                    Blocs de rédaction
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {blocks.map((block, index) => {
-                      const selected = (selectedWritingBlockId || blocks[0]?.id) === block.id;
-                      return (
-                        <button
-                          key={block.id}
-                          type="button"
-                          onClick={() => setSelectedWritingBlockId(block.id)}
-                          className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left font-inter text-xs font-semibold transition ${selected ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/10 bg-white text-[#172554] hover:bg-[#F7FAF8]"}`}
-                        >
-                          <span>Bloc {index + 1}</span>
-                          <span className={`text-[11px] font-normal ${selected ? "text-white/70" : "text-[#172554]/45"}`}>
-                            {block.status === "done" ? `${block.wordCount} mots · terminé` : block.status === "generating" ? "rédaction en cours…" : `${block.expectedWords} mots prévus`}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-4 border-t border-[#172554]/10 pt-3 font-inter text-xs text-[#172554]/60">
-                    {totalDoneWords.toLocaleString("fr-FR")} / {targetWords.toLocaleString("fr-FR")} mots · {progress} %
-                  </div>
-                </div>
-
-                {(() => {
-                  const current = blocks.find((block) => block.id === (selectedWritingBlockId || blocks[0]?.id)) || blocks[0];
-                  if (!current) return null;
-                  const index = blocks.findIndex((block) => block.id === current.id);
-                  const next = blocks[index + 1];
-                  return (
-                    <div className="pb-16">
-                      <article className="mx-auto max-w-[900px] overflow-hidden border border-[#D9D9D9] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
-                        <div className="border-b border-[#E5E5E5] bg-white px-10 py-5 md:px-16">
+                <div className="space-y-8 pb-20">
+                  {blocks.map((block, index) => {
+                    const isLast = index === blocks.length - 1;
+                    const isGenerating = block.status === "generating";
+                    return (
+                      <article
+                        key={block.id}
+                        id={`writing-block-${block.id}`}
+                        className="mx-auto max-w-[900px] overflow-hidden border border-[#D9D9D9] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+                      >
+                        <div className="border-b border-[#E5E5E5] px-10 py-6 md:px-16">
                           <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="font-inter text-[10px] uppercase tracking-[0.18em] text-[#777]">Bloc {index + 1}</div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-inter text-[11px] text-[#777]">{current.status === "done" ? current.wordCount : current.expectedWords} mots</span>
-                              <button
-                                type="button"
-                                disabled={current.status === "generating" || (activeBlockId !== null && activeBlockId !== current.id)}
-                                onClick={() => void generateBlock(current.id)}
-                                className="rounded-full bg-[#172554] px-4 py-2 font-inter text-[11px] font-semibold text-white disabled:opacity-50"
-                              >
-                                {current.status === "generating" ? "Rédaction..." : current.status === "done" ? "Régénérer" : "Rédiger ce bloc"}
-                              </button>
+                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#777]">
+                              Bloc {index + 1}
+                            </div>
+                            <button
+                              type="button"
+                              disabled={isGenerating || (activeBlockId !== null && activeBlockId !== block.id)}
+                              onClick={() => {
+                                setSelectedWritingBlockId(block.id);
+                                void generateBlock(block.id);
+                              }}
+                              className="rounded-full bg-[#172554] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {isGenerating ? "Rédaction en cours…" : block.status === "done" ? "Régénérer ce bloc" : "Rédiger ce bloc"}
+                            </button>
+                          </div>
+
+                          <h2 className="mt-4 font-playfair text-2xl text-[#172554]">{block.title}</h2>
+
+                          <div className="mt-5 border-l-2 border-[#D4A23A] pl-4">
+                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777]">
+                              Trame du plan sélectionné
+                            </div>
+                            <div className="mt-2 space-y-1 font-inter text-[11px] leading-5 text-[#555]">
+                              {block.structure.map((item, structureIndex) => (
+                                <div key={`${block.id}-structure-${structureIndex}`}>{item}</div>
+                              ))}
                             </div>
                           </div>
-                          <h2 className="mt-4 font-playfair text-2xl text-[#172554]">{current.title}</h2>
-                          <div className="mt-3 font-inter text-[11px] leading-5 text-[#666]">{current.structure.join(" › ")}</div>
                         </div>
 
-                        <div className="min-h-[1120px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
-                          {current.error && (
+                        <div className="min-h-[720px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
+                          {block.error && (
                             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
-                              <strong>Erreur de rédaction :</strong> {current.error}
+                              <strong>Erreur de rédaction :</strong> {block.error}
                             </div>
                           )}
-                          {current.content ? (
-                            <div className="whitespace-pre-wrap">{current.content}</div>
+
+                          {block.content ? (
+                            <div className="whitespace-pre-wrap">{block.content}</div>
                           ) : (
-                            <div className="flex min-h-[500px] items-center justify-center text-center text-sm text-[#777]">
+                            <div className="flex min-h-[420px] items-center justify-center text-center">
                               <div>
-                                <div className="font-playfair text-xl text-[#172554]">Bloc {index + 1}</div>
-                                <div className="mt-3 font-inter text-sm">Ce bloc n'est pas encore rédigé.</div>
+                                <div className="font-playfair text-2xl text-[#172554]">{block.title}</div>
+                                <div className="mt-3 font-inter text-sm text-[#777]">
+                                  Ce bloc attend sa rédaction.
+                                </div>
                                 <button
                                   type="button"
-                                  disabled={current.status === "generating" || activeBlockId !== null}
-                                  onClick={() => void generateBlock(current.id)}
-                                  className="mt-5 rounded-full bg-[#1D78C1] px-5 py-2.5 font-inter text-xs font-semibold text-white disabled:opacity-40"
+                                  disabled={isGenerating || activeBlockId !== null}
+                                  onClick={() => {
+                                    setSelectedWritingBlockId(block.id);
+                                    void generateBlock(block.id);
+                                  }}
+                                  className="mt-5 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
                                 >
-                                  {current.status === "generating" ? "Rédaction en cours…" : "Rédiger ce bloc"}
+                                  {isGenerating ? "Rédaction en cours…" : "Rédiger ce bloc"}
                                 </button>
                               </div>
                             </div>
                           )}
 
-                          {current.footnotes.length > 0 && (
-                            <div className="mt-12 border-t border-[#222] pt-5 font-['Times_New_Roman'] text-[11px] leading-[1.6]">
+                          {block.footnotes.length > 0 && (
+                            <div className="mt-12 border-t border-[#222] pt-5 text-[11px] leading-[1.6]">
                               <div className="mb-2 font-bold">Notes</div>
                               <ol className="list-decimal space-y-1 pl-5">
-                                {current.footnotes.map((note, noteIndex) => <li key={noteIndex}>{note}</li>)}
+                                {block.footnotes.map((note, noteIndex) => <li key={noteIndex}>{note}</li>)}
                               </ol>
                             </div>
                           )}
 
-                          {current.sources.length > 0 && (
+                          {block.sources.length > 0 && (
                             <div className="mt-10 border-t border-[#DDD] pt-5 font-inter text-[11px] leading-[1.6] text-[#555]">
                               <div className="mb-2 font-semibold uppercase tracking-[0.12em]">Sources utilisées</div>
                               <div className="space-y-1">
-                                {current.sources.map((source, sourceIndex) => (
-                                  <div key={`${source.title}-${sourceIndex}`}>
+                                {block.sources.map((source, sourceIndex) => (
+                                  <div key={`${block.id}-source-${sourceIndex}`}>
                                     {source.author ? `${source.author}. ` : ""}{source.title}{source.year ? ` (${source.year})` : ""}
                                   </div>
                                 ))}
@@ -2854,30 +2839,27 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                      </article>
 
-                      <div className="mx-auto mt-5 flex max-w-[900px] justify-center">
-                        {next ? (
-                          <button
-                            type="button"
-                            disabled={activeBlockId !== null}
-                            onClick={() => {
-                              setSelectedWritingBlockId(next.id);
-                              if (next.status === "pending") void generateBlock(next.id);
-                            }}
-                            className="rounded-full bg-[#172554] px-7 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
-                          >
-                            Bloc suivant · {index + 2}
-                          </button>
-                        ) : (
-                          <div className="rounded-full border border-[#172554]/10 bg-white px-6 py-3 font-inter text-xs font-semibold text-[#172554]">
-                            Dernier bloc
+                        {!isLast && (
+                          <div className="border-t border-[#E5E5E5] bg-white px-10 py-5 text-center md:px-16">
+                            <button
+                              type="button"
+                              disabled={activeBlockId !== null}
+                              onClick={() => {
+                                const next = blocks[index + 1];
+                                setSelectedWritingBlockId(next.id);
+                                document.getElementById(`writing-block-${next.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }}
+                              className="rounded-full border border-[#172554]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#172554] hover:bg-[#F7FAF8] disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Bloc suivant · {index + 2}
+                            </button>
                           </div>
                         )}
-                      </div>
-                    </div>
-                  );
-                })()}
+                      </article>
+                    );
+                  })}
+                </div>
               </section>
             )}
 
