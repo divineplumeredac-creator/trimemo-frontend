@@ -1747,7 +1747,7 @@ export default function App() {
                     <strong>03.</strong> Sélection d’un plan
                   </div>
                   <div className="rounded-2xl bg-[#F7FAF8] p-4">
-                    <strong>04.</strong> Rédaction par blocs
+                    <strong>04.</strong> Rédaction
                   </div>
                 </div>
               </aside>
@@ -1935,8 +1935,8 @@ export default function App() {
                     {selectedPlan.title}
                   </h1>
                   <p className="mt-2 max-w-3xl font-inter text-sm leading-[1.7] text-[#172554]/65">
-                    Chaque partie est rédigée par blocs successifs de 900 mots maximum.
-                    La structure complète du mémoire est affichée pour chaque bloc.
+                    La rédaction est séquentielle et chaque unité reçoit une longueur adaptée à sa densité.
+                    La structure complète du mémoire est affichée pour chaque unité.
                   </p>
                   <button type="button" onClick={exportDocument} className="mt-4 rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
                     Exporter le document Word
