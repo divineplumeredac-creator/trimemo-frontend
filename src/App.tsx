@@ -479,7 +479,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem("trimemo_state_v3");
+      const raw = window.localStorage.getItem(stateStorageKey);
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (saved?.project) setProject(saved.project);
@@ -497,7 +497,7 @@ export default function App() {
     } catch {
       window.localStorage.removeItem("trimemo_state_v3");
     }
-  }, []);
+  }, [ownerRoute, stateStorageKey]);
 
   useEffect(() => {
     if (!ownerRoute && !window.localStorage.getItem("trimemo_premium_token")) {
@@ -511,7 +511,7 @@ export default function App() {
     }
     if (ownerRoute && !ownerSessionValid) return;
     try {
-      window.localStorage.setItem("trimemo_state_v3", JSON.stringify({
+      window.localStorage.setItem(stateStorageKey, JSON.stringify({
         project,
         formula,
         preview,
@@ -526,7 +526,7 @@ export default function App() {
         selectedWritingBlockId,
       }));
     } catch {}
-  }, [ownerRoute, ownerSessionValid, project, formula, preview, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId]);
+  }, [ownerRoute, ownerSessionValid, stateStorageKey, project, formula, preview, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId]);
 
   useEffect(() => {
     if (!ownerRoute) return;
