@@ -453,6 +453,7 @@ export default function App() {
   const [view, setView] = useState<"home" | "project" | "preview" | "premium" | "writing">("home");
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
+  const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
   const [loading, setLoading] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
@@ -490,6 +491,7 @@ export default function App() {
       if (saved?.view) setView(saved.view);
       if (saved?.previewTab) setPreviewTab(saved.previewTab);
       if (saved?.premiumNav) setPremiumNav(saved.premiumNav);
+      if (saved?.premiumSection === "problematic" || saved?.premiumSection === "plan" || saved?.premiumSection === "writing") setPremiumSection(saved.premiumSection);
     } catch {
       window.localStorage.removeItem("trimemo_state_v3");
     }
@@ -509,9 +511,10 @@ export default function App() {
         view,
         previewTab,
         premiumNav,
+        premiumSection,
       }));
     } catch {}
-  }, [ownerRoute, ownerSessionValid, project, formula, preview, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav]);
+  }, [ownerRoute, ownerSessionValid, project, formula, preview, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection]);
 
   useEffect(() => {
     if (!ownerRoute) return;
@@ -862,6 +865,7 @@ export default function App() {
       setSelectedProblematic(problematic);
       setPremium((current) => current ? { ...current, plans } : { problematics: [problematic], plans });
       setPremiumNav("plan-0");
+      setPremiumSection("plan");
       setSelectedPlan(null);
       setBlocks([]);
       pushToast("success", "Les trois plans académiques sont disponibles pour cette problématique.");
@@ -1418,6 +1422,7 @@ export default function App() {
                   setView("project");
                   setPremium(null);
                   setPremiumNav("problematic-0");
+                  setPremiumSection("problematic");
                   setSelectedProblematic(null);
                   setSelectedPlan(null);
                   setBlocks([]);
@@ -1708,92 +1713,172 @@ export default function App() {
           )}
 
           
+          
           {view === "premium" && premium && (
             <section>
-              <div className="mb-5">
-                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Espace propriétaire · résultats</div>
-                <h1 className="mt-2 font-playfair text-4xl">Problématiques et plans</h1>
-                <p className="mt-2 font-inter text-sm text-[#172554]/65">Tout le contenu reste dans le même menu de navigation.</p>
+              <div className="mb-6">
+                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                  Espace propriétaire · résultats
+                </div>
+                <h1 className="mt-2 font-playfair text-4xl text-[#172554]">Problématiques, plans et rédaction</h1>
               </div>
-              <div className="max-w-4xl">
-                <aside className="rounded-[24px] border border-[#172554]/10 bg-white p-4">
-                  <div className="px-3 pb-3 font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigateur du projet</div>
-                  <div className="space-y-2">
-                    {premium.problematics.map((item, index) => {
-                      const active = premiumNav === "problematic-" + index;
-                      return (
-                        <div key={item.id} className={active ? "rounded-[16px] border border-[#172554]/15 bg-[#EAF7EE]" : "rounded-[16px] border border-transparent bg-[#F7FAF8]"}>
-                          <button type="button" onClick={() => { setPremiumNav("problematic-" + index); setSelectedProblematic(item); }} className={active ? "w-full rounded-[16px] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554]" : "w-full rounded-[16px] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554]/80"}>
-                            Problématique {index + 1}<span className="ml-2 text-xs font-normal text-[#172554]/55">· {item.title}</span>
-                          </button>
-                          {active && (
-                            <div className="border-t border-[#172554]/10 px-4 pb-4 pt-3">
-                              <div className="font-playfair text-xl text-[#172554]">{item.title}</div>
-                              <p className="mt-3 font-inter text-sm leading-[1.75] text-[#172554]/80">{item.question}</p>
-                              {item.angle && <div className="mt-3 rounded-xl bg-white p-3 font-inter text-xs leading-[1.7] text-[#172554]/75"><strong>Angle :</strong> {item.angle}</div>}
-                              {item.rationale && <div className="mt-3 rounded-xl bg-white p-3 font-inter text-xs leading-[1.7] text-[#172554]/70">{item.rationale}</div>}
-                              <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(item, true)} className="mt-4 rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
-                                {loading && selectedProblematic?.id === item.id ? "Génération des 3 plans..." : "Générer les 3 plans"}
-                              </button>
-                            </div>
-                          )}
+
+              <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+                <nav className="h-fit rounded-[24px] border border-[#172554]/10 bg-white p-3 lg:sticky lg:top-[96px]">
+                  <div className="px-3 pb-2 font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                    Navigation du projet
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setPremiumSection("problematic")}
+                    className={`w-full rounded-[14px] px-4 py-3 text-left font-inter text-sm font-semibold ${premiumSection === "problematic" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"}`}
+                  >
+                    Problématique
+                  </button>
+
+                  {premiumSection === "problematic" && (
+                    <div className="mt-2 space-y-1 border-l-2 border-[#EAF7EE] pl-2">
+                      {premium.problematics.map((item, index) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setPremiumNav("problematic-" + index);
+                            setSelectedProblematic(item);
+                          }}
+                          className={`w-full rounded-[12px] px-3 py-2.5 text-left font-inter text-xs font-semibold ${premiumNav === "problematic-" + index ? "bg-[#EAF7EE] text-[#172554]" : "text-[#172554]/75 hover:bg-[#F7FAF8]"}`}
+                        >
+                          Problématique {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setPremiumSection("plan")}
+                    disabled={premium.plans.length === 0}
+                    className={`mt-2 w-full rounded-[14px] px-4 py-3 text-left font-inter text-sm font-semibold ${premiumSection === "plan" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"} disabled:cursor-not-allowed disabled:opacity-40`}
+                  >
+                    Plan
+                  </button>
+
+                  {premiumSection === "plan" && premium.plans.length > 0 && (
+                    <div className="mt-2 space-y-1 border-l-2 border-[#EAF7EE] pl-2">
+                      {premium.plans.map((plan, index) => (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          onClick={() => {
+                            setPremiumNav("plan-" + index);
+                            setSelectedPlan(plan);
+                          }}
+                          className={`w-full rounded-[12px] px-3 py-2.5 text-left font-inter text-xs font-semibold ${premiumNav === "plan-" + index ? "bg-[#EAF7EE] text-[#172554]" : "text-[#172554]/75 hover:bg-[#F7FAF8]"}`}
+                        >
+                          Plan {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedPlan) return;
+                      setPremiumSection("writing");
+                      setView("writing");
+                    }}
+                    disabled={!selectedPlan}
+                    className={`mt-2 w-full rounded-[14px] px-4 py-3 text-left font-inter text-sm font-semibold ${premiumSection === "writing" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"} disabled:cursor-not-allowed disabled:opacity-40`}
+                  >
+                    Rédaction
+                  </button>
+                </nav>
+
+                <div className="min-w-0">
+                  {premiumSection === "problematic" && (() => {
+                    const index = Number(premiumNav.replace("problematic-", "") || 0);
+                    const item = premium.problematics[index] || premium.problematics[0];
+                    return item ? (
+                      <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 shadow-sm lg:p-10">
+                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                          Problématique {index + 1}
                         </div>
-                      );
-                    })}
-                    {premium.plans.length > 0 && (
-                      <div className="mt-5 border-t border-[#172554]/10 pt-4">
-                        <div className="px-3 pb-2 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">Plans générés</div>
-                        {premium.plans.map((plan, index) => {
-                          const active = premiumNav === "plan-" + index;
-                          return (
-                            <div key={plan.id} className={active ? "mt-2 rounded-[16px] border border-[#172554]/15 bg-[#F7FAF8]" : "mt-2 rounded-[16px] border border-transparent bg-white"}>
-                              <button type="button" onClick={() => { setPremiumNav("plan-" + index); setSelectedPlan(plan); }} className="w-full rounded-[16px] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554]">
-                                Plan {index + 1}<span className="ml-2 text-xs font-normal text-[#172554]/55">· {plan.title}</span>
-                              </button>
-                              {active && (
-                                <div className="border-t border-[#172554]/10 px-4 pb-4 pt-3 font-inter">
-                                  <div className="space-y-3">
-                                    {plan.parts.map((part) => (
-                                      <div key={part.id}>
-                                        <div className="text-xs font-bold uppercase text-[#172554]">PARTIE {part.number}. {part.title}</div>
-                                        <div className="mt-2 space-y-2 pl-3">
-                                          {part.chapters.map((chapter) => (
-                                            <div key={chapter.id}>
-                                              <div className="text-xs font-semibold text-[#172554]">Chapitre {chapter.number}. {chapter.title}</div>
-                                              <div className="mt-1 space-y-1 pl-3">
-                                                {chapter.sections.map((section) => (
-                                                  <div key={section.id}>
-                                                    <div className="text-[11px] font-semibold text-[#172554]/85">Section {chapter.number}.{section.number}. {section.title}</div>
-                                                    {section.subsections.map((subsection) => (
-                                                      <div key={subsection.id} className="mt-1 pl-3 text-[11px] text-[#172554]/65">
-                                                        § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
-                                                        {subsection.internalTitles.map((internal) => <div key={internal.id} className="pl-3 text-[10px] text-[#172554]/50">{internal.number}. {internal.title}</div>)}
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                ))}
-                                              </div>
+                        <h2 className="mt-3 font-playfair text-3xl text-[#172554]">{item.title}</h2>
+                        <p className="mt-6 font-inter text-base leading-[1.9] text-[#172554]/80">{item.question}</p>
+                        {item.angle && <div className="mt-5 rounded-2xl bg-[#EAF7EE] p-5 font-inter text-sm leading-[1.8] text-[#172554]/80"><strong>Angle :</strong> {item.angle}</div>}
+                        {item.rationale && <div className="mt-4 rounded-2xl bg-[#F7FAF8] p-5 font-inter text-sm leading-[1.8] text-[#172554]/70">{item.rationale}</div>}
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => void generatePlansForProblematic(item, true)}
+                          className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {loading && selectedProblematic?.id === item.id ? "Génération des 3 plans..." : "Générer les 3 plans"}
+                        </button>
+                      </article>
+                    ) : null;
+                  })()}
+
+                  {premiumSection === "plan" && (() => {
+                    const index = Number(premiumNav.replace("plan-", "") || 0);
+                    const plan = premium.plans[index] || premium.plans[0];
+                    return plan ? (
+                      <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 shadow-sm lg:p-10">
+                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                          Plan {index + 1}
+                        </div>
+                        <h2 className="mt-3 font-playfair text-3xl text-[#172554]">{plan.title}</h2>
+                        <div className="mt-7 space-y-5 font-inter">
+                          {plan.parts.map((part) => (
+                            <div key={part.id}>
+                              <div className="font-bold uppercase text-[#172554]">PARTIE {part.number}. {part.title}</div>
+                              <div className="mt-3 space-y-3 pl-4">
+                                {part.chapters.map((chapter) => (
+                                  <div key={chapter.id}>
+                                    <div className="font-semibold text-[#172554]">Chapitre {chapter.number}. {chapter.title}</div>
+                                    <div className="mt-2 space-y-2 pl-5">
+                                      {chapter.sections.map((section) => (
+                                        <div key={section.id}>
+                                          <div className="text-sm font-semibold text-[#172554]/90">Section {chapter.number}.{section.number}. {section.title}</div>
+                                          {section.subsections.map((subsection) => (
+                                            <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#172554]/70">
+                                              § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
+                                              {subsection.internalTitles.map((internal) => (
+                                                <div key={internal.id} className="pl-4 text-[11px] text-[#172554]/55">{internal.number}. {internal.title}</div>
+                                              ))}
                                             </div>
                                           ))}
                                         </div>
-                                      </div>
-                                    ))}
+                                      ))}
+                                    </div>
                                   </div>
-                                  <button type="button" onClick={() => { const problematic = selectedProblematic || premium.problematics[0]; if (problematic) selectPremiumPlan(problematic, plan); }} className="mt-5 rounded-full bg-[#1D78C1] px-5 py-3 font-inter text-xs font-semibold text-white">
-                                    Choisir ce plan et passer à la rédaction
-                                  </button>
-                                </div>
-                              )}
+                                ))}
+                              </div>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const problematic = selectedProblematic || premium.problematics[0];
+                            if (!problematic) return;
+                            setSelectedProblematic(problematic);
+                            selectPremiumPlan(problematic, plan);
+                          }}
+                          className="mt-8 rounded-full bg-[#172554] px-6 py-3 font-inter text-xs font-semibold text-white"
+                        >
+                          Choisir ce plan et passer à la rédaction
+                        </button>
+                      </article>
+                    ) : (
+                      <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#172554]/65">
+                        Aucun plan n'est encore disponible. Sélectionnez une problématique et générez les 3 plans.
                       </div>
-                    )}
-                    <button type="button" onClick={() => setView("writing")} disabled={!selectedPlan} className="mt-5 w-full rounded-[14px] bg-[#1D78C1] px-4 py-3 text-left font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
-                      Rédaction des blocs
-                    </button>
-                  </div>
-                </aside>
+                    );
+                  })()}
+                </div>
               </div>
             </section>
           )}
@@ -2472,92 +2557,172 @@ export default function App() {
             )}
 
             
+          
           {view === "premium" && premium && (
             <section>
-              <div className="mb-5">
-                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Projet académique · résultats</div>
-                <h1 className="mt-2 font-playfair text-4xl">Problématiques et plans</h1>
-                <p className="mt-2 font-inter text-sm text-[#172554]/65">Tout le contenu reste dans le même menu de navigation.</p>
+              <div className="mb-6">
+                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                  Résultats du projet
+                </div>
+                <h1 className="mt-2 font-playfair text-4xl text-[#172554]">Problématiques, plans et rédaction</h1>
               </div>
-              <div className="max-w-4xl">
-                <aside className="rounded-[24px] border border-[#172554]/10 bg-white p-4">
-                  <div className="px-3 pb-3 font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigateur du projet</div>
-                  <div className="space-y-2">
-                    {premium.problematics.map((item, index) => {
-                      const active = premiumNav === "problematic-" + index;
-                      return (
-                        <div key={item.id} className={active ? "rounded-[16px] border border-[#172554]/15 bg-[#EAF7EE]" : "rounded-[16px] border border-transparent bg-[#F7FAF8]"}>
-                          <button type="button" onClick={() => { setPremiumNav("problematic-" + index); setSelectedProblematic(item); }} className={active ? "w-full rounded-[16px] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554]" : "w-full rounded-[16px] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554]/80"}>
-                            Problématique {index + 1}<span className="ml-2 text-xs font-normal text-[#172554]/55">· {item.title}</span>
-                          </button>
-                          {active && (
-                            <div className="border-t border-[#172554]/10 px-4 pb-4 pt-3">
-                              <div className="font-playfair text-xl text-[#172554]">{item.title}</div>
-                              <p className="mt-3 font-inter text-sm leading-[1.75] text-[#172554]/80">{item.question}</p>
-                              {item.angle && <div className="mt-3 rounded-xl bg-white p-3 font-inter text-xs leading-[1.7] text-[#172554]/75"><strong>Angle :</strong> {item.angle}</div>}
-                              {item.rationale && <div className="mt-3 rounded-xl bg-white p-3 font-inter text-xs leading-[1.7] text-[#172554]/70">{item.rationale}</div>}
-                              <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(item, false)} className="mt-4 rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
-                                {loading && selectedProblematic?.id === item.id ? "Génération des 3 plans..." : "Générer les 3 plans"}
-                              </button>
-                            </div>
-                          )}
+
+              <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+                <nav className="h-fit rounded-[24px] border border-[#172554]/10 bg-white p-3 lg:sticky lg:top-[96px]">
+                  <div className="px-3 pb-2 font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                    Navigation du projet
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setPremiumSection("problematic")}
+                    className={`w-full rounded-[14px] px-4 py-3 text-left font-inter text-sm font-semibold ${premiumSection === "problematic" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"}`}
+                  >
+                    Problématique
+                  </button>
+
+                  {premiumSection === "problematic" && (
+                    <div className="mt-2 space-y-1 border-l-2 border-[#EAF7EE] pl-2">
+                      {premium.problematics.map((item, index) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setPremiumNav("problematic-" + index);
+                            setSelectedProblematic(item);
+                          }}
+                          className={`w-full rounded-[12px] px-3 py-2.5 text-left font-inter text-xs font-semibold ${premiumNav === "problematic-" + index ? "bg-[#EAF7EE] text-[#172554]" : "text-[#172554]/75 hover:bg-[#F7FAF8]"}`}
+                        >
+                          Problématique {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setPremiumSection("plan")}
+                    disabled={premium.plans.length === 0}
+                    className={`mt-2 w-full rounded-[14px] px-4 py-3 text-left font-inter text-sm font-semibold ${premiumSection === "plan" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"} disabled:cursor-not-allowed disabled:opacity-40`}
+                  >
+                    Plan
+                  </button>
+
+                  {premiumSection === "plan" && premium.plans.length > 0 && (
+                    <div className="mt-2 space-y-1 border-l-2 border-[#EAF7EE] pl-2">
+                      {premium.plans.map((plan, index) => (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          onClick={() => {
+                            setPremiumNav("plan-" + index);
+                            setSelectedPlan(plan);
+                          }}
+                          className={`w-full rounded-[12px] px-3 py-2.5 text-left font-inter text-xs font-semibold ${premiumNav === "plan-" + index ? "bg-[#EAF7EE] text-[#172554]" : "text-[#172554]/75 hover:bg-[#F7FAF8]"}`}
+                        >
+                          Plan {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedPlan) return;
+                      setPremiumSection("writing");
+                      setView("writing");
+                    }}
+                    disabled={!selectedPlan}
+                    className={`mt-2 w-full rounded-[14px] px-4 py-3 text-left font-inter text-sm font-semibold ${premiumSection === "writing" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"} disabled:cursor-not-allowed disabled:opacity-40`}
+                  >
+                    Rédaction
+                  </button>
+                </nav>
+
+                <div className="min-w-0">
+                  {premiumSection === "problematic" && (() => {
+                    const index = Number(premiumNav.replace("problematic-", "") || 0);
+                    const item = premium.problematics[index] || premium.problematics[0];
+                    return item ? (
+                      <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 shadow-sm lg:p-10">
+                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                          Problématique {index + 1}
                         </div>
-                      );
-                    })}
-                    {premium.plans.length > 0 && (
-                      <div className="mt-5 border-t border-[#172554]/10 pt-4">
-                        <div className="px-3 pb-2 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#D4A23A]">Plans générés</div>
-                        {premium.plans.map((plan, index) => {
-                          const active = premiumNav === "plan-" + index;
-                          return (
-                            <div key={plan.id} className={active ? "mt-2 rounded-[16px] border border-[#172554]/15 bg-[#F7FAF8]" : "mt-2 rounded-[16px] border border-transparent bg-white"}>
-                              <button type="button" onClick={() => { setPremiumNav("plan-" + index); setSelectedPlan(plan); }} className="w-full rounded-[16px] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554]">
-                                Plan {index + 1}<span className="ml-2 text-xs font-normal text-[#172554]/55">· {plan.title}</span>
-                              </button>
-                              {active && (
-                                <div className="border-t border-[#172554]/10 px-4 pb-4 pt-3 font-inter">
-                                  <div className="space-y-3">
-                                    {plan.parts.map((part) => (
-                                      <div key={part.id}>
-                                        <div className="text-xs font-bold uppercase text-[#172554]">PARTIE {part.number}. {part.title}</div>
-                                        <div className="mt-2 space-y-2 pl-3">
-                                          {part.chapters.map((chapter) => (
-                                            <div key={chapter.id}>
-                                              <div className="text-xs font-semibold text-[#172554]">Chapitre {chapter.number}. {chapter.title}</div>
-                                              <div className="mt-1 space-y-1 pl-3">
-                                                {chapter.sections.map((section) => (
-                                                  <div key={section.id}>
-                                                    <div className="text-[11px] font-semibold text-[#172554]/85">Section {chapter.number}.{section.number}. {section.title}</div>
-                                                    {section.subsections.map((subsection) => (
-                                                      <div key={subsection.id} className="mt-1 pl-3 text-[11px] text-[#172554]/65">
-                                                        § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
-                                                        {subsection.internalTitles.map((internal) => <div key={internal.id} className="pl-3 text-[10px] text-[#172554]/50">{internal.number}. {internal.title}</div>)}
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                ))}
-                                              </div>
+                        <h2 className="mt-3 font-playfair text-3xl text-[#172554]">{item.title}</h2>
+                        <p className="mt-6 font-inter text-base leading-[1.9] text-[#172554]/80">{item.question}</p>
+                        {item.angle && <div className="mt-5 rounded-2xl bg-[#EAF7EE] p-5 font-inter text-sm leading-[1.8] text-[#172554]/80"><strong>Angle :</strong> {item.angle}</div>}
+                        {item.rationale && <div className="mt-4 rounded-2xl bg-[#F7FAF8] p-5 font-inter text-sm leading-[1.8] text-[#172554]/70">{item.rationale}</div>}
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => void generatePlansForProblematic(item, false)}
+                          className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {loading && selectedProblematic?.id === item.id ? "Génération des 3 plans..." : "Générer les 3 plans"}
+                        </button>
+                      </article>
+                    ) : null;
+                  })()}
+
+                  {premiumSection === "plan" && (() => {
+                    const index = Number(premiumNav.replace("plan-", "") || 0);
+                    const plan = premium.plans[index] || premium.plans[0];
+                    return plan ? (
+                      <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 shadow-sm lg:p-10">
+                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                          Plan {index + 1}
+                        </div>
+                        <h2 className="mt-3 font-playfair text-3xl text-[#172554]">{plan.title}</h2>
+                        <div className="mt-7 space-y-5 font-inter">
+                          {plan.parts.map((part) => (
+                            <div key={part.id}>
+                              <div className="font-bold uppercase text-[#172554]">PARTIE {part.number}. {part.title}</div>
+                              <div className="mt-3 space-y-3 pl-4">
+                                {part.chapters.map((chapter) => (
+                                  <div key={chapter.id}>
+                                    <div className="font-semibold text-[#172554]">Chapitre {chapter.number}. {chapter.title}</div>
+                                    <div className="mt-2 space-y-2 pl-5">
+                                      {chapter.sections.map((section) => (
+                                        <div key={section.id}>
+                                          <div className="text-sm font-semibold text-[#172554]/90">Section {chapter.number}.{section.number}. {section.title}</div>
+                                          {section.subsections.map((subsection) => (
+                                            <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#172554]/70">
+                                              § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
+                                              {subsection.internalTitles.map((internal) => (
+                                                <div key={internal.id} className="pl-4 text-[11px] text-[#172554]/55">{internal.number}. {internal.title}</div>
+                                              ))}
                                             </div>
                                           ))}
                                         </div>
-                                      </div>
-                                    ))}
+                                      ))}
+                                    </div>
                                   </div>
-                                  <button type="button" onClick={() => { const problematic = selectedProblematic || premium.problematics[0]; if (problematic) selectPremiumPlan(problematic, plan); }} className="mt-5 rounded-full bg-[#1D78C1] px-5 py-3 font-inter text-xs font-semibold text-white">
-                                    Choisir ce plan et passer à la rédaction
-                                  </button>
-                                </div>
-                              )}
+                                ))}
+                              </div>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const problematic = selectedProblematic || premium.problematics[0];
+                            if (!problematic) return;
+                            setSelectedProblematic(problematic);
+                            selectPremiumPlan(problematic, plan);
+                          }}
+                          className="mt-8 rounded-full bg-[#172554] px-6 py-3 font-inter text-xs font-semibold text-white"
+                        >
+                          Choisir ce plan et passer à la rédaction
+                        </button>
+                      </article>
+                    ) : (
+                      <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#172554]/65">
+                        Aucun plan n'est encore disponible. Sélectionnez une problématique et générez les 3 plans.
                       </div>
-                    )}
-                    <button type="button" onClick={() => setView("writing")} disabled={!selectedPlan} className="mt-5 w-full rounded-[14px] bg-[#1D78C1] px-4 py-3 text-left font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
-                      Rédaction des blocs
-                    </button>
-                  </div>
-                </aside>
+                    );
+                  })()}
+                </div>
               </div>
             </section>
           )}
