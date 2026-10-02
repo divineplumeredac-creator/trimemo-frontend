@@ -952,34 +952,65 @@ export default function App() {
 
     setLoading(true);
     try {
-      const response = await fetchWithTimeout(FREE_PREVIEW_API, {
+      const problematicResponse = await fetchWithTimeout(FREE_PROBLEMATICS_API, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ project }),
+        body: JSON.stringify({ project, count: 1, freePreview: true }),
       });
-      const data = await readApiResponse(response);
-      if (!data?.problematic?.question || !data?.plan?.parts?.length || !data?.introduction?.content) {
-        throw new Error("L’aperçu retourné est incomplet.");
+      const problematicData = await readApiResponse(problematicResponse);
+      const problematicRaw = problematicData?.problematiques?.[0];
+      if (!problematicRaw?.question) {
+        throw new Error("La problématique gratuite n’a pas pu être générée.");
+      }
+      const problematic = normalizeProblematic(problematicRaw, 0);
+
+      const planResponse = await fetchWithTimeout(FREE_PLANS_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ project, problematic, count: 1, freePreview: true }),
+      });
+      const planData = await readApiResponse(planResponse);
+      const planRaw = planData?.plans?.[0];
+      if (!planRaw?.parts?.length) {
+        throw new Error("Le plan gratuit n’a pas pu être généré.");
+      }
+      const plan = normalizePlan(planRaw, 0);
+
+      const introductionResponse = await fetchWithTimeout(FREE_INTRODUCTION_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          project,
+          problematic: problematic.question,
+          plan,
+          targetWords: 320,
+        }),
+      });
+      const introductionData = await readApiResponse(introductionResponse);
+      const introductionContent = String(introductionData?.introduction?.content || "").trim();
+      if (!introductionContent) {
+        throw new Error("L’aperçu de l’introduction n’a pas pu être généré.");
       }
 
-      const previewData: Preview = {
-        problematic: normalizeProblematic(data.problematic, 0),
-        plan: normalizePlan(data.plan, 0),
+      setPreview({
+        problematic,
+        plan,
         introduction: {
-          title: data.introduction.title || "Introduction",
-          content: data.introduction.content,
-          wordCount: Number(data.introduction.wordCount || countWords(data.introduction.content)),
+          title: introductionData?.introduction?.title || "Introduction générale",
+          content: introductionContent,
+          wordCount: Number(
+            introductionData?.introduction?.wordCount ||
+            countWords(introductionContent)
+          ),
           incomplete: true,
         },
-      };
-
-      setPreview(previewData);
+      });
       sessionStorage.setItem("trimemo_project", JSON.stringify(project));
       setView("preview");
     } catch (error) {
       pushToast(
         "error",
-        error instanceof Error ? error.message : "Impossible de générer l’aperçu."
+        error instanceof Error ? error.message : "Impossible de générer l’aperçu gratuit."
       );
     } finally {
       setLoading(false);
