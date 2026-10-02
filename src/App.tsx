@@ -461,6 +461,7 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ownerRoute] = useState(() => typeof window !== "undefined" && window.location.pathname === "/owner");
+  const stateStorageKey = ownerRoute ? "trimemo_state_v3_owner" : "trimemo_state_v3_public";
   const [ownerSessionValid, setOwnerSessionValid] = useState(false);
   const [ownerEmail, setOwnerEmail] = useState("");
   const [ownerPassword, setOwnerPassword] = useState("");
@@ -495,7 +496,7 @@ export default function App() {
       if (saved?.premiumSection === "problematic" || saved?.premiumSection === "plan" || saved?.premiumSection === "writing") setPremiumSection(saved.premiumSection);
       if (saved?.selectedWritingBlockId) setSelectedWritingBlockId(saved.selectedWritingBlockId);
     } catch {
-      window.localStorage.removeItem("trimemo_state_v3");
+      window.localStorage.removeItem(stateStorageKey);
     }
   }, [ownerRoute, stateStorageKey]);
 
