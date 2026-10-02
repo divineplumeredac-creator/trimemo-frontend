@@ -2590,80 +2590,7 @@ export default function App() {
                 <h1 className="mt-2 font-playfair text-4xl text-[#172554]">Problématiques, plans et rédaction</h1>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-                <nav className="h-fit rounded-[24px] border border-[#172554]/10 bg-white p-3 lg:sticky lg:top-[96px]">
-                  <div className="px-3 pb-2 font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
-                    Navigation du projet
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setPremiumSection("problematic")}
-                    className={`w-full rounded-[14px] px-4 py-3 text-left font-inter text-sm font-semibold ${premiumSection === "problematic" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"}`}
-                  >
-                    Problématique
-                  </button>
-
-                  {premiumSection === "problematic" && (
-                    <div className="mt-2 space-y-1 border-l-2 border-[#EAF7EE] pl-2">
-                      {premium.problematics.map((item, index) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            setPremiumNav("problematic-" + index);
-                            setSelectedProblematic(item);
-                          }}
-                          className={`w-full rounded-[12px] px-3 py-2.5 text-left font-inter text-xs font-semibold ${premiumNav === "problematic-" + index ? "bg-[#EAF7EE] text-[#172554]" : "text-[#172554]/75 hover:bg-[#F7FAF8]"}`}
-                        >
-                          Problématique {index + 1}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => setPremiumSection("plan")}
-                    disabled={premium.plans.length === 0}
-                    className={`mt-2 w-full rounded-[14px] px-4 py-3 text-left font-inter text-sm font-semibold ${premiumSection === "plan" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"} disabled:cursor-not-allowed disabled:opacity-40`}
-                  >
-                    Plan
-                  </button>
-
-                  {premiumSection === "plan" && premium.plans.length > 0 && (
-                    <div className="mt-2 space-y-1 border-l-2 border-[#EAF7EE] pl-2">
-                      {premium.plans.map((plan, index) => (
-                        <button
-                          key={plan.id}
-                          type="button"
-                          onClick={() => {
-                            setPremiumNav("plan-" + index);
-                            setSelectedPlan(plan);
-                          }}
-                          className={`w-full rounded-[12px] px-3 py-2.5 text-left font-inter text-xs font-semibold ${premiumNav === "plan-" + index ? "bg-[#EAF7EE] text-[#172554]" : "text-[#172554]/75 hover:bg-[#F7FAF8]"}`}
-                        >
-                          Plan {index + 1}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!selectedPlan) return;
-                      setPremiumSection("writing");
-                      setView("writing");
-                    }}
-                    disabled={!selectedPlan}
-                    className={`mt-2 w-full rounded-[14px] px-4 py-3 text-left font-inter text-sm font-semibold ${premiumSection === "writing" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"} disabled:cursor-not-allowed disabled:opacity-40`}
-                  >
-                    Rédaction
-                  </button>
-                </nav>
-
-                <div className="min-w-0">
+              <div className="min-w-0">
                   {premiumSection === "problematic" && (() => {
                     const index = Number(premiumNav.replace("problematic-", "") || 0);
                     const item = premium.problematics[index] || premium.problematics[0];
@@ -2747,6 +2674,7 @@ export default function App() {
                   })()}
                 </div>
               </div>
+
             </section>
           )}
           {view === "writing" && selectedPlan && selectedProblematic && (
