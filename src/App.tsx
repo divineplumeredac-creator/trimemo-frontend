@@ -500,6 +500,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!ownerRoute && !window.localStorage.getItem("trimemo_premium_token")) {
+      if (premium || view === "premium" || view === "writing") {
+        setPremium(null);
+        setSelectedProblematic(null);
+        setSelectedPlan(null);
+        setBlocks([]);
+        setView("preview");
+      }
+    }
     if (ownerRoute && !ownerSessionValid) return;
     try {
       window.localStorage.setItem("trimemo_state_v3", JSON.stringify({
@@ -522,6 +531,13 @@ export default function App() {
   useEffect(() => {
     if (!ownerRoute) return;
     const token = window.sessionStorage.getItem("trimemo_owner_session");
+    const lastActivity = Number(window.sessionStorage.getItem("trimemo_owner_last_activity") || 0);
+    if (token && lastActivity && Date.now() - lastActivity >= 60 * 60 * 1000) {
+      window.sessionStorage.removeItem("trimemo_owner_session");
+      window.sessionStorage.removeItem("trimemo_owner_last_activity");
+      setOwnerSessionValid(false);
+      return;
+    }
     if (!token) return;
     (async () => {
       try {
@@ -532,6 +548,7 @@ export default function App() {
         });
         if (response.ok) {
           setOwnerSessionValid(true);
+          window.sessionStorage.setItem("trimemo_owner_last_activity", String(Date.now()));
         } else {
           window.sessionStorage.removeItem("trimemo_owner_session");
         }
@@ -540,6 +557,26 @@ export default function App() {
       }
     })();
   }, [ownerRoute]);
+
+  useEffect(() => {
+    if (!ownerRoute || !ownerSessionValid) return;
+    const markActivity = () => window.sessionStorage.setItem("trimemo_owner_last_activity", String(Date.now()));
+    const events = ["pointerdown", "keydown", "scroll", "touchstart", "mousemove"];
+    events.forEach((event) => window.addEventListener(event, markActivity, { passive: true }));
+    const timer = window.setInterval(() => {
+      const last = Number(window.sessionStorage.getItem("trimemo_owner_last_activity") || 0);
+      if (last && Date.now() - last >= 60 * 60 * 1000) {
+        window.sessionStorage.removeItem("trimemo_owner_session");
+        window.sessionStorage.removeItem("trimemo_owner_last_activity");
+        setOwnerSessionValid(false);
+        setView("home");
+      }
+    }, 60 * 1000);
+    return () => {
+      events.forEach((event) => window.removeEventListener(event, markActivity));
+      window.clearInterval(timer);
+    };
+  }, [ownerRoute, ownerSessionValid]);
 
   useEffect(() => {
     if (ownerRoute) return;
@@ -562,6 +599,10 @@ export default function App() {
         if (data.status !== "PAID") {
           throw new Error(data.error || "Le paiement n’a pas été confirmé.");
         }
+        if (!data.premium_token) {
+          throw new Error("Paiement confirmé, mais le déblocage premium sécurisé n’a pas été délivré.");
+        }
+        window.localStorage.setItem("trimemo_premium_token", String(data.premium_token));
         const stored = sessionStorage.getItem("trimemo_project");
         if (stored) {
           const saved: ProjectData = JSON.parse(stored);
@@ -569,7 +610,7 @@ export default function App() {
 
           const problematicsResponse = await fetchWithTimeout(PROBLEMATICS_API, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            headers: { "Content-Type": "application/json", Accept: "application/json", ...premiumAuthHeaders() },
             body: JSON.stringify({ project: saved, count: 3 }),
           });
           const problematicsData = await readApiResponse(problematicsResponse);
@@ -653,6 +694,11 @@ export default function App() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
+  function premiumAuthHeaders(): Record<string, string> {
+    const token = window.localStorage.getItem("trimemo_premium_token");
+    return token ? { "X-Trimemo-Premium-Token": token } : {};
+  }
+
   async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 180000) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -714,6 +760,7 @@ export default function App() {
       const data = await readApiResponse(response);
       if (!data.token) throw new Error("Session propriétaire non reçue.");
       window.sessionStorage.setItem("trimemo_owner_session", data.token);
+      window.sessionStorage.setItem("trimemo_owner_last_activity", String(Date.now()));
       setOwnerSessionValid(true);
       setOwnerPassword("");
       setShowOwnerPassword(false);
@@ -732,6 +779,7 @@ export default function App() {
 
   function handleOwnerLogout() {
     window.sessionStorage.removeItem("trimemo_owner_session");
+    window.sessionStorage.removeItem("trimemo_owner_last_activity");
     setOwnerSessionValid(false);
     setOwnerEmail("");
     setOwnerPassword("");
@@ -835,7 +883,7 @@ export default function App() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          ...(ownerMode ? ownerAuthHeaders() : {}),
+          ...(ownerMode ? ownerAuthHeaders() : premiumAuthHeaders()),
         },
         body: JSON.stringify({
           project: requestProject,
@@ -957,72 +1005,38 @@ export default function App() {
 
   function prepareBlocks(plan: Plan) {
     const distributeVariableWords = (totalWords: number, count: number, seed: number) => {
-      const total = Math.max(count, Math.round(Number(totalWords) || 0));
-      if (count <= 1) return [total];
+      const total = Math.max(count * 300, Math.round(Number(totalWords) || count * 300));
+      if (count <= 1) return [Math.min(1500, total)];
 
       const patterns = [
-        [0.88, 1.12, 0.96, 1.04, 1.08, 0.92],
-        [1.10, 0.90, 1.05, 0.95, 1.08, 0.92],
-        [0.94, 1.08, 0.90, 1.12, 0.98, 1.06],
-        [1.06, 0.98, 1.12, 0.90, 1.04, 0.94],
+        [0.82, 1.16, 0.94, 1.08, 1.02, 0.88],
+        [1.12, 0.86, 1.06, 0.96, 1.14, 0.90],
+        [0.92, 1.10, 0.84, 1.18, 0.98, 1.06],
+        [1.04, 0.90, 1.14, 0.88, 1.08, 0.96],
       ];
       const pattern = patterns[seed % patterns.length];
       const average = total / count;
       const raw = Array.from({ length: count }, (_, index) =>
-        Math.max(1, Math.round(average * pattern[(index + seed) % pattern.length]))
+        Math.max(300, Math.round(average * pattern[(index + seed) % pattern.length]))
       );
       const rawSum = raw.reduce((sum, value) => sum + value, 0);
-      const scaled = raw.map((value) => Math.max(1, Math.round(value * total / rawSum)));
-      let delta = total - scaled.reduce((sum, value) => sum + value, 0);
-      let cursor = 0;
-      while (delta !== 0 && cursor < 10000) {
-        const index = cursor % scaled.length;
-        if (delta > 0) {
-          scaled[index] += 1;
-          delta -= 1;
-        } else if (scaled[index] > 1) {
-          scaled[index] -= 1;
-          delta += 1;
-        }
-        cursor += 1;
-      }
+      const scaled = raw.map((value) => Math.max(300, Math.min(1500, Math.round(value * total / rawSum))));
       return scaled;
     };
 
-    const createVariableBlocks = (
-      baseId: string,
-      title: string,
-      totalWords: number,
-      structure: string[],
-      kind: Block["kind"],
-      seed: number,
-    ): Block[] => {
-      const safeTotal = Math.max(1, Math.round(Number(totalWords) || 0));
-      const count = safeTotal <= 320 ? 1 : Math.max(2, Math.ceil(safeTotal / 280));
-      const targets = distributeVariableWords(safeTotal, count, seed);
-
-      return targets.map((expectedWords, index) => ({
-        id: `${baseId}-${index + 1}`,
-        title,
-        expectedWords,
-        content: "",
-        wordCount: 0,
-        status: "pending" as const,
-        sources: [],
-        footnotes: [],
-        structure,
-        kind,
-      }));
+    const introductionWords = Math.min(1500, Math.max(300, Math.round(Number(plan.introductionGeneral.wordCount || 900))));
+    const introductionBlock: Block = {
+      id: `${plan.id}-introduction-generale`,
+      title: plan.introductionGeneral.title || "Introduction générale",
+      expectedWords: introductionWords,
+      content: "",
+      wordCount: 0,
+      status: "pending",
+      sources: [],
+      footnotes: [],
+      structure: ["Introduction générale"],
+      kind: "introduction",
     };
-
-    const introductionBlocks = createVariableBlocks(
-      `${plan.id}-introduction-generale`,
-      plan.introductionGeneral.title || "Introduction générale",
-      plan.introductionGeneral.wordCount || 900,
-      ["Introduction générale"],
-      "introduction",
-      1,
-    );
 
     const chapterBlocks = plan.parts.flatMap((part, partIndex) =>
       part.chapters.flatMap((chapter, chapterIndex) => {
@@ -1043,7 +1057,7 @@ export default function App() {
                     }))
                   : [{
                       id: subsection.id,
-                      title: `${section.number}.${subsection.number} ${subsection.title}`,
+                      title: subsection.title,
                       structure: [
                         `Partie ${part.number} : ${part.title}`,
                         `Chapitre ${chapter.number} : ${chapter.title}`,
@@ -1054,7 +1068,7 @@ export default function App() {
               )
             : [{
                 id: section.id,
-                title: `${section.number}. ${section.title}`,
+                title: section.title,
                 structure: [
                   `Partie ${part.number} : ${part.title}`,
                   `Chapitre ${chapter.number} : ${chapter.title}`,
@@ -1063,39 +1077,41 @@ export default function App() {
               }]
         );
 
-        const unitTargets = distributeVariableWords(
+        const targets = distributeVariableWords(
           Number(chapter.wordCount || 0),
           Math.max(1, units.length),
           partIndex + chapterIndex + 2,
         );
 
-        return units.flatMap((unit, unitIndex) =>
-          createVariableBlocks(
-            `${chapter.id}-${unit.id}`,
-            unit.title,
-            unitTargets[unitIndex] || 1,
-            unit.structure,
-            "chapter",
-            partIndex + chapterIndex + unitIndex + 3,
-          ),
-        );
+        return units.map((unit, unitIndex) => ({
+          id: `${chapter.id}-${unit.id}`,
+          title: unit.title,
+          expectedWords: targets[unitIndex] || 300,
+          content: "",
+          wordCount: 0,
+          status: "pending" as const,
+          sources: [],
+          footnotes: [],
+          structure: unit.structure,
+          kind: "chapter" as const,
+        }));
       }),
     );
 
-    const conclusionBlocks = createVariableBlocks(
-      `${plan.id}-conclusion-generale`,
-      plan.conclusionGeneral.title || "Conclusion générale",
-      plan.conclusionGeneral.wordCount || 600,
-      ["Conclusion générale"],
-      "conclusion",
-      4,
-    );
+    const conclusionBlock: Block = {
+      id: `${plan.id}-conclusion-generale`,
+      title: plan.conclusionGeneral.title || "Conclusion générale",
+      expectedWords: Math.min(1500, Math.max(300, Math.round(Number(plan.conclusionGeneral.wordCount || 600)))),
+      content: "",
+      wordCount: 0,
+      status: "pending",
+      sources: [],
+      footnotes: [],
+      structure: ["Conclusion générale"],
+      kind: "conclusion",
+    };
 
-    setBlocks([
-      ...introductionBlocks,
-      ...chapterBlocks,
-      ...conclusionBlocks,
-    ]);
+    setBlocks([introductionBlock, ...chapterBlocks, conclusionBlock]);
   }
 
   function selectPremiumPlan(problematic: Problematic, plan: Plan) {
@@ -1169,7 +1185,7 @@ export default function App() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...ownerAuthHeaders(),
+          ...(ownerRoute ? ownerAuthHeaders() : premiumAuthHeaders()),
         },
         body: JSON.stringify(payload),
       }, 240000);
@@ -1240,7 +1256,11 @@ export default function App() {
       const papers = doneBlocks.flatMap((block) => block.sources || []);
       const response = await fetch(EXPORT_API, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          ...(ownerRoute ? ownerAuthHeaders() : premiumAuthHeaders()),
+        },
         body: JSON.stringify({
           format: "docx",
           title: project.sujet || "Document académique",
