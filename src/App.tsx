@@ -452,6 +452,7 @@ export default function App() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [view, setView] = useState<"home" | "project" | "preview" | "premium" | "writing">("home");
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction">("problematic");
+  const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [loading, setLoading] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
@@ -473,6 +474,44 @@ export default function App() {
     ? blocks.reduce((sum, block) => sum + block.expectedWords, 0)
     : project.pages * WORDS_PER_PAGE;
   const progress = targetWords ? Math.min(100, Math.round((totalDoneWords / targetWords) * 100)) : 0;
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("trimemo_state_v3");
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved?.project) setProject(saved.project);
+      if (saved?.formula) setFormula(saved.formula);
+      if (saved?.preview) setPreview(saved.preview);
+      if (saved?.premium) setPremium(saved.premium);
+      if (saved?.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
+      if (saved?.selectedPlan) setSelectedPlan(saved.selectedPlan);
+      if (Array.isArray(saved?.blocks)) setBlocks(saved.blocks);
+      if (saved?.view) setView(saved.view);
+      if (saved?.previewTab) setPreviewTab(saved.previewTab);
+      if (saved?.premiumNav) setPremiumNav(saved.premiumNav);
+    } catch {
+      window.localStorage.removeItem("trimemo_state_v3");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (ownerRoute && !ownerSessionValid) return;
+    try {
+      window.localStorage.setItem("trimemo_state_v3", JSON.stringify({
+        project,
+        formula,
+        preview,
+        premium,
+        selectedProblematic,
+        selectedPlan,
+        blocks,
+        view,
+        previewTab,
+        premiumNav,
+      }));
+    } catch {}
+  }, [ownerRoute, ownerSessionValid, project, formula, preview, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav]);
 
   useEffect(() => {
     if (!ownerRoute) return;
@@ -572,6 +611,7 @@ export default function App() {
     }
     setProject((current) => ({ ...current, formula }));
     setView("project");
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
   }
 
   async function handleFiles(fileList: FileList | null) {
@@ -607,7 +647,7 @@ export default function App() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 60000) {
+  async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 180000) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -754,6 +794,7 @@ export default function App() {
 
       setProject(ownerProject);
       setPremium({ problematics, plans: [] });
+      setPremiumNav("problematic-0");
       setSelectedProblematic(null);
       setSelectedPlan(null);
       setBlocks([]);
@@ -820,6 +861,7 @@ export default function App() {
 
       setSelectedProblematic(problematic);
       setPremium((current) => current ? { ...current, plans } : { problematics: [problematic], plans });
+      setPremiumNav("plan-0");
       setSelectedPlan(null);
       setBlocks([]);
       pushToast("success", "Les trois plans académiques sont disponibles pour cette problématique.");
@@ -1327,6 +1369,7 @@ export default function App() {
                 onClick={() => {
                   setView("project");
                   setPremium(null);
+                  setPremiumNav("problematic-0");
                   setSelectedProblematic(null);
                   setSelectedPlan(null);
                   setBlocks([]);
@@ -2437,34 +2480,95 @@ export default function App() {
             )}
 
             {view === "premium" && premium && (
-              <div>
-                <section className="grid gap-6 lg:grid-cols-3">
-                  {premium.problematics.map((item) => (
-                    <button key={item.id} onClick={() => {
-                        if (loading) return;
-                        setSelectedProblematic(item);
-                        setSelectedPlan(null);
-                        setBlocks([]);
-                        void generatePlansForProblematic(item, ownerRoute);
-                      }} className={`rounded-[24px] border p-7 text-left ${selectedProblematic?.id === item.id ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/5 bg-white"}`}>
-                      <div className={`font-inter text-[11px] uppercase tracking-[0.2em] ${selectedProblematic?.id === item.id ? "text-[#D4A23A]" : "text-[#D4A23A]"}`}>Problématique {item.id}</div>
-                      <h3 className="mt-4 font-playfair text-xl">{item.title}</h3>
-                      <p className={`mt-4 font-inter text-sm leading-[1.7] ${selectedProblematic?.id === item.id ? "text-white/70" : "text-[#172554]/75"}`}>{item.question}</p>
-                      <p className={`mt-4 font-inter text-xs leading-[1.6] ${selectedProblematic?.id === item.id ? "text-white/50" : "text-[#172554]/75"}`}>{item.rationale}</p>
+              <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+                <aside className="h-fit rounded-[24px] border border-[#172554]/10 bg-white p-4 lg:sticky lg:top-[96px]">
+                  <div className="px-3 pb-3 font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigation du projet</div>
+                  <div className="space-y-2">
+                    {premium.problematics.map((item, index) => (
+                      <button key={item.id} type="button" onClick={() => setPremiumNav(`problematic-${index}`)}
+                        className={`w-full rounded-[14px] px-4 py-3 text-left font-inter text-xs font-semibold transition ${premiumNav === `problematic-${index}` ? "bg-[#172554] text-white" : "bg-[#EAF7EE] text-[#172554]"}`}>
+                        Problématique {index + 1}
+                      </button>
+                    ))}
+                    {premium.plans.length > 0 && (
+                      <div className="mt-4 border-t border-[#172554]/10 pt-4">
+                        <div className="px-3 pb-2 font-inter text-[10px] uppercase tracking-[0.16em] text-[#D4A23A]">Plans</div>
+                        {premium.plans.map((plan, index) => (
+                          <button key={plan.id} type="button" onClick={() => setPremiumNav(`plan-${index}`)}
+                            className={`mt-2 w-full rounded-[14px] px-4 py-3 text-left font-inter text-xs font-semibold transition ${premiumNav === `plan-${index}` ? "bg-[#172554] text-white" : "bg-[#F7FAF8] text-[#172554]"}`}>
+                            Plan {index + 1}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <button type="button" onClick={() => setView("writing")} disabled={!selectedPlan}
+                      className="mt-4 w-full rounded-[14px] bg-[#1D78C1] px-4 py-3 text-left font-inter text-xs font-semibold text-white disabled:opacity-40">
+                      Rédaction des blocs
                     </button>
-                  ))}
-                </section>
-                <section className="mt-8 grid gap-6 lg:grid-cols-3">
-                  {premium.plans.map((plan) => {
-                    const isCompatible = Boolean(selectedProblematic);
-                    return <button key={plan.id} disabled={!isCompatible} onClick={() => selectedProblematic && selectPremiumPlan(selectedProblematic, plan)} className={`rounded-[24px] border p-7 text-left ${selectedPlan?.id === plan.id ? "border-[#172554] bg-[#172554] text-white" : "border-[#172554]/5 bg-white"}`}>
-                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Plan académique {plan.id}</div>
-                      <h3 className="mt-4 font-playfair text-xl">{plan.title}</h3>
-                      <div className={`mt-5 font-inter text-xs ${selectedPlan?.id === plan.id ? "text-white/50" : "text-[#172554]/75"}`}>{plan.totalWords.toLocaleString("fr-FR")} mots · {wordsToPages(plan.totalWords).toFixed(1)} pages</div>
-                      <div className="mt-5 space-y-2">{plan.parts.map((part) => <div key={part.id} className={`rounded-[12px] p-3 ${selectedPlan?.id === plan.id ? "bg-white/10" : "bg-[#EAF7EE]"}`}><div className="font-inter text-xs font-semibold">{part.number}. {part.title}</div>{part.description && <div className="mt-1 font-inter text-[10px] leading-[1.5] text-[#172554]/60">{part.description}</div>}{part.chapters.slice(0, 3).map((chapter) => <div key={chapter.id} className="mt-2"><div className="font-inter text-[11px] font-semibold">{chapter.title}</div>{chapter.sections.map((section) => <div key={section.id} className={`pl-2 font-inter text-[10px] ${selectedPlan?.id === plan.id ? "text-white/50" : "text-[#172554]/50"}`}>{section.number}. {section.title}{section.description ? ` : ${section.description}` : ""}{section.subsections.length ? ` · ${section.subsections.map((subsection) => `${subsection.number}. ${subsection.title}`).join(" · ")}` : ""}</div>)}</div>)}</div>)}</div>
-                      <div className="mt-5 font-inter text-xs font-semibold">{selectedProblematic ? "Choisir ce plan et rédiger" : "Sélectionnez une problématique"}</div>
-                    </button>;
-                  })}
+                  </div>
+                </aside>
+
+                <section className="min-w-0">
+                  {premiumNav.startsWith("problematic-") && (() => {
+                    const index = Number(premiumNav.split("-")[1] || 0);
+                    const item = premium.problematics[index] || premium.problematics[0];
+                    return item ? (
+                      <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 lg:p-10">
+                        <div className="font-inter text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Problématique {index + 1}</div>
+                        <h1 className="mt-4 font-playfair text-3xl text-[#172554]">{item.title}</h1>
+                        <p className="mt-6 font-inter text-base leading-[1.9] text-[#172554]/80">{item.question}</p>
+                        {item.angle && <div className="mt-6 rounded-2xl bg-[#EAF7EE] p-5 font-inter text-sm leading-[1.8]"><strong>Angle :</strong> {item.angle}</div>}
+                        {item.rationale && <div className="mt-4 rounded-2xl bg-[#F7FAF8] p-5 font-inter text-sm leading-[1.8] text-[#172554]/75">{item.rationale}</div>}
+                        <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(item, false)}
+                          className="mt-7 rounded-full bg-[#172554] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">
+                          {loading && selectedProblematic?.id === item.id ? "Génération..." : "Générer les 3 plans"}
+                        </button>
+                      </article>
+                    ) : null;
+                  })()}
+
+                  {premiumNav.startsWith("plan-") && (() => {
+                    const index = Number(premiumNav.split("-")[1] || 0);
+                    const plan = premium.plans[index];
+                    return plan ? (
+                      <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 lg:p-10">
+                        <div className="font-inter text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Plan {index + 1}</div>
+                        <h1 className="mt-4 font-playfair text-3xl">{plan.title}</h1>
+                        <div className="mt-7 space-y-5 font-inter">
+                          {plan.parts.map((part) => (
+                            <div key={part.id}>
+                              <div className="font-bold uppercase">PARTIE {part.number}. {part.title}</div>
+                              <div className="mt-3 space-y-3 pl-4">
+                                {part.chapters.map((chapter) => (
+                                  <div key={chapter.id}>
+                                    <div className="font-semibold">Chapitre {chapter.number}. {chapter.title}</div>
+                                    <div className="mt-2 space-y-2 pl-5">
+                                      {chapter.sections.map((section) => (
+                                        <div key={section.id}>
+                                          <div className="text-sm font-semibold">Section {chapter.number}.{section.number}. {section.title}</div>
+                                          <div className="mt-1 space-y-1 pl-5 text-xs text-[#172554]/70">
+                                            {section.subsections.map((subsection) => (
+                                              <div key={subsection.id}>§ {chapter.number}.{section.number}.{subsection.number} {subsection.title}</div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <button type="button" onClick={() => {
+                          if (!selectedProblematic) return;
+                          selectPremiumPlan(selectedProblematic, plan);
+                        }} className="mt-8 rounded-full bg-[#172554] px-6 py-3 font-inter text-xs font-semibold text-white">
+                          Choisir ce plan et passer à la rédaction
+                        </button>
+                      </article>
+                    ) : null;
+                  })()}
                 </section>
               </div>
             )}
