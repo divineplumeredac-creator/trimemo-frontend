@@ -1731,7 +1731,12 @@ export default function App() {
                                         <div key={section.id}>
                                           <div className="text-sm font-semibold">Section {chapter.number}.{section.number}. {section.title}</div>
                                           {section.subsections.map((subsection) => (
-                                            <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#172554]/70">§ {chapter.number}.{section.number}.{subsection.number} {subsection.title}</div>
+                                            <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#172554]/70">
+                                              <div>§ {chapter.number}.{section.number}.{subsection.number} {subsection.title}</div>
+                                              {subsection.internalTitles.map((internal) => (
+                                                <div key={internal.id} className="pl-4 text-[11px] text-[#172554]/55">Titre interne {internal.number}. {internal.title}</div>
+                                              ))}
+                                            </div>
                                           ))}
                                         </div>
                                       ))}
