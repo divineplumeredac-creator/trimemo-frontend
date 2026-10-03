@@ -1808,7 +1808,20 @@ export default function App() {
                             key={`${file.name}-${file.content.length}`}
                             className="rounded-xl bg-[#F7FAF8] px-3 py-2 font-inter text-xs"
                           >
-                            {file.name}
+                            <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                            <select value={file.category || "reference"} onChange={(event) => {
+                              const category = event.target.value as FileCategory;
+                              setProject((current) => ({
+                                ...current,
+                                files: current.files.map((item, itemIndex) => itemIndex === index ? { ...item, category } : item),
+                              }));
+                            }} className="rounded-lg border border-[#172554]/10 bg-white px-2 py-1 text-[11px]">
+                              <option value="methodology">Méthodologie</option>
+                              <option value="instructions">Instructions</option>
+                              <option value="context">Contexte</option>
+                              <option value="source">Source</option>
+                              <option value="reference">Référence</option>
+                            </select>
                           </div>
                         ))}
                       </div>
@@ -2486,7 +2499,20 @@ export default function App() {
                         <div className="mt-3 flex flex-wrap gap-2">
                           {project.files.map((file, index) => (
                             <span key={`${file.name}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-[#172554]/10 bg-white px-3 py-1.5 font-inter text-[11px]">
-                              <FileText className="h-3.5 w-3.5" /> {file.name}
+                              <FileText className="h-3.5 w-3.5" /> <span className="max-w-[180px] truncate">{file.name}</span>
+                              <select value={file.category || "reference"} onChange={(event) => {
+                              const category = event.target.value as FileCategory;
+                              setProject((current) => ({
+                                ...current,
+                                files: current.files.map((item, itemIndex) => itemIndex === index ? { ...item, category } : item),
+                              }));
+                            }} className="rounded-lg border border-[#172554]/10 bg-white px-2 py-1 text-[11px]">
+                              <option value="methodology">Méthodologie</option>
+                              <option value="instructions">Instructions</option>
+                              <option value="context">Contexte</option>
+                              <option value="source">Source</option>
+                              <option value="reference">Référence</option>
+                            </select>
                               <button onClick={() => setProject((current) => ({ ...current, files: current.files.filter((_, fileIndex) => fileIndex !== index) }))}><X className="h-3 w-3" /></button>
                             </span>
                           ))}
