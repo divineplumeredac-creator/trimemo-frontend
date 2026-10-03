@@ -415,7 +415,7 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ownerRoute] = useState(() => typeof window !== "undefined" && window.location.pathname === "/owner");
-  const stateStorageKey = ownerRoute ? "trimemo_state_v4_owner" : "trimemo_state_v4_public";
+  const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : "trimemo_state_v5_public";
   const [ownerSessionValid, setOwnerSessionValid] = useState(false);
   const [ownerEmail, setOwnerEmail] = useState("");
   const [ownerPassword, setOwnerPassword] = useState("");
