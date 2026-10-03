@@ -773,11 +773,11 @@ export default function App() {
 
     setLoading(true);
     try {
-      const response = await fetch(PROBLEMATICS_API, {
+      const response = await fetchWithTimeout(PROBLEMATICS_API, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json", ...ownerAuthHeaders() },
         body: JSON.stringify({ project: ownerProject, count: 3, ownerMode: true }),
-      });
+      }, 240000);
       const data = await readApiResponse(response);
       const rawList = data.problematiques || data.problematics || data.data || [];
       if (!Array.isArray(rawList) || rawList.length === 0) {
