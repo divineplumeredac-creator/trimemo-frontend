@@ -1455,6 +1455,14 @@ export default function App() {
               </button>
               <button
                 type="button"
+                onClick={() => setMobileMenuOpen((value) => !value)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-white lg:hidden"
+                aria-label={mobileMenuOpen ? "Fermer la navigation" : "Ouvrir la navigation"}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+              <button
+                type="button"
                 onClick={handleOwnerLogout}
                 className="rounded-full bg-white px-4 py-2 font-inter text-xs font-semibold text-[#172554]"
               >
@@ -1465,6 +1473,26 @@ export default function App() {
         </div>
 
         <div className="mx-auto flex max-w-[1280px]">
+        {mobileMenuOpen && (
+          <div className="border-b border-[#172554]/10 bg-white px-5 py-4 lg:hidden">
+            <div className="mx-auto flex max-w-[1280px] flex-col gap-2 font-inter text-sm">
+              <button type="button" onClick={() => { setMobileMenuOpen(false); setView("project"); }} className="rounded-xl px-4 py-3 text-left text-[#172554] hover:bg-[#F7FAF8]">Nouveau projet</button>
+              {premium && (
+                <>
+                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="rounded-xl px-4 py-3 text-left text-[#172554] hover:bg-[#F7FAF8]">Problématique</button>
+                  {premium.problematics.map((item,index) => (
+                    <button key={item.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#172554]/70 hover:bg-[#EAF7EE]">Problématique {index+1}</button>
+                  ))}
+                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="rounded-xl px-4 py-3 text-left text-[#172554] hover:bg-[#F7FAF8]">Plan</button>
+                  {premium.plans.map((plan,index) => (
+                    <button key={plan.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#172554]/70 hover:bg-[#EAF7EE]">Plan {index+1}</button>
+                  ))}
+                  <button type="button" disabled={!selectedPlan} onClick={() => { setMobileMenuOpen(false); setView("writing"); setPremiumSection("writing"); }} className="rounded-xl px-4 py-3 text-left text-[#172554] hover:bg-[#F7FAF8] disabled:opacity-40">Rédaction</button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
           <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#172554]/10 bg-white p-5 lg:block">
             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigation</div>
             <nav className="mt-5 space-y-2">
