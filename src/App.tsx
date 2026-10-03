@@ -1843,7 +1843,13 @@ export default function App() {
                   Espace propriétaire · résultats
                 </div>
                 <h1 className="mt-2 font-playfair text-4xl text-[#172554]">
-                  {premiumSection === "problematic" && (
+                  {premiumSection === "problematic"
+                    ? "Problématiques"
+                    : premiumSection === "plan"
+                      ? "Plans détaillés"
+                      : "Rédaction"}
+                </h1>
+                {premiumSection === "problematic" && (
                   <div className="grid gap-5 xl:grid-cols-2">
                     {premium.problematics.map((item, index) => (
                       <article
