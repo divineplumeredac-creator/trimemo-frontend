@@ -76,10 +76,13 @@ const pricingInclusions = [
 ];
 
 
+type FileCategory = "methodology" | "instructions" | "context" | "source" | "reference";
+
 type FileInput = {
   name: string;
   type: string;
   content: string;
+  category: FileCategory;
 };
 
 type ProjectData = {
@@ -635,7 +638,8 @@ export default function App() {
         continue;
       }
       try {
-        files.push({ name: file.name, type: file.type || "application/octet-stream", content: await readFileAsDataUrl(file) });
+        const category: FileCategory = /(methodolog|méthodolog|guide|consigne|instruction|norme|jury)/i.test(file.name) ? "methodology" : "reference";
+        files.push({ name: file.name, type: file.type || "application/octet-stream", content: await readFileAsDataUrl(file), category });
       } catch {
         pushToast("error", `Impossible de lire ${file.name}.`);
       }
@@ -1785,7 +1789,7 @@ export default function App() {
 
                   <div className="md:col-span-2">
                     <label className="font-inter text-xs font-semibold text-[#172554]/75">
-                      Documents de référence
+                      Documents du projet
                     </label>
                     <input
                       type="file"
@@ -1799,7 +1803,7 @@ export default function App() {
                     />
                     {project.files.length > 0 && (
                       <div className="mt-3 space-y-2">
-                        {project.files.map((file) => (
+                        {project.files.map((file, index) => (
                           <div
                             key={`${file.name}-${file.content.length}`}
                             className="rounded-xl bg-[#F7FAF8] px-3 py-2 font-inter text-xs"
@@ -2471,7 +2475,7 @@ export default function App() {
                     </div>
                     <div>
                       <div className="flex items-center justify-between gap-4">
-                        <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Documents de référence</label>
+                        <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Documents du projet</label>
                         <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#172554]/10 bg-white px-3 py-2 font-inter text-xs">
                           <Paperclip className="h-3.5 w-3.5" /> Ajouter des fichiers
                           <input type="file" multiple accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" onChange={(e) => void handleFiles(e.target.files)} className="hidden" />
