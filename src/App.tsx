@@ -62,66 +62,17 @@ type FormulaId = (typeof formulaOptions)[number]["id"];
 
 const pricing = {
   individual: [
-    {
-      id: "LICENCE",
-      title: "Mémoire Licence",
-      pages: "10 à 45 pages",
-      eur: "27 €",
-      fcfa: "18 000 FCFA",
-      badge: "Licence 3",
-      details: "Complet · 1 révision incluse",
-    },
-    {
-      id: "MASTER",
-      title: "Mémoire Master",
-      pages: "10 à 80 pages",
-      eur: "38 €",
-      fcfa: "25 000 FCFA",
-      badge: "Le plus choisi",
-      details: "Master 1 & 2 · 2 révisions incluses",
-    },
-    {
-      id: "DOCTORAT",
-      title: "Thèse",
-      pages: "10 à 100 pages",
-      eur: "76 €",
-      fcfa: "50 000 FCFA",
-      badge: "Doctorat & gros volumes",
-      details:
-        "Coach plan perso + anti-plagiat + Export LaTeX/Word + 3 révisions",
-    },
-  ],
-  packs: [
-    {
-      title: "Pack 1 · 5 Licences",
-      pages: "5 × 1–45 pages",
-      eur: "110 €",
-      fcfa: "72 000 FCFA",
-      saving: "Économisez 18 000 FCFA",
-    },
-    {
-      title: "Pack 2 · 5 Masters",
-      pages: "5 × 1–80 pages",
-      eur: "152 €",
-      fcfa: "100 000 FCFA",
-      saving: "Économisez 25 000 FCFA",
-    },
-    {
-      title: "Pack 3 · 5 Thèses",
-      pages: "5 × 1–100 pages",
-      eur: "305 €",
-      fcfa: "200 000 FCFA",
-      saving: "Économisez 50 000 FCFA",
-    },
+    { id: "LICENCE", title: "Mémoire Licence", pages: "10 à 45 pages", eur: "27 €", fcfa: "18 000 FCFA", badge: "Licence 3", details: "Génération complète du document académique." },
+    { id: "MASTER", title: "Mémoire Master", pages: "10 à 80 pages", eur: "38 €", fcfa: "25 000 FCFA", badge: "Le plus choisi", details: "Génération complète du document académique." },
+    { id: "DOCTORAT", title: "Thèse", pages: "10 à 100 pages", eur: "76 €", fcfa: "50 000 FCFA", badge: "Doctorat", details: "Génération complète du document académique." },
   ],
 };
 
 const pricingInclusions = [
-  "3 problématiques + 3 plans",
-  "Rédaction séquentielle par blocs de longueur variable",
-  "Sources avec DOI",
+  "3 problématiques + 3 plans après paiement",
+  "Sources bibliographiques vérifiées",
   "Export Word",
-  "Facture groupée pour les packs",
+  "Contact pour les demandes de correction",
 ];
 
 
@@ -1187,8 +1138,8 @@ export default function App() {
     try {
       const preceding = blocks
         .filter((item) => item.status === "done")
-        .slice(-2)
-        .map((item) => ({ title: item.title, content: item.content }));
+        .slice(-3)
+        .map((item) => ({ title: item.title, content: item.content, sources: item.sources || [] }));
 
       const payload = {
         project,
@@ -1284,6 +1235,18 @@ export default function App() {
     }
     if (!selectedPlan || !selectedProblematic) {
       pushToast("error", "Sélectionnez une problématique et un plan avant l’exportation.");
+      return;
+    }
+    const uniqueSources = new Map(
+      doneBlocks
+        .flatMap((block) => block.sources || [])
+        .map((source) => [
+          `${String(source.author || "").toLowerCase()}|${String(source.year || "")}|${String(source.title || "").toLowerCase()}`,
+          source,
+        ])
+    );
+    if (uniqueSources.size < 10) {
+      pushToast("error", `Le mémoire doit contenir au moins 10 sources bibliographiques vérifiables. Sources actuellement retenues : ${uniqueSources.size}.`);
       return;
     }
     try {
@@ -1946,9 +1909,15 @@ export default function App() {
                       Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
                     </p>
                   </div>
-                  <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
-                    Exporter le document Word
-                  </button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
+                      Exporter le document Word
+                    </button>
+                    <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande de correction - " + (project.sujet || "Document Trimémo"))}`} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
+                      Demander une correction
+                    </a>
+                  </div>
+                  <div className="font-inter text-[11px] text-[#172554]/60">Demander une correction : {CONTACT_EMAIL}</div>
                 </div>
 
                 <div className="space-y-8 pb-20">
@@ -2275,7 +2244,7 @@ export default function App() {
                 {[
                   ["01", "Votre formule", "Vous choisissez la formule qui correspond à votre niveau ou à votre besoin."],
                   ["02", "Votre dossier", "Sujet, contexte, consignes et documents sont transmis au moteur de génération."],
-                  ["03", "Aperçu gratuit", "Une problématique, un plan et une introduction incomplète de 300 mots."],
+                  ["03", "Aperçu gratuit", "Une problématique, un plan et une introduction incomplète de 320 mots."],
                   ["04", "Accès complet", "Après paiement : trois problématiques, trois plans puis la rédaction séquentielle par blocs de longueur variable."],
                 ].map(([n, title, text]) => (
                   <div key={n} className="rounded-[20px] border border-[#172554]/5 bg-white p-6">
@@ -2364,37 +2333,6 @@ export default function App() {
                     </div>
                   </button>
                 ))}
-              </div>
-
-              <div className="mt-12">
-                <div className="font-inter text-[11px] uppercase tracking-[0.22em] text-[#D4A23A]">
-                  Packs 5 documents
-                </div>
-
-                <div className="mt-5 grid gap-5 lg:grid-cols-3">
-                  {pricing.packs.map((pack) => (
-                    <div
-                      key={pack.title}
-                      className="rounded-[24px] border border-[#172554]/10 bg-white p-7"
-                    >
-                      <div className="font-playfair text-xl">{pack.title}</div>
-                      <div className="mt-2 font-inter text-xs text-[#172554]/75">
-                        {pack.pages}
-                      </div>
-
-                      <div className="mt-5 flex flex-wrap items-end gap-x-3 gap-y-1">
-                        <span className="font-playfair text-3xl">{pack.eur}</span>
-                        <span className="pb-1 font-inter text-xs text-[#172554]/75">
-                          {pack.fcfa}
-                        </span>
-                      </div>
-
-                      <div className="mt-4 font-inter text-xs font-semibold text-[#D4A23A]">
-                        {pack.saving}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <div className="mt-10 rounded-[22px] border border-[#172554]/10 bg-white p-6">
