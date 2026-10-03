@@ -851,7 +851,7 @@ export default function App() {
             ownerMode,
           }),
         },
-        180000,
+        240000,
       );
 
       const data = await readApiResponse(response);
