@@ -2219,27 +2219,35 @@ export default function App() {
       {mobileMenuOpen && (
         <div className="sticky top-[72px] z-40 border-b border-white/15 bg-[#172554] px-6 py-4 shadow-sm md:hidden">
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
-            <button
-              onClick={() => navigateToSection("fonctionnement")}
-              className="rounded-xl px-4 py-3 text-left hover:bg-white/10"
-            >
-              Fonctionnement
-            </button>
-            <button
-              onClick={() => navigateToSection("formules")}
-              className="rounded-xl px-4 py-3 text-left hover:bg-white/10"
-            >
-              Formules
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setView("project");
-              }}
-              className="rounded-xl px-4 py-3 text-left hover:bg-white/10"
-            >
-              Mon projet
-            </button>
+            <button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
+            <button onClick={() => navigateToSection("formules")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Formules</button>
+            <button onClick={() => { setMobileMenuOpen(false); setView("project"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
+            {view === "preview" && preview && (
+              <>
+                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Aperçu</div>
+                {(["problematic","plan","introduction"] as const).map((tab) => (
+                  <button key={tab} onClick={() => { setMobileMenuOpen(false); setPreviewTab(tab); }} className="rounded-xl px-4 py-2 text-left hover:bg-white/10">
+                    {tab === "problematic" ? "Problématique" : tab === "plan" ? "Plan" : "Introduction"}
+                  </button>
+                ))}
+              </>
+            )}
+            {view === "premium" && premium && (
+              <>
+                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Problématiques</div>
+                {premium.problematics.map((item,index) => (
+                  <button key={item.id} onClick={() => { setMobileMenuOpen(false); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="rounded-xl px-4 py-2 text-left hover:bg-white/10">Problématique {index+1}</button>
+                ))}
+                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Plans</div>
+                {premium.plans.map((plan,index) => (
+                  <button key={plan.id} onClick={() => { setMobileMenuOpen(false); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="rounded-xl px-4 py-2 text-left hover:bg-white/10">Plan {index+1}</button>
+                ))}
+                <button disabled={!selectedPlan} onClick={() => { setMobileMenuOpen(false); setPremiumSection("writing"); setView("writing"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10 disabled:opacity-40">Rédaction</button>
+              </>
+            )}
+            {view === "writing" && selectedPlan && (
+              <button onClick={() => { setMobileMenuOpen(false); setView("writing"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Rédaction</button>
+            )}
           </div>
         </div>
       )}
