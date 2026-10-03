@@ -2551,10 +2551,10 @@ export default function App() {
                   )}
                   {previewTab === "introduction" && (
                     <div>
-                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Extrait de l’introduction générale · 300 mots</div>
+                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Extrait de l’introduction générale · 320 mots</div>
                       <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.introduction.title}</h3>
                       <p className="mt-6 whitespace-pre-wrap font-inter text-base leading-[1.95] text-[#172554]/80">{preview.introduction.content}</p>
-                      <div className="mt-6 rounded-[14px] bg-[#FFF8E7] p-4 font-inter text-sm leading-[1.7] text-[#6B4B08]"><strong>Extrait gratuit :</strong> environ 300 mots affichés sur une introduction générale cible d’environ {Number(preview.plan.introductionGeneral?.wordCount || Math.round(project.pages * WORDS_PER_PAGE * 0.1)).toLocaleString("fr-FR")} mots, soit 10 % du volume prévu.</div>
+                      <div className="mt-6 rounded-[14px] bg-[#FFF8E7] p-4 font-inter text-sm leading-[1.7] text-[#6B4B08]"><strong>Extrait gratuit :</strong> 320 mots maximum affichés sur une introduction générale complète prévu.</div>
                     </div>
                   )}
                 </section>
