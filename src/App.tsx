@@ -2545,7 +2545,7 @@ export default function App() {
                           </div>)}
                         </div>
                         <div className="mt-6 border-t border-[#172554]/10 pt-4 text-base font-semibold">Conclusion générale</div>
-                        <div className="mt-4 rounded-xl bg-[#FFF8E7] p-3 text-xs leading-[1.7] text-[#6B4B08]">Aperçu gratuit : le plan présente la structure du mémoire. Les 300 mots affichés dans l’onglet Introduction constituent seulement un extrait de l’introduction générale. Celle-ci représente environ 10 % du volume total.</div>
+                        <div className="mt-4 rounded-xl bg-[#FFF8E7] p-3 text-xs leading-[1.7] text-[#6B4B08]">Aperçu gratuit : le plan présente la structure du mémoire. Les 320 mots affichés dans l’onglet Introduction constituent seulement un extrait de l’introduction générale.</div>
                       </div>
                     </div>
                   )}
