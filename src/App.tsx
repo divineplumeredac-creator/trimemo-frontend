@@ -831,16 +831,13 @@ export default function App() {
       email: project.email || (ownerMode ? "owner@trimemo.local" : project.email),
     };
 
+    setSelectedProblematic(problematic);
     setLoading(true);
-    try {
-      const requestOnePlan = async (variation: number) => {
-        const variationInstructions = [
-          "Construis une architecture analytique adaptée au sujet et à la problématique. Privilégie 2 parties lorsque cette organisation est scientifiquement cohérente.",
-          "Construis une architecture problématisée différente de la première. Tu peux retenir 2 ou 3 parties selon la logique du sujet, avec une distribution non mécanique des chapitres et sections.",
-          "Construis une architecture par axes ou dimensions adaptée au sujet. Fais varier la structure par rapport aux deux autres propositions sans modifier la problématique."
-        ][variation];
 
-        const response = await fetchWithTimeout(PLANS_API, {
+    try {
+      const response = await fetchWithTimeout(
+        PLANS_API,
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -850,81 +847,51 @@ export default function App() {
           body: JSON.stringify({
             project: requestProject,
             problematic,
-            count: 1,
-            ownerMode,
-            variation: variation + 1,
-            variationInstructions,
-          }),
-        });
-
-        const data = await readApiResponse(response);
-        const rawList = data.plans || data.data?.plans || data.data || [];
-        if (!Array.isArray(rawList) || rawList.length === 0) {
-          throw new Error("Le serveur n’a retourné aucun plan exploitable.");
-        }
-        return normalizePlan(rawList[0], variation);
-      };
-
-      let generatedPlans: Plan[] = [];
-
-      if (ownerMode) {
-        const results = await Promise.all([0, 1, 2].map((variation) => requestOnePlan(variation)));
-        const signatures = new Set<string>();
-        generatedPlans = results.filter((plan) => {
-          const signature = plan.parts
-            .map((part) => part.chapters.map((chapter) => chapter.sections.length).join("."))
-            .join("/");
-          if (signatures.has(signature)) return false;
-          signatures.add(signature);
-          return true;
-        });
-        if (generatedPlans.length < 3) {
-          throw new Error("Les trois architectures générées sont trop proches. Relancez la génération.");
-        }
-      } else {
-        const response = await fetchWithTimeout(PLANS_API, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            ...premiumAuthHeaders(),
-          },
-          body: JSON.stringify({
-            project: requestProject,
-            problematic,
             count: 3,
-            ownerMode: false,
+            ownerMode,
           }),
-        });
-        const data = await readApiResponse(response);
-        const rawList = data.plans || data.data?.plans || data.data || [];
-        generatedPlans = Array.isArray(rawList)
-          ? rawList.slice(0, 3).map((item: any, index: number) => normalizePlan(item, index))
-          : [];
+        },
+        180000,
+      );
+
+      const data = await readApiResponse(response);
+      const rawList = data.plans || data.data?.plans || data.data || [];
+
+      if (!Array.isArray(rawList) || rawList.length < 3) {
+        throw new Error("Le serveur n’a pas retourné les trois plans académiques attendus.");
       }
+
+      const generatedPlans = rawList
+        .slice(0, 3)
+        .map((item: any, index: number) => normalizePlan(item, index));
 
       const personalPlan = requestProject.planPersonnel.trim()
         ? [createManualPlan(requestProject.planPersonnel, requestProject)]
         : [];
-      const plans = [...personalPlan, ...generatedPlans];
 
-      if (!plans.length) {
-        throw new Error("Aucun plan n’a été généré et aucun plan personnel n’a été fourni.");
-      }
+      const plans = personalPlan.length
+        ? [personalPlan[0], ...generatedPlans.slice(0, 2)]
+        : generatedPlans;
 
-      if (plans.length > 3 && !requestProject.planPersonnel.trim()) {
-        plans.splice(3);
-      }
-
-      setSelectedProblematic(problematic);
-      setPremium((current) => current ? { ...current, plans } : { problematics: [problematic], plans });
+      setPremium((current) =>
+        current
+          ? { ...current, problematics: current.problematics, plans }
+          : { problematics: [problematic], plans },
+      );
       setPremiumNav("plan-0");
       setPremiumSection("plan");
       setSelectedPlan(null);
       setBlocks([]);
-      pushToast("success", "Les trois plans académiques sont disponibles pour cette problématique.");
+
+      pushToast(
+        "success",
+        "Les trois plans ont été construits à partir du sujet, de la problématique, des consignes et des documents fournis.",
+      );
     } catch (error) {
-      pushToast("error", error instanceof Error ? error.message : "Impossible de générer les plans.");
+      pushToast(
+        "error",
+        error instanceof Error ? error.message : "Impossible de générer les plans.",
+      );
     } finally {
       setLoading(false);
     }
