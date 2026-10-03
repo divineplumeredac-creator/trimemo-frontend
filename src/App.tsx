@@ -1843,32 +1843,56 @@ export default function App() {
                   Espace propriétaire · résultats
                 </div>
                 <h1 className="mt-2 font-playfair text-4xl text-[#172554]">
-                  {premiumSection === "problematic" ? "Problématique" : "Plan"}
-                </h1>
-              </div>
-
-              <div className="min-w-0 rounded-[24px] border border-[#172554]/10 bg-white p-7 shadow-sm lg:p-10">
-                {premiumSection === "problematic" && (() => {
-                  const index = Number(premiumNav.replace("problematic-", "") || 0);
-                  const item = premium.problematics[index] || premium.problematics[0];
-                  return item ? (
-                    <article>
-                      <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Problématique {index + 1}</div>
-                      <h2 className="mt-3 font-playfair text-3xl text-[#172554]">{item.title}</h2>
-                      <p className="mt-6 font-inter text-base leading-[1.9] text-[#172554]/80">{item.question}</p>
-                      {item.angle && <div className="mt-5 rounded-2xl bg-[#EAF7EE] p-5 font-inter text-sm leading-[1.8] text-[#172554]/80"><strong>Angle :</strong> {item.angle}</div>}
-                      {item.rationale && <div className="mt-4 rounded-2xl bg-[#F7FAF8] p-5 font-inter text-sm leading-[1.8] text-[#172554]/70">{item.rationale}</div>}
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => void generatePlansForProblematic(item, true)}
-                        className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  {premiumSection === "problematic" && (
+                  <div className="grid gap-5 xl:grid-cols-2">
+                    {premium.problematics.map((item, index) => (
+                      <article
+                        key={item.id}
+                        className={`rounded-[24px] border border-[#172554]/10 bg-white p-6 shadow-sm lg:p-8 ${premiumNav === "problematic-" + index ? "ring-2 ring-[#D4A23A]/40" : ""}`}
                       >
-                        {loading && selectedProblematic?.id === item.id ? "Génération des 3 plans..." : "Générer les 3 plans"}
-                      </button>
-                    </article>
-                  ) : null;
-                })()}
+                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                          Problématique {index + 1}
+                        </div>
+                        <h2 className="mt-3 font-playfair text-2xl text-[#172554]">{item.title}</h2>
+                        <p className="mt-5 font-inter text-sm leading-[1.9] text-[#172554]/80">{item.question}</p>
+                        {item.angle && (
+                          <div className="mt-5 rounded-2xl bg-[#EAF7EE] p-4 font-inter text-xs leading-[1.8] text-[#172554]/80">
+                            <strong>Angle :</strong> {item.angle}
+                          </div>
+                        )}
+                        {item.rationale && (
+                          <div className="mt-4 rounded-2xl bg-[#F7FAF8] p-4 font-inter text-xs leading-[1.8] text-[#172554]/70">
+                            {item.rationale}
+                          </div>
+                        )}
+                        <div className="mt-6 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPremiumNav("problematic-" + index);
+                              setSelectedProblematic(item);
+                            }}
+                            className="rounded-full border border-[#172554]/15 bg-white px-4 py-2 font-inter text-[11px] font-semibold text-[#172554]"
+                          >
+                            Afficher
+                          </button>
+                          <button
+                            type="button"
+                            disabled={loading}
+                            onClick={() => {
+                              setPremiumNav("problematic-" + index);
+                              setSelectedProblematic(item);
+                              void generatePlansForProblematic(item, true);
+                            }}
+                            className="rounded-full bg-[#1D78C1] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {loading && selectedProblematic?.id === item.id ? "Génération en cours…" : "Générer les 3 plans"}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
 
                 {premiumSection === "plan" && (() => {
                   const index = Number(premiumNav.replace("plan-", "") || 0);
