@@ -833,31 +833,79 @@ export default function App() {
 
     setLoading(true);
     try {
-      const response = await fetchWithTimeout(PLANS_API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          ...(ownerMode ? ownerAuthHeaders() : premiumAuthHeaders()),
-        },
-        body: JSON.stringify({
-          project: requestProject,
-          problematic,
-          count: 3,
-          ownerMode,
-        }),
-      });
+      const requestOnePlan = async (variation: number) => {
+        const variationInstructions = [
+          "Construis une architecture analytique adaptée au sujet et à la problématique. Privilégie 2 parties lorsque cette organisation est scientifiquement cohérente.",
+          "Construis une architecture problématisée différente de la première. Tu peux retenir 2 ou 3 parties selon la logique du sujet, avec une distribution non mécanique des chapitres et sections.",
+          "Construis une architecture par axes ou dimensions adaptée au sujet. Fais varier la structure par rapport aux deux autres propositions sans modifier la problématique."
+        ][variation];
 
-      const data = await readApiResponse(response);
-      const rawList = data.plans || data.data?.plans || data.data || [];
-      const generatedPlans = Array.isArray(rawList)
-        ? rawList.slice(0, 3).map((item: any, index: number) => normalizePlan(item, index))
-        : [];
+        const response = await fetchWithTimeout(PLANS_API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            ...(ownerMode ? ownerAuthHeaders() : premiumAuthHeaders()),
+          },
+          body: JSON.stringify({
+            project: requestProject,
+            problematic,
+            count: 1,
+            ownerMode,
+            variation: variation + 1,
+            variationInstructions,
+          }),
+        });
+
+        const data = await readApiResponse(response);
+        const rawList = data.plans || data.data?.plans || data.data || [];
+        if (!Array.isArray(rawList) || rawList.length === 0) {
+          throw new Error("Le serveur n’a retourné aucun plan exploitable.");
+        }
+        return normalizePlan(rawList[0], variation);
+      };
+
+      let generatedPlans: Plan[] = [];
+
+      if (ownerMode) {
+        const results = await Promise.all([0, 1, 2].map((variation) => requestOnePlan(variation)));
+        const signatures = new Set<string>();
+        generatedPlans = results.filter((plan) => {
+          const signature = plan.parts
+            .map((part) => part.chapters.map((chapter) => chapter.sections.length).join("."))
+            .join("/");
+          if (signatures.has(signature)) return false;
+          signatures.add(signature);
+          return true;
+        });
+        if (generatedPlans.length < 3) {
+          throw new Error("Les trois architectures générées sont trop proches. Relancez la génération.");
+        }
+      } else {
+        const response = await fetchWithTimeout(PLANS_API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            ...premiumAuthHeaders(),
+          },
+          body: JSON.stringify({
+            project: requestProject,
+            problematic,
+            count: 3,
+            ownerMode: false,
+          }),
+        });
+        const data = await readApiResponse(response);
+        const rawList = data.plans || data.data?.plans || data.data || [];
+        generatedPlans = Array.isArray(rawList)
+          ? rawList.slice(0, 3).map((item: any, index: number) => normalizePlan(item, index))
+          : [];
+      }
 
       const personalPlan = requestProject.planPersonnel.trim()
         ? [createManualPlan(requestProject.planPersonnel, requestProject)]
         : [];
-
       const plans = [...personalPlan, ...generatedPlans];
 
       if (!plans.length) {
@@ -1844,61 +1892,47 @@ export default function App() {
                 </div>
                 <h1 className="mt-2 font-playfair text-4xl text-[#172554]">
                   {premiumSection === "problematic"
-                    ? "Problématiques"
+                    ? "Problématique"
                     : premiumSection === "plan"
                       ? "Plans détaillés"
                       : "Rédaction"}
                 </h1>
-                {premiumSection === "problematic" && (
-                  <div className="grid gap-5 xl:grid-cols-2">
-                    {premium.problematics.map((item, index) => (
-                      <article
-                        key={item.id}
-                        className={`rounded-[24px] border border-[#172554]/10 bg-white p-6 shadow-sm lg:p-8 ${premiumNav === "problematic-" + index ? "ring-2 ring-[#D4A23A]/40" : ""}`}
+
+                {premiumSection === "problematic" && (() => {
+                  const index = Number(premiumNav.replace("problematic-", "") || 0);
+                  const item = premium.problematics[index] || premium.problematics[0];
+                  return item ? (
+                    <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 shadow-sm lg:p-10">
+                      <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
+                        Problématique {index + 1}
+                      </div>
+                      <h2 className="mt-3 font-playfair text-3xl text-[#172554]">{item.title}</h2>
+                      <p className="mt-6 font-inter text-base leading-[1.9] text-[#172554]/80">{item.question}</p>
+                      {item.angle && (
+                        <div className="mt-5 rounded-2xl bg-[#EAF7EE] p-5 font-inter text-sm leading-[1.8] text-[#172554]/80">
+                          <strong>Angle :</strong> {item.angle}
+                        </div>
+                      )}
+                      {item.rationale && (
+                        <div className="mt-4 rounded-2xl bg-[#F7FAF8] p-5 font-inter text-sm leading-[1.8] text-[#172554]/70">
+                          {item.rationale}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => void generatePlansForProblematic(item, true)}
+                        className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
-                          Problématique {index + 1}
-                        </div>
-                        <h2 className="mt-3 font-playfair text-2xl text-[#172554]">{item.title}</h2>
-                        <p className="mt-5 font-inter text-sm leading-[1.9] text-[#172554]/80">{item.question}</p>
-                        {item.angle && (
-                          <div className="mt-5 rounded-2xl bg-[#EAF7EE] p-4 font-inter text-xs leading-[1.8] text-[#172554]/80">
-                            <strong>Angle :</strong> {item.angle}
-                          </div>
-                        )}
-                        {item.rationale && (
-                          <div className="mt-4 rounded-2xl bg-[#F7FAF8] p-4 font-inter text-xs leading-[1.8] text-[#172554]/70">
-                            {item.rationale}
-                          </div>
-                        )}
-                        <div className="mt-6 flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPremiumNav("problematic-" + index);
-                              setSelectedProblematic(item);
-                            }}
-                            className="rounded-full border border-[#172554]/15 bg-white px-4 py-2 font-inter text-[11px] font-semibold text-[#172554]"
-                          >
-                            Afficher
-                          </button>
-                          <button
-                            type="button"
-                            disabled={loading}
-                            onClick={() => {
-                              setPremiumNav("problematic-" + index);
-                              setSelectedProblematic(item);
-                              void generatePlansForProblematic(item, true);
-                            }}
-                            className="rounded-full bg-[#1D78C1] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {loading && selectedProblematic?.id === item.id ? "Génération en cours…" : "Générer les 3 plans"}
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                )}
+                        {loading && selectedProblematic?.id === item.id ? "Génération des 3 plans..." : "Générer les 3 plans"}
+                      </button>
+                    </article>
+                  ) : (
+                    <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#172554]/65">
+                      Aucune problématique disponible.
+                    </div>
+                  );
+                })()}
 
                 {premiumSection === "plan" && (() => {
                   const index = Number(premiumNav.replace("plan-", "") || 0);
