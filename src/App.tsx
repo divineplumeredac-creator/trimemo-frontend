@@ -2757,9 +2757,24 @@ export default function App() {
                       Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
                     </p>
                   </div>
-                  <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
-                    Exporter le document Word
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
+                      Exporter le document Word
+                    </button>
+                    {blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const subject = encodeURIComponent(`Demande de révision humaine · ${project.sujet || "Projet Trimémo"}`);
+                          const body = encodeURIComponent(`Bonjour,\n\nJe souhaite demander une révision humaine de mon document Trimémo.\n\nSujet : ${project.sujet || "Non précisé"}\n\nMerci.`);
+                          window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+                        }}
+                        className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554]"
+                      >
+                        Demander une révision humaine
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-8 pb-20">
