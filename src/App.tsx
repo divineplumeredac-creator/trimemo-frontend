@@ -425,6 +425,7 @@ export default function App() {
   const [showOwnerPassword, setShowOwnerPassword] = useState(false);
   const [ownerLoginError, setOwnerLoginError] = useState("");
   const [ownerBusy, setOwnerBusy] = useState(false);
+  const [generationError, setGenerationError] = useState("");
 
   const totalDoneWords = useMemo(
     () => blocks.filter((b) => b.status === "done").reduce((sum, b) => sum + b.wordCount, 0),
@@ -836,6 +837,7 @@ export default function App() {
     };
 
     setSelectedProblematic(problematic);
+    setGenerationError("");
     setLoading(true);
 
     try {
@@ -892,10 +894,9 @@ export default function App() {
         "Les trois plans ont été construits à partir du sujet, de la problématique, des consignes et des documents fournis.",
       );
     } catch (error) {
-      pushToast(
-        "error",
-        error instanceof Error ? error.message : "Impossible de générer les plans.",
-      );
+      const message = error instanceof Error ? error.message : "Impossible de générer les plans.";
+      setGenerationError(message);
+      pushToast("error", message);
     } finally {
       setLoading(false);
     }
@@ -923,68 +924,50 @@ export default function App() {
       return;
     }
 
+    setGenerationError("");
     setLoading(true);
     try {
-      const problematicResponse = await fetchWithTimeout(FREE_PROBLEMATICS_API, {
+      const response = await fetchWithTimeout(FREE_PREVIEW_API, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ project, count: 1, freePreview: true }),
-      });
-      const problematicData = await readApiResponse(problematicResponse);
-      const problematicRaw = problematicData?.problematiques?.[0];
+      }, 180000);
+      const data = await readApiResponse(response);
+
+      const problematicRaw = data?.problematic || data?.problematique;
+      const planRaw = data?.plan;
+      const introductionRaw = data?.introduction;
       if (!problematicRaw?.question) {
-        throw new Error("La problématique gratuite n’a pas pu être générée.");
+        throw new Error("La problématique gratuite n’a pas été retournée par le serveur.");
       }
-      const problematic = normalizeProblematic(problematicRaw, 0);
-
-      const planResponse = await fetchWithTimeout(FREE_PLANS_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ project, problematic, count: 1, freePreview: true }),
-      });
-      const planData = await readApiResponse(planResponse);
-      const planRaw = planData?.plans?.[0];
       if (!planRaw?.parts?.length) {
-        throw new Error("Le plan gratuit n’a pas pu être généré.");
+        throw new Error("Le plan gratuit n’a pas été retourné par le serveur.");
       }
-      const plan = normalizePlan(planRaw, 0);
+      if (!introductionRaw?.content) {
+        throw new Error("L’aperçu de l’introduction n’a pas été retourné par le serveur.");
+      }
 
-      const introductionResponse = await fetchWithTimeout(FREE_INTRODUCTION_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          project,
-          problematic: problematic.question,
-          plan,
-          targetWords: 320,
-        }),
-      });
-      const introductionData = await readApiResponse(introductionResponse);
-      const introductionContent = String(introductionData?.introduction?.content || "").trim();
-      if (!introductionContent) {
-        throw new Error("L’aperçu de l’introduction n’a pas pu être généré.");
-      }
+      const problematic = normalizeProblematic(problematicRaw, 0);
+      const plan = normalizePlan(planRaw, 0);
+      const introductionContent = String(introductionRaw.content).trim();
 
       setPreview({
         problematic,
         plan,
         introduction: {
-          title: introductionData?.introduction?.title || "Introduction générale",
+          title: introductionRaw.title || "Introduction générale",
           content: introductionContent,
-          wordCount: Number(
-            introductionData?.introduction?.wordCount ||
-            countWords(introductionContent)
-          ),
+          wordCount: Math.min(320, countWords(introductionContent)),
           incomplete: true,
         },
       });
       sessionStorage.setItem("trimemo_project", JSON.stringify(project));
+      setPreviewTab("problematic");
       setView("preview");
     } catch (error) {
-      pushToast(
-        "error",
-        error instanceof Error ? error.message : "Impossible de générer l’aperçu gratuit."
-      );
+      const message = error instanceof Error ? error.message : "Impossible de générer l’aperçu gratuit.";
+      setGenerationError(message);
+      pushToast("error", message);
     } finally {
       setLoading(false);
     }
@@ -2466,6 +2449,12 @@ export default function App() {
               <div className="font-inter text-xs text-[#172554]/75">1 page = {WORDS_PER_PAGE} mots</div>
             </div>
 
+            {generationError && view === "project" && (
+              <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 font-inter text-sm leading-6 text-red-700">
+                <strong>Erreur de génération :</strong> {generationError}
+              </div>
+            )}
+
             {view === "project" && (
               <div className="grid gap-8 lg:grid-cols-[1fr_350px]">
                 <section className="rounded-[24px] border border-[#172554]/5 bg-white p-7 lg:p-9">
@@ -2666,6 +2655,12 @@ export default function App() {
               </div>
 
               <div className="min-w-0">
+                  {generationError && premiumSection === "problematic" && (
+                    <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 font-inter text-sm leading-6 text-red-700">
+                      <strong>Erreur de génération du plan :</strong> {generationError}
+                    </div>
+                  )}
+
                   {premiumSection === "problematic" && (() => {
                     const index = Number(premiumNav.replace("problematic-", "") || 0);
                     const item = premium.problematics[index] || premium.problematics[0];
