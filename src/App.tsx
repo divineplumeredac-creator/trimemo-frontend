@@ -1989,11 +1989,15 @@ export default function App() {
                     <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
                       Exporter le document Word
                     </button>
-                    <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande de correction - " + (project.sujet || "Document Trimémo"))}`} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
-                      Demander une correction
-                    </a>
+                    {blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
+                      <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande de révision humaine - " + (project.sujet || "Document Trimémo"))}`} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
+                        Demander une révision humaine
+                      </a>
+                    )}
                   </div>
-                  <div className="font-inter text-[11px] text-[#172554]/60">Demander une correction : {CONTACT_EMAIL}</div>
+                  {blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
+                    <div className="font-inter text-[11px] text-[#172554]/60">Révision humaine : {CONTACT_EMAIL}</div>
+                  )}
                 </div>
 
                 <div className="space-y-8 pb-20">
