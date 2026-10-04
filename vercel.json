@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/trimemo-api/api/:path*",
+      "destination": "https://trimemo-api.vercel.app/api/:path*"
+    },
+    {
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
