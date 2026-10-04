@@ -2677,7 +2677,7 @@ export default function App() {
                         <button
                           type="button"
                           disabled={loading}
-                          onClick={() => void generatePlansForProblematic(item, false)}
+                          onClick={() => void generatePlansForProblematic(item, ownerRoute)}
                           className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {loading && selectedProblematic?.id === item.id ? "Génération des 3 plans..." : "Générer les 3 plans"}
