@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-const API_BASE_URL = typeof window !== "undefined" && !import.meta.env.DEV ? window.location.origin : "https://trimemo-api.vercel.app";
+const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "https://trimemo-api.vercel.app").replace(/\/$/, "");
 const API_URL = `${API_BASE_URL}/api/academic`;
 const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
 const PLANS_API = `${API_BASE_URL}/api/generate-plans`;
