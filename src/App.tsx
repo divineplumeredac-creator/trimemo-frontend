@@ -997,12 +997,10 @@ export default function App() {
       pushToast("error", "Le sujet est obligatoire.");
       return;
     }
-    if (!project.email.trim()) {
-      pushToast("error", "L’adresse e-mail est obligatoire pour recevoir votre projet.");
-      return;
-    }
-
+    // Le sujet est la seule donnée obligatoire pour l’aperçu gratuit.
+    // Le niveau, la discipline, les consignes, le contexte et l’e-mail sont facultatifs.
     setGenerationError("");
+    setPreview(null);
     setLoading(true);
     try {
       const response = await fetchWithTimeout(FREE_PREVIEW_API, {
