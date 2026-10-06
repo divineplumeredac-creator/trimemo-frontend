@@ -530,7 +530,7 @@ export default function App() {
     if (!ownerRoute) return;
     const token = window.sessionStorage.getItem("trimemo_owner_session");
     const lastActivity = Number(window.sessionStorage.getItem("trimemo_owner_last_activity") || 0);
-    if (token && lastActivity && Date.now() - lastActivity >= 60 * 60 * 1000) {
+    if (token && lastActivity && Date.now() - lastActivity >= 24 * 60 * 60 * 1000) {
       window.sessionStorage.removeItem("trimemo_owner_session");
       window.sessionStorage.removeItem("trimemo_owner_last_activity");
       setOwnerSessionValid(false);
@@ -563,7 +563,7 @@ export default function App() {
     events.forEach((event) => window.addEventListener(event, markActivity, { passive: true }));
     const timer = window.setInterval(() => {
       const last = Number(window.sessionStorage.getItem("trimemo_owner_last_activity") || 0);
-      if (last && Date.now() - last >= 60 * 60 * 1000) {
+      if (last && Date.now() - last >= 24 * 60 * 60 * 1000) {
         window.sessionStorage.removeItem("trimemo_owner_session");
         window.sessionStorage.removeItem("trimemo_owner_last_activity");
         setOwnerSessionValid(false);
