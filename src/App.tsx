@@ -605,33 +605,53 @@ export default function App() {
         if (saved) {
           setProject(saved);
 
-          const problematicsResponse = await fetchWithTimeout(PROBLEMATICS_API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Accept: "application/json", ...premiumAuthHeaders() },
-            body: JSON.stringify({ project: saved, count: 3 }),
-          });
-          const problematicsData = await readApiResponse(problematicsResponse);
-          const rawProblematicList =
-            problematicsData.problematiques ||
-            problematicsData.problematics ||
-            problematicsData.data ||
-            [];
+          const personalQuestion = String(saved.problematiquePersonnelle || saved.problematique || "").trim();
 
-          const problematics = Array.isArray(rawProblematicList)
-            ? rawProblematicList.slice(0, 3).map((item: any, index: number) => normalizeProblematic(item, index))
-            : [];
+          if (personalQuestion) {
+            const personalProblematic: Problematic = {
+              id: "personal-problematic",
+              title: "Problématique fournie par le client",
+              question: personalQuestion,
+              rationale: "Problématique saisie par le client et conservée telle quelle.",
+              angle: "Approche définie par le client",
+            };
+            setPremium({ problematics: [personalProblematic], plans: [] });
+            setSelectedProblematic(personalProblematic);
+            setSelectedPlan(null);
+            setBlocks([]);
+            setView("premium");
+            window.localStorage.removeItem("trimemo_project_pending");
+            pushToast("success", "Paiement confirmé. Votre problématique est prise en compte. Génération directe des trois plans.");
+            await generatePlansForProblematic(personalProblematic, false, saved);
+          } else {
+            const problematicsResponse = await fetchWithTimeout(PROBLEMATICS_API, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json", ...premiumAuthHeaders() },
+              body: JSON.stringify({ project: saved, count: 3 }),
+            });
+            const problematicsData = await readApiResponse(problematicsResponse);
+            const rawProblematicList =
+              problematicsData.problematiques ||
+              problematicsData.problematics ||
+              problematicsData.data ||
+              [];
 
-          if (!problematics.length) {
-            throw new Error("Le paiement est confirmé, mais aucune problématique n’a pu être générée.");
+            const problematics = Array.isArray(rawProblematicList)
+              ? rawProblematicList.slice(0, 3).map((item: any, index: number) => normalizeProblematic(item, index))
+              : [];
+
+            if (!problematics.length) {
+              throw new Error("Le paiement est confirmé, mais aucune problématique n’a pu être générée.");
+            }
+
+            setPremium({ problematics, plans: [] });
+            setSelectedProblematic(null);
+            setSelectedPlan(null);
+            setBlocks([]);
+            setView("premium");
+            window.localStorage.removeItem("trimemo_project_pending");
+            pushToast("success", "Paiement confirmé. Les trois problématiques sont disponibles. Sélectionnez-en une pour générer les trois plans.");
           }
-
-          setPremium({ problematics, plans: [] });
-          setSelectedProblematic(null);
-          setSelectedPlan(null);
-          setBlocks([]);
-          setView("premium");
-          window.localStorage.removeItem("trimemo_project_pending");
-          pushToast("success", "Paiement confirmé. Les trois problématiques sont disponibles. Sélectionnez-en une pour générer les trois plans.");
         }
       } catch (error) {
         pushToast("error", error instanceof Error ? error.message : "Vérification du paiement impossible.");
@@ -816,6 +836,28 @@ export default function App() {
       email: project.email || "owner@trimemo.local",
     };
 
+    const personalQuestion = String(ownerProject.problematiquePersonnelle || ownerProject.problematique || "").trim();
+    if (personalQuestion) {
+      const personalProblematic: Problematic = {
+        id: "personal-problematic",
+        title: "Problématique fournie par l'administrateur",
+        question: personalQuestion,
+        rationale: "Problématique saisie par l'administrateur et conservée telle quelle.",
+        angle: "Approche définie par l'utilisateur",
+      };
+      setProject(ownerProject);
+      setPremium({ problematics: [personalProblematic], plans: [] });
+      setPremiumNav("plan-0");
+      setPremiumSection("problematic");
+      setSelectedProblematic(personalProblematic);
+      setSelectedPlan(null);
+      setBlocks([]);
+      setView("premium");
+      pushToast("info", "Problématique fournie détectée. Passage direct à la génération des trois plans.");
+      await generatePlansForProblematic(personalProblematic, true, ownerProject);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(PROBLEMATICS_API, {
@@ -861,7 +903,7 @@ export default function App() {
     }
   }
 
-  async function generatePlansForProblematic(problematic: Problematic, ownerMode = false) {
+  async function generatePlansForProblematic(problematic: Problematic, ownerMode = false, projectOverride?: ProjectData) {
     if (ownerMode && !ownerSessionValid) {
       pushToast("error", "Connectez-vous à l’espace administrateur.");
       return;
@@ -871,9 +913,10 @@ export default function App() {
       return;
     }
 
+    const baseProject = projectOverride || project;
     const requestProject: ProjectData = {
-      ...project,
-      email: project.email || (ownerMode ? "owner@trimemo.local" : project.email),
+      ...baseProject,
+      email: baseProject.email || (ownerMode ? "owner@trimemo.local" : baseProject.email),
     };
 
     setSelectedProblematic(problematic);
