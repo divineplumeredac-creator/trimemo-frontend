@@ -1101,9 +1101,9 @@ export default function App() {
     const chapterLabel = (chapter: PlanChapter) => `CHAPITRE ${chapter.number} : ${chapter.title}`;
     const sectionLabel = (chapter: PlanChapter, section: PlanSection) => `SECTION ${chapter.number}.${section.number} : ${section.title}`;
     const subsectionLabel = (chapter: PlanChapter, section: PlanSection, subsection: PlanSubsection) =>
-      `Sous-section ${chapter.number}.${section.number}.${subsection.number} : ${subsection.title}`;
+      `${chapter.number}.${section.number}.${subsection.number} : ${subsection.title}`;
     const internalLabel = (chapter: PlanChapter, section: PlanSection, subsection: PlanSubsection, internal: PlanInternalTitle) =>
-      `Titre interne ${chapter.number}.${section.number}.${subsection.number}.${internal.number} : ${internal.title}`;
+      `${chapter.number}.${section.number}.${subsection.number}.${internal.number} : ${internal.title}`;
 
     const introductionWords = Math.min(1500, Math.max(300, Math.round(Number(plan.introductionGeneral.wordCount || 900))));
     const introductionBlock: Block = {
