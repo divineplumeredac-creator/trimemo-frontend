@@ -285,17 +285,22 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 function normalizeStructuralTitle(value: any, kind: "part" | "chapter" | "section" | "subsection", fallback: string) {
-  const raw = String(value ?? "").trim();
+  let raw = String(value ?? "").trim();
   if (!raw) return fallback;
 
   const patterns: Record<string, RegExp> = {
-    part: /^part(?:ie)?\s+(?:[IVXLCDM]+|\d+)\s*[.\-–—:]?\s*/i,
-    chapter: /^chap(?:itre|ter)?\s+\d+(?:\.\d+)?\s*[.\-–—:]?\s*/i,
-    section: /^section\s+\d+(?:\.\d+)?\s*[.\-–—:]?\s*/i,
-    subsection: /^sous[- ]section\s+\d+(?:\.\d+)*\s*[.\-–—:]?\s*/i,
+    part: /^(?:partie|part)\s+(?:[IVXLCDM]+|\d+)\s*[.\-–—:]?\s*/i,
+    chapter: /^(?:chapitre|chapter)\s+\d+(?:\.\d+)?\s*[.\-–—:]?\s*/i,
+    section: /^section\s+\d+(?:\.\d+)*\s*[.\-–—:]?\s*/i,
+    subsection: /^(?:sous[- ]section|subsection)\s+\d+(?:\.\d+)*\s*[.\-–—:]?\s*/i,
   };
 
-  return raw.replace(patterns[kind], "").trim() || fallback;
+  raw = raw.replace(patterns[kind], "");
+  raw = raw.replace(/^§\s*/, "");
+  raw = raw.replace(/^(?:\d+\.){1,6}\s*/, "");
+  raw = raw.replace(/^[IVXLCDM]+\s*[.\-–—:]\s*/i, "");
+
+  return raw.trim() || fallback;
 }
 
 function normalizeProblematic(value: any, index = 0): Problematic {
