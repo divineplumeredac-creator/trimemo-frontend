@@ -1124,39 +1124,34 @@ export default function App() {
      * Un même bloc peut contenir plusieurs sous-sections et leurs titres internes.
      * On conserve toujours l'ordre du plan et on ne coupe jamais une sous-section.
      */
-    const chapterBlocks = plan.parts.flatMap((part, partIndex) =>
-      part.chapters.flatMap((chapter, chapterIndex) => {
-        const units = chapter.sections.flatMap((section) =>
-          section.subsections.length
-            ? section.subsections.map((subsection) => ({
-                id: subsection.id,
-                title: subsection.title,
-                structure: [
-                  partLabel(part),
-                  chapterLabel(chapter),
-                  sectionLabel(chapter, section),
-                  subsectionLabel(chapter, section, subsection),
-                  ...subsection.internalTitles.map((internal) =>
-                    internalLabel(chapter, section, subsection, internal)
-                  ),
-                ],
-              }))
-            : [{
-                id: section.id,
-                title: section.title,
-                structure: [
-                  partLabel(part),
-                  chapterLabel(chapter),
-                  sectionLabel(chapter, section),
-                ],
-              }]
-        );
+    const chapterBlocks = plan.parts.flatMap((part) =>
+      part.chapters.flatMap((chapter) => {
+        /*
+         * L'unité minimale de regroupement est la SECTION.
+         * Une section et toutes ses sous-sections/titres internes restent ensemble.
+         * Le seuil de 900 mots est une cible, jamais une contrainte.
+         */
+        const sectionUnits = chapter.sections.map((section) => ({
+          id: section.id,
+          title: section.title,
+          structure: [
+            partLabel(part),
+            chapterLabel(chapter),
+            sectionLabel(chapter, section),
+            ...section.subsections.flatMap((subsection) => [
+              subsectionLabel(chapter, section, subsection),
+              ...subsection.internalTitles.map((internal) =>
+                internalLabel(chapter, section, subsection, internal)
+              ),
+            ]),
+          ],
+        }));
 
-        if (!units.length) {
+        if (!sectionUnits.length) {
           return [{
             id: `${chapter.id}-bloc-1`,
             title: chapter.title,
-            expectedWords: Math.min(1200, Math.max(600, Math.round(Number(chapter.wordCount || 900)))),
+            expectedWords: Math.max(600, Math.round(Number(chapter.wordCount || 900))),
             content: "",
             wordCount: 0,
             status: "pending" as const,
@@ -1167,34 +1162,50 @@ export default function App() {
           }];
         }
 
-        const chapterWords = Math.max(600, Math.round(Number(chapter.wordCount || units.length * 300)));
-        const groupCount = Math.max(1, Math.ceil(chapterWords / 900));
-        const groups: Array<typeof units> = [];
-        const baseSize = Math.floor(units.length / groupCount);
-        const extra = units.length % groupCount;
-        let cursor = 0;
+        const chapterWords = Math.max(300, Math.round(Number(chapter.wordCount || 900)));
+        const estimatedSectionWords = chapterWords / sectionUnits.length;
+        const groups: Array<typeof sectionUnits> = [];
+        let current: typeof sectionUnits = [];
+        let currentWords = 0;
 
-        for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
-          const size = baseSize + (groupIndex < extra ? 1 : 0);
-          if (size > 0) {
-            groups.push(units.slice(cursor, cursor + size));
-            cursor += size;
+        for (const section of sectionUnits) {
+          const nextWords = currentWords + estimatedSectionWords;
+
+          /*
+           * On ne coupe jamais une section.
+           * On vise environ 900 mots lorsque le regroupement reste cohérent.
+           * Une section peut donc constituer seule un bloc de 500, 700, 1 100
+           * ou davantage de mots si sa densité scientifique le justifie.
+           */
+          if (
+            current.length > 0 &&
+            currentWords >= 600 &&
+            nextWords > 1100
+          ) {
+            groups.push(current);
+            current = [];
+            currentWords = 0;
           }
+
+          current.push(section);
+          currentWords += estimatedSectionWords;
         }
 
+        if (current.length) groups.push(current);
+
         return groups.map((group, groupIndex) => {
-          const groupWords = Math.round(chapterWords * group.length / units.length);
+          const groupWords = Math.round(
+            chapterWords * group.length / sectionUnits.length
+          );
           const structure = group.flatMap((unit) => unit.structure);
-          const firstUnit = group[0];
-          const lastUnit = group[group.length - 1];
           const title = group.length === 1
-            ? firstUnit.title
-            : `${firstUnit.title} → ${lastUnit.title}`;
+            ? group[0].title
+            : group.map((unit) => unit.title).join(" + ");
 
           return {
             id: `${chapter.id}-bloc-${groupIndex + 1}`,
             title,
-            expectedWords: Math.min(1200, Math.max(600, groupWords || 900)),
+            expectedWords: Math.max(300, groupWords || 900),
             content: "",
             wordCount: 0,
             status: "pending" as const,
