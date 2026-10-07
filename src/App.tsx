@@ -704,7 +704,15 @@ export default function App() {
         continue;
       }
       try {
-        const category: FileCategory = /(methodolog|méthodolog|guide|consigne|instruction|norme|jury)/i.test(file.name) ? "methodology" : "reference";
+        const category: FileCategory = /(consigne|instruction|instructions|exigence|cahier\s+des\s+charges)/i.test(file.name)
+          ? "instructions"
+          : /(methodolog|méthodolog|guide|norme|jury|format)/i.test(file.name)
+            ? "methodology"
+            : /(contexte|terrain|entreprise|organisation)/i.test(file.name)
+              ? "context"
+              : /(source|article|étude|etude|rapport)/i.test(file.name)
+                ? "source"
+                : "reference";
         files.push({ name: file.name, type: file.type || "application/octet-stream", content: await readFileAsDataUrl(file), category });
       } catch {
         pushToast("error", `Impossible de lire ${file.name}.`);
