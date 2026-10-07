@@ -1096,31 +1096,14 @@ export default function App() {
       }
       return out;
     };
+
     const partLabel = (part: PlanPart) => `PARTIE ${toRoman(part.number)} : ${part.title}`;
     const chapterLabel = (chapter: PlanChapter) => `CHAPITRE ${chapter.number} : ${chapter.title}`;
     const sectionLabel = (chapter: PlanChapter, section: PlanSection) => `SECTION ${chapter.number}.${section.number} : ${section.title}`;
-    const subsectionLabel = (chapter: PlanChapter, section: PlanSection, subsection: PlanSubsection) => `Sous-section ${chapter.number}.${section.number}.${subsection.number} : ${subsection.title}`;
-    const internalLabel = (chapter: PlanChapter, section: PlanSection, subsection: PlanSubsection, internal: PlanInternalTitle) => `Titre interne ${chapter.number}.${section.number}.${subsection.number}.${internal.number} : ${internal.title}`;
-
-    const distributeVariableWords = (totalWords: number, count: number, seed: number) => {
-      const total = Math.max(count * 300, Math.round(Number(totalWords) || count * 300));
-      if (count <= 1) return [Math.min(1500, total)];
-
-      const patterns = [
-        [0.82, 1.16, 0.94, 1.08, 1.02, 0.88],
-        [1.12, 0.86, 1.06, 0.96, 1.14, 0.90],
-        [0.92, 1.10, 0.84, 1.18, 0.98, 1.06],
-        [1.04, 0.90, 1.14, 0.88, 1.08, 0.96],
-      ];
-      const pattern = patterns[seed % patterns.length];
-      const average = total / count;
-      const raw = Array.from({ length: count }, (_, index) =>
-        Math.max(300, Math.round(average * pattern[(index + seed) % pattern.length]))
-      );
-      const rawSum = raw.reduce((sum, value) => sum + value, 0);
-      const scaled = raw.map((value) => Math.max(300, Math.min(1500, Math.round(value * total / rawSum))));
-      return scaled;
-    };
+    const subsectionLabel = (chapter: PlanChapter, section: PlanSection, subsection: PlanSubsection) =>
+      `Sous-section ${chapter.number}.${section.number}.${subsection.number} : ${subsection.title}`;
+    const internalLabel = (chapter: PlanChapter, section: PlanSection, subsection: PlanSubsection, internal: PlanInternalTitle) =>
+      `Titre interne ${chapter.number}.${section.number}.${subsection.number}.${internal.number} : ${internal.title}`;
 
     const introductionWords = Math.min(1500, Math.max(300, Math.round(Number(plan.introductionGeneral.wordCount || 900))));
     const introductionBlock: Block = {
@@ -1136,34 +1119,28 @@ export default function App() {
       kind: "introduction",
     };
 
+    /*
+     * Un bloc de rédaction vise environ 900 mots.
+     * Un même bloc peut contenir plusieurs sous-sections et leurs titres internes.
+     * On conserve toujours l'ordre du plan et on ne coupe jamais une sous-section.
+     */
     const chapterBlocks = plan.parts.flatMap((part, partIndex) =>
       part.chapters.flatMap((chapter, chapterIndex) => {
         const units = chapter.sections.flatMap((section) =>
           section.subsections.length
-            ? section.subsections.flatMap((subsection) =>
-                subsection.internalTitles.length
-                  ? subsection.internalTitles.map((internal) => ({
-                      id: internal.id,
-                      title: internal.title,
-                      structure: [
-                        partLabel(part),
-                        chapterLabel(chapter),
-                        sectionLabel(chapter, section),
-                        subsectionLabel(chapter, section, subsection),
-                        internalLabel(chapter, section, subsection, internal),
-                      ],
-                    }))
-                  : [{
-                      id: subsection.id,
-                      title: subsection.title,
-                      structure: [
-                        partLabel(part),
-                        chapterLabel(chapter),
-                        sectionLabel(chapter, section),
-                        subsectionLabel(chapter, section, subsection),
-                      ],
-                    }]
-              )
+            ? section.subsections.map((subsection) => ({
+                id: subsection.id,
+                title: subsection.title,
+                structure: [
+                  partLabel(part),
+                  chapterLabel(chapter),
+                  sectionLabel(chapter, section),
+                  subsectionLabel(chapter, section, subsection),
+                  ...subsection.internalTitles.map((internal) =>
+                    internalLabel(chapter, section, subsection, internal)
+                  ),
+                ],
+              }))
             : [{
                 id: section.id,
                 title: section.title,
@@ -1175,24 +1152,58 @@ export default function App() {
               }]
         );
 
-        const targets = distributeVariableWords(
-          Number(chapter.wordCount || 0),
-          Math.max(1, units.length),
-          partIndex + chapterIndex + 2,
-        );
+        if (!units.length) {
+          return [{
+            id: `${chapter.id}-bloc-1`,
+            title: chapter.title,
+            expectedWords: Math.min(1200, Math.max(600, Math.round(Number(chapter.wordCount || 900)))),
+            content: "",
+            wordCount: 0,
+            status: "pending" as const,
+            sources: [],
+            footnotes: [],
+            structure: [partLabel(part), chapterLabel(chapter)],
+            kind: "chapter" as const,
+          }];
+        }
 
-        return units.map((unit, unitIndex) => ({
-          id: `${chapter.id}-${unit.id}`,
-          title: unit.title,
-          expectedWords: targets[unitIndex] || 300,
-          content: "",
-          wordCount: 0,
-          status: "pending" as const,
-          sources: [],
-          footnotes: [],
-          structure: unit.structure,
-          kind: "chapter" as const,
-        }));
+        const chapterWords = Math.max(600, Math.round(Number(chapter.wordCount || units.length * 300)));
+        const groupCount = Math.max(1, Math.ceil(chapterWords / 900));
+        const groups: Array<typeof units> = [];
+        const baseSize = Math.floor(units.length / groupCount);
+        const extra = units.length % groupCount;
+        let cursor = 0;
+
+        for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
+          const size = baseSize + (groupIndex < extra ? 1 : 0);
+          if (size > 0) {
+            groups.push(units.slice(cursor, cursor + size));
+            cursor += size;
+          }
+        }
+
+        return groups.map((group, groupIndex) => {
+          const groupWords = Math.round(chapterWords * group.length / units.length);
+          const structure = group.flatMap((unit) => unit.structure);
+          const firstUnit = group[0];
+          const lastUnit = group[group.length - 1];
+          const title = group.length === 1
+            ? firstUnit.title
+            : `${firstUnit.title} → ${lastUnit.title}`;
+
+          return {
+            id: `${chapter.id}-bloc-${groupIndex + 1}`,
+            title,
+            expectedWords: Math.min(1200, Math.max(600, groupWords || 900)),
+            content: "",
+            wordCount: 0,
+            status: "pending" as const,
+            sources: [],
+            footnotes: [],
+            structure,
+            kind: "chapter" as const,
+          };
+        });
       }),
     );
 
