@@ -767,6 +767,18 @@ export default function App() {
     }
   }
 
+  function stringifyApiError(value: any): string {
+    if (typeof value === "string") return value;
+    if (value == null) return "";
+    if (value instanceof Error) return value.message || String(value);
+    if (typeof value === "object") {
+      const message = value.message || value.error || value.details || value.detail;
+      if (typeof message === "string") return message;
+      try { return JSON.stringify(value); } catch { return String(value); }
+    }
+    return String(value);
+  }
+
   async function readApiResponse(response: Response) {
     const raw = await response.text();
     let data: any = null;
@@ -782,8 +794,9 @@ export default function App() {
     }
 
     if (!response.ok) {
-      const detail = data?.details ? " — " + String(data.details) : "";
-      throw new Error((data?.error || data?.message || `Erreur serveur HTTP ${response.status}.`) + detail);
+      const base = stringifyApiError(data?.error || data?.message) || `Erreur serveur HTTP ${response.status}.`;
+      const detail = data?.details ? " — " + stringifyApiError(data.details) : "";
+      throw new Error(base + detail);
     }
 
     return data;
@@ -1006,7 +1019,7 @@ export default function App() {
         "Les trois plans ont été construits à partir du sujet, de la problématique, des consignes et des documents fournis.",
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Impossible de générer les plans.";
+      const message = error instanceof Error ? (error.message || "Impossible de générer les plans.") : stringifyApiError(error) || "Impossible de générer les plans.";
       setGenerationError(message);
       pushToast("error", message);
     } finally {
