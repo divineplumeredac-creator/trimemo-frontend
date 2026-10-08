@@ -351,12 +351,12 @@ function normalizePlan(value: any, index = 0): Plan {
           id: String(section?.id || `section-${partNumber}-${chapterNumber}-${sectionNumber}`),
           number: sectionNumber,
           title: normalizeStructuralTitle(section?.title || section?.titre, "section", `Section ${sectionNumber}`),
-          description: "",
+          description: String(section?.description || section?.descriptionText || "").trim(),
           subsections: rawSubsections.map((item: any, subsectionIndex: number) => ({
             id: String(item?.id || `subsection-${partNumber}-${chapterNumber}-${sectionNumber}-${subsectionIndex + 1}`),
             number: subsectionIndex + 1,
             title: normalizeStructuralTitle(typeof item === "string" ? item : item?.title || item?.titre, "subsection", `Sous-section ${subsectionIndex + 1}`),
-            description: "",
+            description: String(item?.description || item?.descriptionText || "").trim(),
             internalTitles: Array.isArray(item?.internalTitles)
               ? item.internalTitles.map((internal: any, internalIndex: number) => ({
                   id: String(internal?.id || `internal-${partNumber}-${chapterNumber}-${sectionNumber}-${subsectionIndex + 1}-${internalIndex + 1}`),
@@ -372,7 +372,7 @@ function normalizePlan(value: any, index = 0): Plan {
         id: String(chapter?.id || `chapter-${chapterNumber}`),
         number: chapterNumber,
         title: normalizeStructuralTitle(chapter?.title || chapter?.titre, "chapter", `Chapitre ${chapterNumber}`),
-        description: "",
+        description: String(chapter?.description || chapter?.descriptionText || "").trim(),
         wordCount: Number(chapter?.wordCount || 0),
         sections
       };
@@ -382,7 +382,7 @@ function normalizePlan(value: any, index = 0): Plan {
       id: String(part?.id || `part-${partNumber}`),
       number: partNumber,
       title: normalizeStructuralTitle(part?.title || part?.titre, "part", `Partie ${partNumber}`),
-      description: "",
+      description: String(part?.description || part?.descriptionText || "").trim(),
       chapters
     };
   });
@@ -403,8 +403,8 @@ function normalizePlan(value: any, index = 0): Plan {
   return {
     id: String(value?.id || `plan-${index + 1}`),
     title: String(value?.title || value?.titre || `Plan ${index + 1}`),
-    description: "",
-    approach: "",
+    description: String(value?.description || value?.descriptionText || "").trim(),
+    approach: String(value?.approach || value?.angle || "").trim(),
     totalWords: Number(value?.totalWords || 0),
     introductionGeneral: intro,
     parts,
