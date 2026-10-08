@@ -54,6 +54,9 @@ const formulaOptions = [
 
 type FormulaId = (typeof formulaOptions)[number]["id"];
 
+const domainOptions = ["Gestion","Management","Management stratégique","Management des ressources humaines","Finance","Comptabilité","Audit","Contrôle de gestion","Banque","Assurance","Économie","Marketing","Communication","Commerce","Entrepreneuriat","Gestion de projet","Logistique et supply chain","Achats","Management de la qualité","Management des organisations","Droit","Droit des affaires","Droit public","Sciences politiques","Relations internationales","Sociologie","Psychologie","Éducation et sciences de l’éducation","Sciences de l’information et de la communication","Informatique","Intelligence artificielle","Data science","Systèmes d’information","Génie industriel","Génie civil","Agronomie","Environnement","Santé","Sciences infirmières","Médecine","Pharmacie","Tourisme et hôtellerie","Transport","Immobilier","Développement durable","Sciences sociales","Sciences humaines","Autre"];
+
+
 const pricing = {
   individual: [
     { id: "LICENCE", title: "Mémoire Licence", pages: "10 à 45 pages", eur: "27 €", fcfa: "18 000 FCFA", badge: "Licence 3", details: "Génération complète du document académique." },
@@ -63,7 +66,7 @@ const pricing = {
 };
 
 const pricingInclusions = [
-  "3 problématiques + 3 plans après paiement",
+  "3 problématiques + jusqu’à 3 plans générés un par un après paiement",
   "Sources bibliographiques contrôlées (DOI ou URL vérifiée lorsque disponible)",
   "Export Word",
   "Contact pour les demandes de correction",
@@ -83,6 +86,7 @@ type ProjectData = {
   projectId: string;
   formula: FormulaId;
   sujet: string;
+  domaine: string;
   contexte: string;
   problematiquePersonnelle: string;
   planPersonnel: string;
@@ -424,6 +428,7 @@ export default function App() {
     projectId: createProjectId(),
     formula: "MASTER",
     sujet: "",
+    domaine: "",
     contexte: "",
     problematiquePersonnelle: "",
     planPersonnel: "",
@@ -458,6 +463,7 @@ export default function App() {
   const [ownerLoginError, setOwnerLoginError] = useState("");
   const [ownerBusy, setOwnerBusy] = useState(false);
   const [generationError, setGenerationError] = useState("");
+  const [planImprovementComments, setPlanImprovementComments] = useState<Record<string,string>>({});
   const filesHydrated = useRef(false);
 
   const totalDoneWords = useMemo(
@@ -672,7 +678,7 @@ export default function App() {
             setBlocks([]);
             setView("premium");
             window.localStorage.removeItem("trimemo_project_pending");
-            pushToast("success", "Paiement confirmé. Les trois problématiques sont disponibles. Sélectionnez-en une pour générer les trois plans.");
+            pushToast("success", "Paiement confirmé. Les trois problématiques sont disponibles. Sélectionnez-en une pour générer les plans un par un.");
           }
         }
       } catch (error) {
@@ -950,7 +956,7 @@ export default function App() {
     }
   }
 
-  async function generatePlansForProblematic(problematic: Problematic, ownerMode = false, projectOverride?: ProjectData) {
+  async function generatePlansForProblematic(problematic: Problematic, ownerMode = false, projectOverride?: ProjectData, options?: { action?: "new" | "alternative" | "improve"; currentPlan?: Plan; comments?: string }) {
     if (ownerMode && !ownerSessionValid) {
       pushToast("error", "Connectez-vous à l’espace administrateur.");
       return;
@@ -961,65 +967,73 @@ export default function App() {
     }
 
     const baseProject = projectOverride || project;
-    const requestProject: ProjectData = {
-      ...baseProject,
-      email: baseProject.email || (ownerMode ? "owner@trimemo.local" : baseProject.email),
-    };
+    const action = options?.action || "new";
+    const currentPlan = options?.currentPlan;
+    const comments = String(options?.comments || "").trim();
+    const existingPlans = premium?.plans || [];
+    if ((action === "new" || action === "alternative") && existingPlans.length >= 3) {
+      pushToast("info", "Vous avez atteint les trois plans disponibles. Améliorez ou validez l’un des plans existants.");
+      return;
+    }
+    if (action === "improve" && !currentPlan) {
+      pushToast("error", "Sélectionnez le plan à améliorer.");
+      return;
+    }
+    if (action === "improve" && !comments) {
+      pushToast("error", "Décrivez les modifications souhaitées avant de demander une amélioration.");
+      return;
+    }
 
+    const requestProject: ProjectData = { ...baseProject, email: baseProject.email || (ownerMode ? "owner@trimemo.local" : baseProject.email) };
     setSelectedProblematic(problematic);
     setGenerationError("");
     setLoading(true);
 
     try {
-      const response = await fetchWithTimeout(
-        PLANS_API,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            ...(ownerMode ? ownerAuthHeaders() : premiumAuthHeaders()),
-          },
-          body: JSON.stringify({
-            project: requestProject,
-            problematic,
-            count: 3,
-            ownerMode,
-          }),
+      const rejectedPlans = existingPlans.filter((item) => item.id !== currentPlan?.id).slice(0, 3);
+      const response = await fetchWithTimeout(PLANS_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(ownerMode ? ownerAuthHeaders() : premiumAuthHeaders()),
         },
-        295000,
-      );
+        body: JSON.stringify({
+          project: requestProject,
+          problematic,
+          count: 1,
+          ownerMode,
+          planAction: action,
+          currentPlan: currentPlan || null,
+          improvementComments: comments,
+          rejectedPlans,
+        }),
+      }, 180000);
 
       const data = await readApiResponse(response);
-      const rawList = data.plans || data.data?.plans || data.data || [];
+      const raw = data.plan || data.plans?.[0] || data.data?.plan || data.data?.plans?.[0];
+      if (!raw) throw new Error("Le serveur n’a pas retourné de plan académique.");
+      const generatedPlan = normalizePlan(raw, action === "improve" ? 0 : existingPlans.length);
 
-      if (!Array.isArray(rawList) || rawList.length < 3) {
-        throw new Error("Le serveur n’a pas retourné les trois plans académiques attendus.");
-      }
-
-      const generatedPlans = rawList
-        .slice(0, 3)
-        .map((item: any, index: number) => normalizePlan(item, index));
-
-      // Si le client a fourni son plan, le serveur le reprend fidèlement dans le plan n°1.
-      const plans = generatedPlans;
-
-      setPremium((current) =>
-        current
-          ? { ...current, problematics: current.problematics, plans }
-          : { problematics: [problematic], plans },
-      );
-      setPremiumNav("plan-0");
+      setPremium((current) => {
+        const base = current || { problematics: [problematic], plans: [] as Plan[] };
+        if (action === "improve" && currentPlan) {
+          return { ...base, plans: base.plans.map((item) => item.id === currentPlan.id ? generatedPlan : item) };
+        }
+        return { ...base, plans: [...base.plans, generatedPlan] };
+      });
+      setPremiumNav(action === "improve" ? "plan-0" : "plan-" + existingPlans.length);
       setPremiumSection("plan");
       setSelectedPlan(null);
       setBlocks([]);
-
-      pushToast(
-        "success",
-        "Les trois plans ont été construits à partir du sujet, de la problématique, des consignes et des documents fournis.",
-      );
+      if (action === "improve" && currentPlan) {
+        setPlanImprovementComments((current) => ({ ...current, [currentPlan.id]: "" }));
+        pushToast("success", "Le plan a été amélioré selon vos commentaires.");
+      } else {
+        pushToast("success", existingPlans.length === 0 ? "Le premier plan est prêt. Vous pouvez le valider, l’améliorer ou générer un autre plan." : `Plan ${existingPlans.length + 1} généré. Vous pouvez le valider, l’améliorer ou poursuivre.`);
+      }
     } catch (error) {
-      const message = error instanceof Error ? (error.message || "Impossible de générer les plans.") : stringifyApiError(error) || "Impossible de générer les plans.";
+      const message = error instanceof Error ? (error.message || "Impossible de générer le plan.") : stringifyApiError(error) || "Impossible de générer le plan.";
       setGenerationError(message);
       pushToast("error", message);
     } finally {
@@ -1797,37 +1811,23 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
-                      Niveau
-                    </label>
-                    <input
-                      value={project.niveau}
-                      onChange={(event) =>
-                        setProject((current) => ({
-                          ...current,
-                          niveau: event.target.value,
-                        }))
-                      }
-                      placeholder="Ex. Master 2"
-                      className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 px-4 font-inter text-sm"
-                    />
+                    <label className="font-inter text-xs font-semibold text-[#172554]/75">Niveau</label>
+                    <select value={project.niveau} onChange={(event) => setProject((current) => ({ ...current, niveau: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 bg-white px-4 font-inter text-sm">
+                      <option value="">Sélectionnez un niveau</option><option>Licence 1</option><option>Licence 2</option><option>Licence 3</option><option>Master 1</option><option>Master 2</option><option>Doctorat</option><option>Autre</option>
+                    </select>
                   </div>
-
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
-                      Type de document
-                    </label>
-                    <input
-                      value={project.typeDoc}
-                      onChange={(event) =>
-                        setProject((current) => ({
-                          ...current,
-                          typeDoc: event.target.value,
-                        }))
-                      }
-                      placeholder="Mémoire, thèse, rapport..."
-                      className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 px-4 font-inter text-sm"
-                    />
+                    <label className="font-inter text-xs font-semibold text-[#172554]/75">Domaine</label>
+                    <select value={project.domaine} onChange={(event) => setProject((current) => ({ ...current, domaine: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 bg-white px-4 font-inter text-sm">
+                      <option value="">Sélectionnez un domaine</option>
+                      {domainOptions.map((domain) => <option key={domain} value={domain}>{domain}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-inter text-xs font-semibold text-[#172554]/75">Type de document</label>
+                    <select value={project.typeDoc} onChange={(event) => setProject((current) => ({ ...current, typeDoc: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 bg-white px-4 font-inter text-sm">
+                      <option value="">Sélectionnez un type</option><option>Mémoire</option><option>Thèse</option><option>Rapport</option><option>Dissertation</option><option>Devoir</option><option>Article scientifique</option><option>Autre</option>
+                    </select>
                   </div>
 
                   <div>
@@ -2064,10 +2064,10 @@ export default function App() {
                       <button
                         type="button"
                         disabled={loading}
-                        onClick={() => void generatePlansForProblematic(item, true)}
+                        onClick={() => void generatePlansForProblematic(item, true, undefined, { action: "new" })}
                         className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {loading && selectedProblematic?.id === item.id ? "Génération des 3 plans..." : "Générer les 3 plans"}
+                        {loading && selectedProblematic?.id === item.id ? "Génération du plan..." : "Générer un plan"}
                       </button>
                     </article>
                   ) : (
@@ -2492,7 +2492,7 @@ export default function App() {
                   ["01", "Votre formule", "Vous choisissez la formule qui correspond à votre niveau ou à votre besoin."],
                   ["02", "Votre dossier", "Sujet, contexte, consignes et documents sont transmis au moteur de génération."],
                   ["03", "Aperçu gratuit", "Une problématique, un plan et une introduction incomplète de 320 mots."],
-                  ["04", "Accès complet", "Après paiement : trois problématiques, trois plans puis la rédaction séquentielle par blocs de longueur variable."],
+                  ["04", "Accès complet", "Après paiement : trois problématiques, des plans générés un par un puis la rédaction séquentielle par blocs de longueur variable."],
                 ].map(([n, title, text]) => (
                   <div key={n} className="rounded-[20px] border border-[#172554]/5 bg-white p-6">
                     <div className="font-inter text-[11px] tracking-[0.2em] text-[#D4A23A]">{n}</div>
@@ -2699,12 +2699,26 @@ export default function App() {
                       <div className="mt-2 rounded-[12px] bg-[#172554] px-4 py-3 font-inter text-sm text-white">{formulaOptions.find((item) => item.id === project.formula)?.title || "À sélectionner"}</div>
                     </div>
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Niveau</label>
-                      <input value={project.niveau} onChange={(e) => setProject({ ...project, niveau: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#172554]/10 px-4 font-inter text-sm" placeholder="Ex. Master 2" />
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Niveau *</label>
+                      <select value={project.niveau} onChange={(e) => setProject({ ...project, niveau: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#172554]/10 bg-white px-4 font-inter text-sm">
+                        <option value="">Sélectionnez un niveau</option>
+                        <option>Licence 1</option><option>Licence 2</option><option>Licence 3</option>
+                        <option>Master 1</option><option>Master 2</option><option>Doctorat</option><option>Autre</option>
+                      </select>
                     </div>
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Type de document</label>
-                      <input value={project.typeDoc} onChange={(e) => setProject({ ...project, typeDoc: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#172554]/10 px-4 font-inter text-sm" />
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Domaine *</label>
+                      <select value={project.domaine} onChange={(e) => setProject({ ...project, domaine: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#172554]/10 bg-white px-4 font-inter text-sm">
+                        <option value="">Sélectionnez un domaine</option>
+                        {domainOptions.map((domain) => <option key={domain} value={domain}>{domain}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Type de document *</label>
+                      <select value={project.typeDoc} onChange={(e) => setProject({ ...project, typeDoc: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#172554]/10 bg-white px-4 font-inter text-sm">
+                        <option value="">Sélectionnez un type</option>
+                        <option>Mémoire</option><option>Thèse</option><option>Rapport</option><option>Dissertation</option><option>Devoir</option><option>Article scientifique</option><option>Autre</option>
+                      </select>
                     </div>
                     <div>
                       <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Nombre de pages</label>
@@ -2899,18 +2913,29 @@ export default function App() {
                             </div>
                           ))}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const problematic = selectedProblematic || premium.problematics[0];
-                            if (!problematic) return;
-                            setSelectedProblematic(problematic);
-                            selectPremiumPlan(problematic, plan);
-                          }}
-                          className="mt-8 rounded-full bg-[#172554] px-6 py-3 font-inter text-xs font-semibold text-white"
-                        >
-                          Choisir ce plan et passer à la rédaction
-                        </button>
+                        <div className="mt-8 grid gap-3 rounded-2xl border border-[#172554]/10 bg-[#F7FAF8] p-5">
+                          <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#172554]/60">Validation du plan</div>
+                          <textarea
+                            value={planImprovementComments[plan.id] || ""}
+                            onChange={(event) => setPlanImprovementComments((current) => ({ ...current, [plan.id]: event.target.value }))}
+                            rows={4}
+                            placeholder="Décrivez précisément les modifications souhaitées pour améliorer ce plan."
+                            className="w-full rounded-xl border border-[#172554]/10 bg-white px-4 py-3 font-inter text-sm"
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554] disabled:opacity-50">Demander une amélioration</button>
+                            <button type="button" disabled={loading || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], true, undefined, { action: "alternative" })} className="rounded-full border border-[#1D78C1]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#1D78C1] disabled:opacity-50">Générer un autre plan</button>
+                            <button type="button" disabled={loading} onClick={() => {
+                              const problematic = selectedProblematic || premium.problematics[0];
+                              if (!problematic) return;
+                              setSelectedProblematic(problematic);
+                              selectPremiumPlan(problematic, plan);
+                              pushToast("success", "Plan retenu. La rédaction peut maintenant commencer.");
+                            }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
+                          </div>
+                          {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#2F6B45]">Plan retenu</div>}
+                          <div className="font-inter text-[11px] text-[#172554]/55">{premium.plans.length}/3 plan(s) généré(s)</div>
+                        </div>
                       </article>
                     ) : (
                       <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#172554]/65">
