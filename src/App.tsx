@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "https://trimemo-api.vercel.app").replace(/\/$/, "");
+const API_BASE_URL = (import.meta.env.PROD ? "" : String(import.meta.env.VITE_API_BASE_URL || "https://trimemo-api.vercel.app")).replace(/\/$/, "");
 const API_URL = `${API_BASE_URL}/api/academic`;
 const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
 const PLANS_API = `${API_BASE_URL}/api/generate-plans`;
@@ -759,7 +759,7 @@ export default function App() {
         throw new Error("La génération a dépassé le délai prévu. L’API Trimémo n’a pas répondu à temps.");
       }
       if (error instanceof TypeError && /fetch/i.test(error.message || "")) {
-        throw new Error("Impossible de joindre l’API Trimémo. Vérifiez la connexion entre le frontend et trimemo-api.");
+        throw new Error("Impossible de joindre l’API Trimémo. La requête a échoué avant réception d’une réponse serveur. Vérifiez le proxy /api de Vercel.");
       }
       throw error;
     } finally {
