@@ -1126,7 +1126,7 @@ export default function App() {
     const internalLabel = (chapter: PlanChapter, section: PlanSection, subsection: PlanSubsection, internal: PlanInternalTitle) =>
       `${chapter.number}.${section.number}.${subsection.number}.${internal.number} : ${internal.title}`;
 
-    const introductionWords = Math.min(1500, Math.max(300, Math.round(Number(plan.introductionGeneral.wordCount || 900))));
+    const introductionWords = Math.min(1500, Math.max(100, Math.round(Number(plan.introductionGeneral.wordCount || 900))));
     const introductionBlock: Block = {
       id: `${plan.id}-introduction-generale`,
       title: plan.introductionGeneral.title || "Introduction générale",
@@ -1172,7 +1172,7 @@ export default function App() {
           return [{
             id: `${chapter.id}-bloc-1`,
             title: chapter.title,
-            expectedWords: Math.max(600, Math.round(Number(chapter.wordCount || 900))),
+            expectedWords: Math.max(100, Math.round(Number(chapter.wordCount || 900))),
             content: "",
             wordCount: 0,
             status: "pending" as const,
@@ -1226,7 +1226,7 @@ export default function App() {
           return {
             id: `${chapter.id}-bloc-${groupIndex + 1}`,
             title,
-            expectedWords: Math.max(300, groupWords || 900),
+            expectedWords: Math.max(100, groupWords || 900),
             content: "",
             wordCount: 0,
             status: "pending" as const,
