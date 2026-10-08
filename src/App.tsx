@@ -756,7 +756,10 @@ export default function App() {
       return await fetch(input, { ...init, signal: controller.signal });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        throw new Error("La génération a dépassé le délai prévu. Vérifiez le déploiement de l’API et réessayez.");
+        throw new Error("La génération a dépassé le délai prévu. L’API Trimémo n’a pas répondu à temps.");
+      }
+      if (error instanceof TypeError && /fetch/i.test(error.message || "")) {
+        throw new Error("Impossible de joindre l’API Trimémo. Vérifiez la connexion entre le frontend et trimemo-api.");
       }
       throw error;
     } finally {
