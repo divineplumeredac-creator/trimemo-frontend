@@ -470,6 +470,23 @@ export default function App() {
   const progress = targetWords ? Math.min(100, Math.round((totalDoneWords / targetWords) * 100)) : 0;
 
   useEffect(() => {
+    if (!ownerRoute) return;
+    try {
+      const token = window.sessionStorage.getItem("trimemo_owner_session");
+      const lastActivity = Number(window.sessionStorage.getItem("trimemo_owner_last_activity") || 0);
+      const maxAge = 24 * 60 * 60 * 1000;
+      if (token && lastActivity && Date.now() - lastActivity < maxAge) {
+        setOwnerSessionValid(true);
+      } else {
+        window.sessionStorage.removeItem("trimemo_owner_session");
+        window.sessionStorage.removeItem("trimemo_owner_last_activity");
+      }
+    } catch {
+      setOwnerSessionValid(false);
+    }
+  }, [ownerRoute]);
+
+  useEffect(() => {
     try {
       const raw = window.localStorage.getItem(stateStorageKey);
       if (!raw) return;
@@ -873,12 +890,13 @@ export default function App() {
 
     setLoading(true);
     try {
-      const response = await fetch(PROBLEMATICS_API, {
+      const response = await fetchWithTimeout(PROBLEMATICS_API, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json", ...ownerAuthHeaders() },
         body: JSON.stringify({ project: ownerProject, count: 3, ownerMode: true }),
-      });
+      }, 180000);
       const data = await readApiResponse(response);
+      window.sessionStorage.setItem("trimemo_owner_last_activity", String(Date.now()));
       const rawList = data.problematiques || data.problematics || data.data || [];
       if (!Array.isArray(rawList) || rawList.length === 0) {
         throw new Error("Aucune problématique n’a été générée.");
