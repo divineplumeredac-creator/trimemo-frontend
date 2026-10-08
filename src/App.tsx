@@ -1013,7 +1013,7 @@ export default function App() {
       const data = await readApiResponse(response);
       const raw = data.plan || data.plans?.[0] || data.data?.plan || data.data?.plans?.[0];
       if (!raw) throw new Error("Le serveur n’a pas retourné de plan académique.");
-      const generatedPlan = normalizePlan(raw, action === "improve" ? 0 : existingPlans.length);
+      const generatedPlan = normalizePlan(raw, action === "improve" ? existingPlans.findIndex((item) => item.id === currentPlan?.id) : existingPlans.length);
 
       setPremium((current) => {
         const base = current || { problematics: [problematic], plans: [] as Plan[] };
@@ -1022,7 +1022,7 @@ export default function App() {
         }
         return { ...base, plans: [...base.plans, generatedPlan] };
       });
-      setPremiumNav(action === "improve" ? "plan-0" : "plan-" + existingPlans.length);
+      setPremiumNav(action === "improve" ? "plan-" + Math.max(0, existingPlans.findIndex((item) => item.id === currentPlan?.id)) : "plan-" + existingPlans.length);
       setPremiumSection("plan");
       setSelectedPlan(null);
       setBlocks([]);
