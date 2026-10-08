@@ -2015,6 +2015,16 @@ export default function App() {
                       : "Rédaction"}
                 </h1>
 
+                {generationError && (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 font-inter text-sm leading-6 text-red-700"
+                  >
+                    <strong>Erreur de génération :</strong> {generationError}
+                  </div>
+                )}
+
                 {premiumSection === "problematic" && (() => {
                   const index = Number(premiumNav.replace("problematic-", "") || 0);
                   const item = premium.problematics[index] || premium.problematics[0];
