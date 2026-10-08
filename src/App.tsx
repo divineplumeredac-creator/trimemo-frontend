@@ -702,11 +702,11 @@ export default function App() {
       pushToast("info", "Choisissez d’abord la formule correspondant à votre niveau ou à votre besoin.");
       return;
     }
-    if (!Number.isFinite(project.pages) || project.pages < 1) {
-      pushToast("error", "Indiquez le nombre de pages souhaité avant de continuer.");
-      return;
-    }
-    setProject((current) => ({ ...current, formula, pages: Math.min(current.pages, maxPagesForFormula(formula)) }));
+    setProject((current) => ({
+      ...current,
+      formula,
+      pages: current.pages > 0 ? Math.min(current.pages, maxPagesForFormula(formula)) : 0,
+    }));
     setView("project");
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
   }
@@ -2539,14 +2539,26 @@ export default function App() {
 
               <div className="mt-10 grid gap-5 lg:grid-cols-3">
                 {pricing.individual.map((item) => (
-                  <button
+                  <div
                     key={item.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       setFormula(item.id as FormulaId);
                       setProject((current) => ({
                         ...current,
                         formula: item.id as FormulaId,
                       }));
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setFormula(item.id as FormulaId);
+                        setProject((current) => ({
+                          ...current,
+                          formula: item.id as FormulaId,
+                        }));
+                      }
                     }}
                     className={`rounded-[24px] border p-7 text-left transition ${
                       formula === item.id
@@ -2590,10 +2602,24 @@ export default function App() {
                       {item.details}
                     </div>
 
-                    <div className="mt-5 font-inter text-xs font-semibold">
-                      Sélectionner cette formule →
+                    <div className="mt-5 flex items-center justify-between gap-3">
+                      <span className="font-inter text-xs font-semibold">
+                        {formula === item.id ? "Formule sélectionnée" : "Sélectionner cette formule →"}
+                      </span>
+                      {formula === item.id && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            goToProject();
+                          }}
+                          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#D4A23A] px-5 font-inter text-xs font-semibold text-[#172554] transition hover:brightness-95"
+                        >
+                          Commencer <ArrowRight className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
 
