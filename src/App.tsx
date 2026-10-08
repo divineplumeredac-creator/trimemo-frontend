@@ -435,7 +435,7 @@ export default function App() {
     consignes: "",
     niveau: "",
     typeDoc: "Mémoire",
-    pages: 30,
+    pages: 0,
     email: "",
     files: [],
   });
@@ -702,7 +702,11 @@ export default function App() {
       pushToast("info", "Choisissez d’abord la formule correspondant à votre niveau ou à votre besoin.");
       return;
     }
-    setProject((current) => ({ ...current, formula, pages: Math.min(current.pages || 30, maxPagesForFormula(formula)) }));
+    if (!Number.isFinite(project.pages) || project.pages < 1) {
+      pushToast("error", "Indiquez le nombre de pages souhaité avant de continuer.");
+      return;
+    }
+    setProject((current) => ({ ...current, formula, pages: Math.min(current.pages, maxPagesForFormula(formula)) }));
     setView("project");
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
   }
@@ -717,7 +721,7 @@ export default function App() {
     ];
     const files: FileInput[] = [];
     for (const file of Array.from(fileList)) {
-      if (!allowed.includes(file.type) && !/\.(pdf|docx|txt|md)$/i.test(file.name)) {
+      if (!allowed.includes(file.type) && !/\.(pdf|docx|txt|md|jpe?g|png|webp|gif|bmp|tiff?)$/i.test(file.name)) {
         pushToast("error", `${file.name} n’est pas un format accepté.`);
         continue;
       }
@@ -864,7 +868,7 @@ export default function App() {
       formula: formulaId,
       email: project.email || "owner@trimemo.local",
       sujet: project.sujet || "Sujet de test académique à préciser",
-      pages: project.pages || 30,
+      pages: project.pages,
     };
     setProject(ownerProject);
     setFormula(formulaId);
@@ -1943,7 +1947,7 @@ export default function App() {
                     <input
                       type="file"
                       multiple
-                      accept=".pdf,.docx,.txt,.md"
+                      accept=".pdf,.docx,.txt,.md,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff"
                       onChange={(event) => {
                         void handleFiles(event.target.files);
                         event.currentTarget.value = "";
@@ -2675,7 +2679,7 @@ export default function App() {
                         </label>
                       </div>
                       <div className="mt-3 rounded-[16px] border border-dashed border-[#172554]/15 bg-[#FFFFFF] p-5">
-                        <div className="font-inter text-xs text-[#172554]/70">PDF, DOCX, TXT ou Markdown. Les documents transmis sont envoyés au moteur OpenAI avec votre demande.</div>
+                        <div className="font-inter text-xs text-[#172554]/70">PDF, DOCX, TXT, Markdown, JPG ou PNG. Les documents et images transmis sont analysés par le moteur OpenAI avec votre demande.</div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {project.files.map((file, index) => (
                             <span key={`${file.name}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-[#172554]/10 bg-white px-3 py-1.5 font-inter text-[11px]">
@@ -2733,7 +2737,10 @@ export default function App() {
                     </div>
                     <div>
                       <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Nombre de pages</label>
-                      <input type="number" min={1} max={maxPagesForFormula(project.formula)} value={project.pages} onChange={(e) => setProject({ ...project, pages: Math.max(1, Math.min(maxPagesForFormula(project.formula), Number(e.target.value) || 1)) })} className="mt-2 h-11 w-full rounded-[12px] border border-[#172554]/10 px-4 font-inter text-sm" />
+                      <input type="number" min={1} max={maxPagesForFormula(project.formula)} value={project.pages || ""} onChange={(e) => {
+                        const raw = e.target.value;
+                        setProject({ ...project, pages: raw === "" ? 0 : Math.min(maxPagesForFormula(project.formula), Number(raw)) });
+                      }} className="mt-2 h-11 w-full rounded-[12px] border border-[#172554]/10 px-4 font-inter text-sm" />
                       <div className="mt-2 font-inter text-[11px] text-[#172554]/75">Objectif de rédaction : {targetWords.toLocaleString("fr-FR")} mots</div>
                     </div>
                     <div>
