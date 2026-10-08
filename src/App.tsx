@@ -2064,7 +2064,7 @@ export default function App() {
                       <button
                         type="button"
                         disabled={loading}
-                        onClick={() => void generatePlansForProblematic(item, true, undefined, { action: "new" })}
+                        onClick={() => void generatePlansForProblematic(item, ownerRoute === true, undefined, { action: "new" })}
                         className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {loading && selectedProblematic?.id === item.id ? "Génération du plan..." : "Générer un plan"}
@@ -2113,18 +2113,29 @@ export default function App() {
                           </div>
                         ))}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const problematic = selectedProblematic || premium.problematics[0];
-                          if (!problematic) return;
-                          setSelectedProblematic(problematic);
-                          selectPremiumPlan(problematic, plan);
-                        }}
-                        className="mt-8 rounded-full bg-[#172554] px-6 py-3 font-inter text-xs font-semibold text-white"
-                      >
-                        Choisir ce plan et passer à la rédaction
-                      </button>
+                      <div className="mt-8 grid gap-3 rounded-2xl border border-[#172554]/10 bg-[#F7FAF8] p-5">
+                        <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#172554]/60">Validation du plan</div>
+                        <textarea
+                          value={planImprovementComments[plan.id] || ""}
+                          onChange={(event) => setPlanImprovementComments((current) => ({ ...current, [plan.id]: event.target.value }))}
+                          rows={4}
+                          placeholder="Décrivez précisément les modifications souhaitées pour améliorer ce plan."
+                          className="w-full rounded-xl border border-[#172554]/10 bg-white px-4 py-3 font-inter text-sm"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554] disabled:opacity-50">Demander une amélioration</button>
+                          <button type="button" disabled={loading || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#1D78C1]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#1D78C1] disabled:opacity-50">Générer un autre plan</button>
+                          <button type="button" disabled={loading} onClick={() => {
+                            const problematic = selectedProblematic || premium.problematics[0];
+                            if (!problematic) return;
+                            setSelectedProblematic(problematic);
+                            selectPremiumPlan(problematic, plan);
+                            pushToast("success", "Plan retenu. La rédaction peut maintenant commencer.");
+                          }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
+                        </div>
+                        {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#2F6B45]">Plan retenu</div>}
+                        <div className="font-inter text-[11px] text-[#172554]/55">{premium.plans.length}/3 plan(s) généré(s)</div>
+                      </div>
                     </article>
                   ) : (
                     <div className="font-inter text-sm text-[#172554]/65">Aucun plan disponible.</div>
@@ -2869,7 +2880,7 @@ export default function App() {
                           onClick={() => void generatePlansForProblematic(item, ownerSessionValid)}
                           className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {loading && selectedProblematic?.id === item.id ? "Génération des 3 plans..." : "Générer les 3 plans"}
+                          {loading && selectedProblematic?.id === item.id ? "Génération du plan..." : "Générer un plan"}
                         </button>
                       </article>
                     ) : null;
@@ -2939,7 +2950,7 @@ export default function App() {
                       </article>
                     ) : (
                       <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#172554]/65">
-                        Aucun plan n'est encore disponible. Sélectionnez une problématique et générez les 3 plans.
+                        Aucun plan n’est encore disponible. Sélectionnez une problématique et générez un plan.
                       </div>
                     );
                   })()}
