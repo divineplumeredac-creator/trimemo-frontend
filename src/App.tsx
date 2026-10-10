@@ -21,6 +21,7 @@ const API_URL = `${API_BASE_URL}/api/academic`;
 const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
 const PLANS_API = `${API_BASE_URL}/api/generate-plans`;
 const FREE_PREVIEW_API = `${API_BASE_URL}/api/generate-free-preview`;
+const ESTIMATE_API = `${API_BASE_URL}/api/estimate-project`;
 const BLOCK_API = `${API_BASE_URL}/api/generate-block`;
 const WORDS_PER_PAGE = 320;
 const LOGO_SRC = "/trimemo-logo.webp";
@@ -59,9 +60,9 @@ const domainOptions = ["Gestion","Management","Management stratégique","Managem
 
 const pricing = {
   individual: [
-    { id: "LICENCE", title: "Mémoire Licence", pages: "10 à 45 pages", eur: "27 €", fcfa: "18 000 FCFA", badge: "Licence 3", details: "Génération complète du document académique." },
-    { id: "MASTER", title: "Mémoire Master", pages: "10 à 80 pages", eur: "38 €", fcfa: "25 000 FCFA", badge: "Le plus choisi", details: "Génération complète du document académique." },
-    { id: "DOCTORAT", title: "Thèse", pages: "10 à 100 pages", eur: "76 €", fcfa: "50 000 FCFA", badge: "Doctorat", details: "Génération complète du document académique." },
+    { id: "LICENCE", title: "Mémoire Licence", pages: "10 à 45 pages", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Licence 3", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
+    { id: "MASTER", title: "Mémoire Master", pages: "10 à 80 pages", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Le plus choisi", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
+    { id: "DOCTORAT", title: "Thèse", pages: "10 à 100 pages", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Doctorat", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
   ],
 };
 
@@ -96,6 +97,8 @@ type ProjectData = {
   pages: number;
   email: string;
   files: FileInput[];
+  country?: string;
+  pricingQuoteToken?: string;
 };
 
 type Problematic = {
@@ -173,6 +176,15 @@ type Preview = {
     wordCount: number;
     incomplete: boolean;
   };
+  chapterOne: { title: string; content: string; wordCount: number; partTitle?: string; chapterNumber?: number; sectionTitles?: string[] };
+};
+
+type ProjectEstimate = {
+  country: string; market: string; marketLabel: string; currency: string;
+  documentType: string; level: string; complexity: string; pages: number; wordsPerPage: number;
+  baseRate: number; levelCoefficient: number; complexityCoefficient: number; estimatedAmount: number;
+  formattedAmount: string; checkoutCurrency: string; checkoutAmount: string; reasons: string[];
+  detectedRequirements: string[]; countryDetected: boolean; pricingQuoteToken: string; status: string;
 };
 
 type Block = {
@@ -220,14 +232,20 @@ function createProjectId() {
   }
 }
 
-function maxPagesForFormula(formula: FormulaId) {
-  if (formula === "LICENCE") return 45;
-  if (formula === "DOCTORAT") return 100;
-  if (formula === "MASTER") return 80;
-  return 80;
+function maxPagesForFormula(_formula: FormulaId) {
+  return 300;
 }
 
 // Le projet « en attente de paiement » est conservé SANS les fichiers (base64) : ils feraient dépasser le quota du navigateur.
+function savePendingPreview(preview: Preview): boolean {
+  try {
+    window.localStorage.setItem("trimemo_preview_pending", JSON.stringify(preview));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function savePendingProject(project: ProjectData): boolean {
   const metadata = { ...project, files: [] };
   try {
@@ -440,12 +458,13 @@ export default function App() {
     files: [],
   });
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [estimate, setEstimate] = useState<ProjectEstimate | null>(null);
   const [premium, setPremium] = useState<PremiumOptions | null>(null);
   const [selectedProblematic, setSelectedProblematic] = useState<Problematic | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [view, setView] = useState<"home" | "project" | "preview" | "premium" | "writing">("home");
-  const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction">("problematic");
+  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing">("home");
+  const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
   const [selectedWritingBlockId, setSelectedWritingBlockId] = useState<string | null>(null);
@@ -503,6 +522,7 @@ export default function App() {
       }
       if (saved?.formula) setFormula(saved.formula);
       if (saved?.preview) setPreview(saved.preview);
+      if (saved?.estimate) setEstimate(saved.estimate);
       if (saved?.premium) setPremium(saved.premium);
       if (saved?.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
       if (saved?.selectedPlan) setSelectedPlan(saved.selectedPlan);
@@ -541,6 +561,7 @@ export default function App() {
         project: { ...project, files: [] },
         formula,
         preview,
+        estimate,
         premium,
         selectedProblematic,
         selectedPlan,
@@ -552,7 +573,7 @@ export default function App() {
         selectedWritingBlockId,
       }));
     } catch {}
-  }, [ownerRoute, ownerSessionValid, stateStorageKey, project, formula, preview, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId]);
+  }, [ownerRoute, ownerSessionValid, stateStorageKey, project, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId]);
 
   useEffect(() => {
     if (!ownerRoute) return;
@@ -1057,13 +1078,57 @@ export default function App() {
     pushToast("success", "Paiement simulé. Aucune transaction réelle n’a été exécutée.");
   }
 
+  async function analyzeProject() {
+    if (!project.sujet.trim()) {
+      pushToast("error", "Le sujet est obligatoire.");
+      return;
+    }
+    if (!project.niveau.trim() || !project.typeDoc.trim() || !project.domaine.trim()) {
+      pushToast("error", "Renseignez le niveau académique, le domaine et le type de document avant l'analyse.");
+      return;
+    }
+    if (!Number.isInteger(project.pages) || project.pages < 1 || project.pages > 300) {
+      pushToast("error", "Indiquez un volume compris entre 1 et 300 pages.");
+      return;
+    }
+    setGenerationError("");
+    setEstimate(null);
+    setLoading(true);
+    try {
+      const response = await fetchWithTimeout(ESTIMATE_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ project }),
+      }, 90000);
+      const data = await readApiResponse(response);
+      if (!data?.estimate?.pricingQuoteToken) throw new Error("L'estimation du projet n'a pas été signée par le serveur.");
+      setEstimate(data.estimate as ProjectEstimate);
+      setProject((current) => ({
+        ...current,
+        country: String(data.estimate.country || ""),
+        pricingQuoteToken: String(data.estimate.pricingQuoteToken),
+      }));
+      setView("estimate");
+      window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible d'analyser le projet.";
+      setGenerationError(message);
+      pushToast("error", message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function generateFreePreview() {
     if (!project.sujet.trim()) {
       pushToast("error", "Le sujet est obligatoire.");
       return;
     }
-    // Le sujet est la seule donnée obligatoire pour l’aperçu gratuit.
-    // Le niveau, la discipline, les consignes, le contexte et l’e-mail sont facultatifs.
+    if (!estimate || !project.pricingQuoteToken) {
+      pushToast("error", "Analysez d'abord le projet pour obtenir une estimation du coût.");
+      setView("project");
+      return;
+    }
     setGenerationError("");
     setPreview(null);
     setLoading(true);
@@ -1087,12 +1152,15 @@ export default function App() {
       if (!introductionRaw?.content) {
         throw new Error("L’aperçu de l’introduction n’a pas été retourné par le serveur.");
       }
+      if (!data?.chapterOne?.content) {
+        throw new Error("Le premier chapitre de validation n’a pas été retourné par le serveur.");
+      }
 
       const problematic = normalizeProblematic(problematicRaw, 0);
       const plan = normalizePlan(planRaw, 0);
       const introductionContent = String(introductionRaw.content).trim();
 
-      setPreview({
+      const generatedPreview: Preview = {
         problematic,
         plan,
         introduction: {
@@ -1101,8 +1169,18 @@ export default function App() {
           wordCount: Math.min(320, countWords(introductionContent)),
           incomplete: true,
         },
-      });
-      savePendingProject(project);
+        chapterOne: {
+          title: String(data.chapterOne.title || plan.parts[0]?.chapters[0]?.title || "Chapitre 1"),
+          content: String(data.chapterOne.content || "").trim(),
+          wordCount: Number(data.chapterOne.wordCount || countWords(String(data.chapterOne.content || ""))),
+          partTitle: String(data.chapterOne.partTitle || plan.parts[0]?.title || ""),
+          chapterNumber: Number(data.chapterOne.chapterNumber || 1),
+          sectionTitles: Array.isArray(data.chapterOne.sectionTitles) ? data.chapterOne.sectionTitles : [],
+        },
+      };
+      setPreview(generatedPreview);
+      savePendingProject({ ...project, pricingQuoteToken: project.pricingQuoteToken || estimate.pricingQuoteToken });
+      savePendingPreview(generatedPreview);
       setPreviewTab("problematic");
       setView("preview");
     } catch (error) {
@@ -1115,6 +1193,11 @@ export default function App() {
   }
 
   async function startPayment(method: "paypal" | "mobile-money") {
+    if (!estimate || !project.pricingQuoteToken) {
+      pushToast("error", "Relancez l'analyse du projet avant le paiement.");
+      setView("project");
+      return;
+    }
     if (project.formula === "AUTRE") {
       pushToast("info", "La formule « Autre besoin » nécessite un devis personnalisé. Contactez-nous pour cette demande.");
       return;
@@ -2661,7 +2744,7 @@ export default function App() {
                 )}
                 <div>
                 <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Projet académique</div>
-                <h2 className="mt-2 font-playfair text-3xl">{view === "project" ? "Définissez votre demande" : view === "preview" ? "Votre aperçu gratuit" : view === "premium" ? "Vos options premium" : "Rédaction complète"}</h2>
+                <h2 className="mt-2 font-playfair text-3xl">{view === "project" ? "Définissez votre demande" : view === "estimate" ? "Analyse du projet · Estimation du coût" : view === "preview" ? "Votre aperçu avant paiement" : view === "premium" ? "Vos options premium" : "Rédaction complète"}</h2>
               </div>
               <div className="font-inter text-xs text-[#172554]/75">1 page = {WORDS_PER_PAGE} mots</div>
             </div>
@@ -2777,9 +2860,9 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => void generateFreePreview()} disabled={loading} className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1D78C1] font-inter text-sm font-medium text-white disabled:opacity-50">
+                  <button onClick={() => void analyzeProject()} disabled={loading} className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1D78C1] font-inter text-sm font-medium text-white disabled:opacity-50">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#D4A23A]" />}
-                    Générer mon aperçu gratuit
+                    Analyser le projet et estimer le coût
                   </button>
                 </aside>
               </div>
