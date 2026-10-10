@@ -60,9 +60,9 @@ const domainOptions = ["Gestion","Management","Management stratégique","Managem
 
 const pricing = {
   individual: [
-    { id: "LICENCE", title: "Mémoire Licence", pages: "10 à 45 pages", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Licence 3", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
-    { id: "MASTER", title: "Mémoire Master", pages: "10 à 80 pages", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Le plus choisi", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
-    { id: "DOCTORAT", title: "Thèse", pages: "10 à 100 pages", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Doctorat", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
+    { id: "LICENCE", title: "Mémoire Licence", pages: "Volume au choix", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Licence 3", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
+    { id: "MASTER", title: "Mémoire Master", pages: "Volume au choix", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Le plus choisi", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
+    { id: "DOCTORAT", title: "Thèse", pages: "Volume au choix", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Doctorat", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
   ],
 };
 
@@ -770,10 +770,12 @@ export default function App() {
       pushToast("info", "Choisissez d’abord la formule correspondant à votre niveau ou à votre besoin.");
       return;
     }
+    setEstimate(null);
     setProject((current) => ({
       ...current,
       formula,
       pages: current.pages > 0 ? Math.min(current.pages, maxPagesForFormula(formula)) : 0,
+      pricingQuoteToken: undefined,
     }));
     setView("project");
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
@@ -1191,10 +1193,10 @@ export default function App() {
       const planRaw = data?.plan;
       const introductionRaw = data?.introduction;
       if (!problematicRaw?.question) {
-        throw new Error("La problématique gratuite n’a pas été retournée par le serveur.");
+        throw new Error("La problématique proposée n’a pas été retournée par le serveur.");
       }
       if (!planRaw?.parts?.length) {
-        throw new Error("Le plan gratuit n’a pas été retourné par le serveur.");
+        throw new Error("Le plan proposé n’a pas été retourné par le serveur.");
       }
       if (!introductionRaw?.content) {
         throw new Error("L’aperçu de l’introduction n’a pas été retourné par le serveur.");
@@ -1231,7 +1233,7 @@ export default function App() {
       setPreviewTab("problematic");
       setView("preview");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Impossible de générer l’aperçu gratuit.";
+      const message = error instanceof Error ? error.message : "Impossible de préparer l’aperçu avant paiement.";
       setGenerationError(message);
       pushToast("error", message);
     } finally {
@@ -2661,7 +2663,7 @@ export default function App() {
                   Créer mon projet <ArrowRight className="h-4 w-4 text-[#D4A23A]" />
                 </button>
               </div>
-              <div className="mt-7 font-inter text-xs text-[#172554]/75">1 page = {WORDS_PER_PAGE} mots · Aperçu gratuit · Paiement avant génération complète</div>
+              <div className="mt-7 font-inter text-xs text-[#172554]/75">1 page = {WORDS_PER_PAGE} mots · Aperçu avant paiement · Coût calculé dès l’analyse</div>
             </div>
           </section>
 
@@ -2675,7 +2677,7 @@ export default function App() {
                 {[
                   ["01", "Votre formule", "Vous choisissez la formule qui correspond à votre niveau ou à votre besoin."],
                   ["02", "Votre dossier", "Sujet, contexte, consignes et documents sont transmis au moteur de génération."],
-                  ["03", "Aperçu gratuit", "Une problématique, un plan et une introduction incomplète de 320 mots."],
+                  ["03", "Aperçu avant paiement", "Une problématique, un plan, un extrait de l’introduction et le premier chapitre pour évaluer la qualité."],
                   ["04", "Accès complet", "Après paiement : trois problématiques, des plans générés un par un puis la rédaction séquentielle par blocs de longueur variable."],
                 ].map(([n, title, text]) => (
                   <div key={n} className="rounded-[20px] border border-[#172554]/5 bg-white p-6">
