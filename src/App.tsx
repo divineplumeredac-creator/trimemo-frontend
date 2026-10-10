@@ -2915,13 +2915,14 @@ export default function App() {
                     <button onClick={() => setPreviewTab("problematic")} className={`w-full rounded-[14px] px-4 py-4 text-left font-inter text-sm font-semibold transition ${previewTab === "problematic" ? "bg-[#172554] text-white" : "bg-[#EAF7EE] text-[#172554] hover:bg-[#DDEFE3]"}`}>Problématique</button>
                     <button onClick={() => setPreviewTab("plan")} className={`w-full rounded-[14px] px-4 py-4 text-left font-inter text-sm font-semibold transition ${previewTab === "plan" ? "bg-[#172554] text-white" : "bg-[#EAF7EE] text-[#172554] hover:bg-[#DDEFE3]"}`}>Plan</button>
                     <button onClick={() => setPreviewTab("introduction")} className={`w-full rounded-[14px] px-4 py-4 text-left font-inter text-sm font-semibold transition ${previewTab === "introduction" ? "bg-[#172554] text-white" : "bg-[#EAF7EE] text-[#172554] hover:bg-[#DDEFE3]"}`}>Introduction</button>
+                    <button onClick={() => setPreviewTab("chapter")} className={`w-full rounded-[14px] px-4 py-4 text-left font-inter text-sm font-semibold transition ${previewTab === "chapter" ? "bg-[#172554] text-white" : "bg-[#EAF7EE] text-[#172554] hover:bg-[#DDEFE3]"}`}>Chapitre 1</button>
                   </div>
                   <div className="mt-5 rounded-[14px] bg-[#FFF8E7] p-4 font-inter text-xs leading-[1.6] text-[#6B4B08]">Sélectionnez une rubrique pour consulter son contenu.</div>
                 </aside>
                 <section className="min-w-0 rounded-[24px] border border-[#172554]/10 bg-white p-6 sm:p-8 lg:p-10">
                   {previewTab === "problematic" && (
                     <div>
-                      <div className="flex items-center justify-between gap-4"><div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Problématique gratuite</div><Search className="h-5 w-5 text-[#172554]/45" /></div>
+                      <div className="flex items-center justify-between gap-4"><div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Problématique proposée avant paiement</div><Search className="h-5 w-5 text-[#172554]/45" /></div>
                       <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.problematic.title}</h3>
                       <p className="mt-6 font-inter text-base leading-[1.9] text-[#172554]/80">{preview.problematic.question || "La problématique n’a pas été retournée par le service."}</p>
                       {preview.problematic.angle && <p className="mt-6 font-inter text-sm leading-[1.8] text-[#172554]/80"><strong>Angle :</strong> {preview.problematic.angle}</p>}
@@ -2930,7 +2931,7 @@ export default function App() {
                   )}
                   {previewTab === "plan" && (
                     <div>
-                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Plan gratuit</div>
+                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Plan proposé avant paiement</div>
                       <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.plan.title}</h3>
                       <div className="mt-7 font-inter text-[#172554]">
                         <div className="border-b border-[#172554]/10 pb-4 text-base font-semibold">Introduction générale <span className="text-xs font-normal text-[#172554]/60">≈ {Number(preview.plan.introductionGeneral?.wordCount || Math.round(project.pages * WORDS_PER_PAGE * 0.1)).toLocaleString("fr-FR")} mots (10 % du volume)</span></div>
@@ -2953,8 +2954,16 @@ export default function App() {
                           </div>)}
                         </div>
                         <div className="mt-6 border-t border-[#172554]/10 pt-4 text-base font-semibold">Conclusion générale</div>
-                        <div className="mt-4 rounded-xl bg-[#FFF8E7] p-3 text-xs leading-[1.7] text-[#6B4B08]">Aperçu gratuit : le plan présente la structure du mémoire. Les 320 mots affichés dans l’onglet Introduction constituent seulement un extrait de l’introduction générale.</div>
+                        <div className="mt-4 rounded-xl bg-[#FFF8E7] p-3 text-xs leading-[1.7] text-[#6B4B08]">Le plan présente la structure du mémoire. L’onglet Introduction montre un extrait ; le chapitre 1 permet d’évaluer la qualité de rédaction avant paiement.</div>
                       </div>
+                    </div>
+                  )}
+                  {previewTab === "chapter" && (
+                    <div>
+                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Premier chapitre · aperçu de validation</div>
+                      <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.chapterOne.title}</h3>
+                      <div className="mt-3 font-inter text-xs text-[#172554]/55">{preview.chapterOne.partTitle ? "PARTIE I · " + preview.chapterOne.partTitle + " · " : ""}{preview.chapterOne.wordCount.toLocaleString("fr-FR")} mots environ</div>
+                      <div className="mt-6 whitespace-pre-wrap font-inter text-base leading-[1.95] text-[#172554]/80">{preview.chapterOne.content}</div>
                     </div>
                   )}
                   {previewTab === "introduction" && (
@@ -2962,7 +2971,7 @@ export default function App() {
                       <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Extrait de l’introduction générale · 320 mots</div>
                       <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.introduction.title}</h3>
                       <p className="mt-6 whitespace-pre-wrap font-inter text-base leading-[1.95] text-[#172554]/80">{preview.introduction.content}</p>
-                      <div className="mt-6 rounded-[14px] bg-[#FFF8E7] p-4 font-inter text-sm leading-[1.7] text-[#6B4B08]"><strong>Extrait gratuit :</strong> 320 mots maximum affichés sur une introduction générale complète prévu.</div>
+                      <div className="mt-6 rounded-[14px] bg-[#FFF8E7] p-4 font-inter text-sm leading-[1.7] text-[#6B4B08]"><strong>Extrait de validation :</strong> 320 mots de l’introduction générale. Le volume complet est produit dans la suite du projet.</div>
                     </div>
                   )}
                 </section>
@@ -2974,11 +2983,12 @@ export default function App() {
                 <div className="grid gap-8 lg:grid-cols-[1fr_390px] lg:items-center">
                   <div>
                     <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Débloquer la suite</div>
-                    <h3 className="mt-3 font-playfair text-3xl">3 problématiques · 3 plans · rédaction complète</h3>
-                    <p className="mt-3 max-w-[720px] font-inter text-sm leading-[1.7] text-white/65">Le paiement débloque les options complètes et la génération du document selon votre sujet, votre contexte, vos consignes et vos fichiers. Le tarif est calculé selon la formule et le volume.</p>
+                    <h3 className="mt-3 font-playfair text-3xl">Validez la qualité avant de poursuivre</h3>
+                    <p className="mt-3 max-w-[720px] font-inter text-sm leading-[1.7] text-white/65">Le montant estimé couvre le projet selon le type de document, le niveau, la complexité détectée et le volume demandé. Les problématiques, le plan, l’extrait d’introduction et le premier chapitre présentés ici sont déjà comptabilisés.</p>
                   </div>
                   <div className="grid gap-3">
-                    <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-60">
+                    {estimate && <div className="rounded-2xl bg-white/10 p-4 text-center"><div className="font-inter text-xs text-white/65">Montant estimé du projet</div><div className="mt-1 font-playfair text-2xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : "$"}</div><div className="mt-1 font-inter text-[11px] text-white/60">Le paiement autorise la poursuite de la rédaction. Aucun travail déjà comptabilisé ne sera facturé deux fois.</div></div>}
+                    <button onClick={() => void startPayment("paypal") disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-60">
                       {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
                       Payer avec PayPal
                     </button>
