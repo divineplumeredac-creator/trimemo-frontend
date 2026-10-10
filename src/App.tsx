@@ -765,16 +765,13 @@ export default function App() {
   }
 
   function goToProject() {
-    if (!formula) {
-      document.getElementById("formules")?.scrollIntoView({ behavior: "smooth" });
-      pushToast("info", "Choisissez d’abord la formule correspondant à votre niveau ou à votre besoin.");
-      return;
-    }
+    const selectedFormula = formula || project.formula || "MASTER";
+    setFormula(selectedFormula);
     setEstimate(null);
     setProject((current) => ({
       ...current,
-      formula,
-      pages: current.pages > 0 ? Math.min(current.pages, maxPagesForFormula(formula)) : 0,
+      formula: selectedFormula,
+      pages: current.pages > 0 ? Math.min(current.pages, maxPagesForFormula(selectedFormula)) : 0,
       pricingQuoteToken: undefined,
     }));
     setView("project");
@@ -2796,7 +2793,7 @@ export default function App() {
 
               <div className="mt-10 rounded-[22px] border border-[#172554]/10 bg-white p-6">
                 <div className="font-playfair text-xl">
-                  Inclus dans tous les forfaits
+                  Inclus dans votre projet
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
