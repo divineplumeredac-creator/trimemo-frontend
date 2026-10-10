@@ -653,53 +653,100 @@ export default function App() {
         const saved = loadPendingProject(stateStorageKey);
         if (saved) {
           setProject(saved);
+          let storedPreview: Preview | null = null;
+          try {
+            storedPreview = JSON.parse(window.localStorage.getItem("trimemo_preview_pending") || "null");
+          } catch {}
 
-          const personalQuestion = String(saved.problematiquePersonnelle || saved.problematique || "").trim();
+          if (storedPreview?.problematic?.question && storedPreview?.plan?.parts?.length && storedPreview?.chapterOne?.content) {
+            const problematic = normalizeProblematic(storedPreview.problematic, 0);
+            const plan = normalizePlan(storedPreview.plan, 0);
+            setPreview(storedPreview);
+            setPremium({ problematics: [problematic], plans: [plan] });
+            setSelectedProblematic(problematic);
+            setSelectedPlan(plan);
+            setPremiumNav("plan-0");
+            setPremiumSection("writing");
 
-          if (personalQuestion) {
-            const personalProblematic: Problematic = {
-              id: "personal-problematic",
-              title: "Problématique fournie par le client",
-              question: personalQuestion,
-              rationale: "Problématique saisie par le client et conservée telle quelle.",
-              angle: "Approche définie par le client",
+            const prepared = prepareBlocks(plan);
+            const firstPart = plan.parts[0];
+            const firstChapter = firstPart?.chapters?.[0];
+            const firstChapterPrefix = firstChapter ? `${firstChapter.id}-bloc-` : "";
+            const introductionBlock = prepared.find((block) => block.kind === "introduction");
+            const seededChapter: Block = {
+              id: `${plan.id}-chapter-one-preview`,
+              title: storedPreview.chapterOne.title || firstChapter?.title || "Chapitre 1",
+              expectedWords: Math.max(100, Number(storedPreview.chapterOne.wordCount || countWords(storedPreview.chapterOne.content))),
+              content: storedPreview.chapterOne.content,
+              wordCount: countWords(storedPreview.chapterOne.content),
+              status: "done",
+              sources: [],
+              footnotes: [],
+              structure: [
+                firstPart ? `PARTIE I : ${firstPart.title}` : "PARTIE I",
+                firstChapter ? `CHAPITRE 1 : ${firstChapter.title}` : "CHAPITRE 1",
+                ...(storedPreview.chapterOne.sectionTitles || []),
+              ],
+              kind: "chapter",
             };
-            setPremium({ problematics: [personalProblematic], plans: [] });
-            setSelectedProblematic(personalProblematic);
-            setSelectedPlan(null);
-            setBlocks([]);
-            setView("premium");
+            const remainingBlocks = prepared.filter((block) =>
+              block.kind !== "introduction" && (!firstChapterPrefix || !block.id.startsWith(firstChapterPrefix))
+            );
+            const nextBlocks = introductionBlock ? [introductionBlock, seededChapter, ...remainingBlocks] : [seededChapter, ...remainingBlocks];
+            setBlocks(nextBlocks);
+            setSelectedWritingBlockId(introductionBlock?.id || seededChapter.id);
+            setView("writing");
             window.localStorage.removeItem("trimemo_project_pending");
-            pushToast("success", "Paiement confirmé. Votre problématique est prise en compte. Génération directe des trois plans.");
-            await generatePlansForProblematic(personalProblematic, false, saved);
+            window.localStorage.removeItem("trimemo_preview_pending");
+            pushToast("success", "Paiement confirmé. Le premier chapitre est conservé. La rédaction reprend avec l'introduction complète et les chapitres suivants.");
           } else {
-            const problematicsResponse = await fetchWithTimeout(PROBLEMATICS_API, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Accept: "application/json", ...premiumAuthHeaders() },
-              body: JSON.stringify({ project: saved, count: 3 }),
-            });
-            const problematicsData = await readApiResponse(problematicsResponse);
-            const rawProblematicList =
-              problematicsData.problematiques ||
-              problematicsData.problematics ||
-              problematicsData.data ||
-              [];
+            const personalQuestion = String(saved.problematiquePersonnelle || saved.problematique || "").trim();
 
-            const problematics = Array.isArray(rawProblematicList)
-              ? rawProblematicList.slice(0, 3).map((item: any, index: number) => normalizeProblematic(item, index))
-              : [];
+            if (personalQuestion) {
+              const personalProblematic: Problematic = {
+                id: "personal-problematic",
+                title: "Problématique fournie par le client",
+                question: personalQuestion,
+                rationale: "Problématique saisie par le client et conservée telle quelle.",
+                angle: "Approche définie par le client",
+              };
+              setPremium({ problematics: [personalProblematic], plans: [] });
+              setSelectedProblematic(personalProblematic);
+              setSelectedPlan(null);
+              setBlocks([]);
+              setView("premium");
+              window.localStorage.removeItem("trimemo_project_pending");
+              pushToast("success", "Paiement confirmé. Votre problématique est prise en compte. Génération directe des trois plans.");
+              await generatePlansForProblematic(personalProblematic, false, saved);
+            } else {
+              const problematicsResponse = await fetchWithTimeout(PROBLEMATICS_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Accept: "application/json", ...premiumAuthHeaders() },
+                body: JSON.stringify({ project: saved, count: 3 }),
+              });
+              const problematicsData = await readApiResponse(problematicsResponse);
+              const rawProblematicList =
+                problematicsData.problematiques ||
+                problematicsData.problematics ||
+                problematicsData.data ||
+                [];
 
-            if (!problematics.length) {
-              throw new Error("Le paiement est confirmé, mais aucune problématique n’a pu être générée.");
+              const problematics = Array.isArray(rawProblematicList)
+                ? rawProblematicList.slice(0, 3).map((item: any, index: number) => normalizeProblematic(item, index))
+                : [];
+
+              if (!problematics.length) {
+                throw new Error("Le paiement est confirmé, mais aucune problématique n’a pu être générée.");
+              }
+
+              setPremium({ problematics, plans: [] });
+              setSelectedProblematic(null);
+              setSelectedPlan(null);
+              setBlocks([]);
+              setView("premium");
+              window.localStorage.removeItem("trimemo_project_pending");
+              pushToast("success", "Paiement confirmé. Les trois problématiques sont disponibles. Sélectionnez-en une pour générer les plans un par un.");
             }
-
-            setPremium({ problematics, plans: [] });
-            setSelectedProblematic(null);
-            setSelectedPlan(null);
-            setBlocks([]);
-            setView("premium");
-            window.localStorage.removeItem("trimemo_project_pending");
-            pushToast("success", "Paiement confirmé. Les trois problématiques sont disponibles. Sélectionnez-en une pour générer les plans un par un.");
           }
         }
       } catch (error) {
@@ -1366,7 +1413,9 @@ export default function App() {
       kind: "conclusion",
     };
 
-    setBlocks([introductionBlock, ...chapterBlocks, conclusionBlock]);
+    const preparedBlocks = [introductionBlock, ...chapterBlocks, conclusionBlock];
+    setBlocks(preparedBlocks);
+    return preparedBlocks;
   }
 
   function selectPremiumPlan(problematic: Problematic, plan: Plan) {
