@@ -3039,10 +3039,16 @@ export default function App() {
                   </div>
                   <div className="grid gap-3">
                     {estimate && <div className="rounded-2xl bg-white/10 p-4 text-center"><div className="font-inter text-xs text-white/65">Montant estimé du projet</div><div className="mt-1 font-playfair text-2xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : "$"}</div><div className="mt-1 font-inter text-[11px] text-white/60">Le paiement autorise la poursuite de la rédaction. Aucun travail déjà comptabilisé ne sera facturé deux fois.</div></div>}
-                    <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-60">
-                      {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                      Payer avec PayPal
-                    </button>
+                    {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
+                      <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-60">
+                        {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
+                        Payer avec PayPal
+                      </button>
+                    ) : (
+                      <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-center font-inter text-xs leading-[1.7] text-white/70">
+                        Le paiement en ligne sera activé après la configuration sécurisée du compte marchand.
+                      </div>
+                    )}
                     {String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true" ? (
                       <button onClick={() => void startPayment("mobile-money")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 font-inter text-sm font-semibold text-white disabled:opacity-60">
                         {paymentLoading === "mobile-money" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
