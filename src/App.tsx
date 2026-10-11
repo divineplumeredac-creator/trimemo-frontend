@@ -943,6 +943,55 @@ export default function App() {
     pushToast("info", `Mode propriétaire : test ${formulaId} sans paiement.`);
   }
 
+  async function generatePublicProblematics() {
+    if (!project.sujet.trim() || !estimate || !project.pricingQuoteToken) {
+      pushToast("error", "Renseignez le projet et lancez l’analyse tarifaire avant de continuer.");
+      setView("project");
+      return;
+    }
+    setLoading(true);
+    setGenerationError("");
+    try {
+      const requestProject = { ...project, pricingQuoteToken: project.pricingQuoteToken };
+      const personalQuestion = String(requestProject.problematiquePersonnelle || "").trim();
+      let problematics: Problematic[] = [];
+      if (personalQuestion) {
+        problematics.push({
+          id: "personal-problematic",
+          title: "Problématique proposée par le client",
+          question: personalQuestion,
+          rationale: "Problématique fournie par le client.",
+          angle: "Approche définie par le client",
+        });
+      } else {
+        const response = await fetchWithTimeout(PROBLEMATICS_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ project: requestProject, count: 1 }),
+        }, 180000);
+        const data = await readApiResponse(response);
+        const rawList = data.problematiques || data.problematics || data.data || [];
+        problematics = Array.isArray(rawList) ? rawList.slice(0, 1).map((item: any, index: number) => normalizeProblematic(item, index)) : [];
+      }
+      if (!problematics.length) throw new Error("Aucune problématique n’a été retournée.");
+      setProject(requestProject);
+      setPremium({ problematics, plans: [] });
+      setSelectedProblematic(null);
+      setSelectedPlan(null);
+      setBlocks([]);
+      setPremiumSection("problematic");
+      setPremiumNav("problematic-0");
+      setView("premium");
+      pushToast("success", "Première problématique générée. Vous pouvez la commenter, l’améliorer ou demander une autre proposition, dans la limite de trois.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de générer la problématique.";
+      setGenerationError(message);
+      pushToast("error", message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function generateOwnerPremium() {
     if (!ownerSessionValid) {
       pushToast("error", "Connectez-vous à l’espace administrateur.");
@@ -2831,9 +2880,9 @@ export default function App() {
                   <div className="mt-3 font-inter text-xs leading-[1.7] text-white/65">Tarif de base {estimate.baseRate} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : "$"} par page × coefficient de niveau {estimate.levelCoefficient} × coefficient de complexité {estimate.complexityCoefficient}.</div>
                   {estimate.currency === "XOF" && <div className="mt-3 rounded-xl bg-white/10 p-3 font-inter text-xs leading-[1.6] text-white/80">Si vous payez par PayPal, le montant sera converti en euros selon la parité fixe FCFA/euro : environ {estimate.checkoutAmount} €.</div>}
                   <div className="mt-5 rounded-xl border border-white/15 p-3 font-inter text-xs leading-[1.7] text-white/75">L'estimation comprend le projet complet. Le travail présenté avant paiement est déjà comptabilisé et ne sera pas facturé une seconde fois.</div>
-                  <button onClick={() => void generateFreePreview()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-50">
+                  <button onClick={() => void generatePublicProblematics()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-50">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                    Continuer la rédaction
+                    Commencer les problématiques
                   </button>
                   <button onClick={() => { setEstimate(null); setView("project"); }} className="mt-3 w-full rounded-full border border-white/20 px-4 py-3 font-inter text-xs font-semibold text-white">Modifier les informations</button>
                 </aside>
