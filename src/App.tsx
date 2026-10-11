@@ -67,10 +67,10 @@ const pricing = {
 };
 
 const pricingInclusions = [
-  "3 problématiques + jusqu’à 3 plans générés un par un après paiement",
+  "Jusqu’à 3 problématiques et jusqu’à 3 plans générés, améliorés et choisis avant paiement",
   "Sources bibliographiques contrôlées (DOI ou URL vérifiée lorsque disponible)",
   "Export Word",
-  "Contact pour les demandes de correction",
+  "Correction humaine disponible en option, avec devis séparé",
 ];
 
 
@@ -2637,8 +2637,8 @@ export default function App() {
                 {[
                   ["01", "Votre formule", "Vous choisissez la formule qui correspond à votre niveau ou à votre besoin."],
                   ["02", "Votre dossier", "Sujet, contexte, consignes et documents sont transmis au moteur de génération."],
-                  ["03", "Aperçu avant paiement", "Une problématique, un plan, un extrait de l’introduction et le premier chapitre pour évaluer la qualité."],
-                  ["04", "Accès complet", "Après paiement : trois problématiques, des plans générés un par un puis la rédaction séquentielle par blocs de longueur variable."],
+                  ["03", "Choix et validation", "Générez jusqu’à trois problématiques, améliorez-les ou proposez-en d’autres, puis comparez jusqu’à trois plans avant de choisir."],
+                  ["04", "Aperçu rédactionnel puis accès complet", "Après validation de la problématique et du plan, rédigez jusqu’à 2 500 mots, de l’introduction au premier chapitre. Le prix inclut toutes les générations du projet ; le paiement débloque la suite et l’export Word."],
                 ].map(([n, title, text]) => (
                   <div key={n} className="rounded-[20px] border border-[#172554]/5 bg-white p-6">
                     <div className="font-inter text-[11px] tracking-[0.2em] text-[#D4A23A]">{n}</div>
@@ -2660,11 +2660,11 @@ export default function App() {
                   Tarifs Trimémo
                 </div>
                 <h2 className="mt-4 font-playfair text-4xl">
-                  Forfaits actuels
+                  Tarification personnalisée
                 </h2>
                 <p className="mt-3 max-w-[760px] font-inter text-sm leading-[1.7] text-[#172554]/70">
-                  Des forfaits adaptés aux travaux de Licence, de Master et de Doctorat,
-                  avec paiement en euros ou en francs CFA.
+                  Un coût estimé après analyse du pays, du type de document, du volume, du niveau et des exigences du guide.
+                  La correction humaine est proposée en option et facturée séparément.
                 </p>
               </div>
 
