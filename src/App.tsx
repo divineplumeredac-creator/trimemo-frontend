@@ -1212,7 +1212,7 @@ export default function App() {
         introduction: {
           title: introductionRaw.title || "Introduction générale",
           content: introductionContent,
-          wordCount: Math.min(320, countWords(introductionContent)),
+          wordCount: countWords(introductionContent),
           incomplete: true,
         },
         chapterOne: {
