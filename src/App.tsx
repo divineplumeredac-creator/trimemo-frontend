@@ -1905,6 +1905,44 @@ export default function App() {
             </nav>
           </aside>
           <main className={`min-w-0 flex-1 px-6 py-8 lg:px-8 lg:py-10 ${view === "writing" ? "h-[calc(100vh-76px)] overflow-y-auto overscroll-contain" : ""}`}>
+            {view === "estimate" && estimate && (
+              <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
+                <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 lg:p-9">
+                  <div className="font-inter text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Analyse du projet</div>
+                  <h3 className="mt-3 font-playfair text-3xl text-[#172554]">Estimation du coût</h3>
+                  <p className="mt-4 font-inter text-sm leading-[1.8] text-[#172554]/75">Trimémo a analysé le sujet, le niveau, les consignes et les documents fournis. Le montant est provisoire et inclut les générations prévues pour le projet, y compris les problématiques, le plan, l'introduction et le premier chapitre consultables avant paiement.</p>
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-[#F7FAF8] p-4"><div className="font-inter text-xs text-[#172554]/60">Type de document</div><div className="mt-1 font-inter text-sm font-semibold text-[#172554]">{project.typeDoc}</div></div>
+                    <div className="rounded-2xl bg-[#F7FAF8] p-4"><div className="font-inter text-xs text-[#172554]/60">Niveau académique</div><div className="mt-1 font-inter text-sm font-semibold text-[#172554]">{project.niveau}</div></div>
+                    <div className="rounded-2xl bg-[#F7FAF8] p-4"><div className="font-inter text-xs text-[#172554]/60">Volume demandé</div><div className="mt-1 font-inter text-sm font-semibold text-[#172554]">{estimate.pages} pages · {(estimate.pages * estimate.wordsPerPage).toLocaleString("fr-FR")} mots</div></div>
+                    <div className="rounded-2xl bg-[#F7FAF8] p-4"><div className="font-inter text-xs text-[#172554]/60">Complexité détectée</div><div className="mt-1 font-inter text-sm font-semibold capitalize text-[#172554]">{estimate.complexity === "elevee" ? "Élevée" : estimate.complexity}</div></div>
+                  </div>
+                  <div className="mt-6 rounded-2xl border border-[#172554]/10 p-5">
+                    <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#172554]/60">Critères pris en compte</div>
+                    <ul className="mt-3 space-y-2 font-inter text-sm leading-[1.7] text-[#172554]/80">
+                      {(estimate.detectedRequirements || []).map((item, index) => <li key={index}>• {item}</li>)}
+                      {(estimate.reasons || []).map((item, index) => <li key={"reason-"+index}>• {item}</li>)}
+                    </ul>
+                  </div>
+                  {!estimate.countryDetected && <p className="mt-4 rounded-xl bg-[#FFF8E7] p-3 font-inter text-xs leading-[1.6] text-[#6B4B08]">Le pays n'a pas pu être détecté automatiquement. Le prix utilise provisoirement le marché international. Vérifiez le pays avant le paiement si ce tarif ne correspond pas à votre situation.</p>}
+                </article>
+                <aside className="h-fit rounded-[24px] bg-[#172554] p-7 text-white lg:sticky lg:top-[98px]">
+                  <div className="font-inter text-[11px] uppercase tracking-[0.18em] text-[#D4A23A]">{estimate.marketLabel}</div>
+                  <div className="mt-5 font-inter text-xs text-white/65">Coût approximatif du projet</div>
+                  <div className="mt-2 font-playfair text-4xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : "$"}</div>
+                  <div className="mt-3 font-inter text-xs leading-[1.7] text-white/65">Tarif de base {estimate.baseRate} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : "$"} par page × coefficient de niveau {estimate.levelCoefficient} × coefficient de complexité {estimate.complexityCoefficient}.</div>
+                  {estimate.currency === "XOF" && <div className="mt-3 rounded-xl bg-white/10 p-3 font-inter text-xs leading-[1.6] text-white/80">Si vous payez par PayPal, le montant sera converti en euros selon la parité fixe FCFA/euro : environ {estimate.checkoutAmount} €.</div>}
+                  <div className="mt-5 rounded-xl border border-white/15 p-3 font-inter text-xs leading-[1.7] text-white/75">L'estimation comprend le projet complet. Le travail présenté avant paiement est déjà comptabilisé et ne sera pas facturé une seconde fois.</div>
+                  <button onClick={() => void generateFreePreview()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-50">
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                    Continuer la rédaction
+                  </button>
+                  <button onClick={() => { setEstimate(null); setView("project"); }} className="mt-3 w-full rounded-full border border-white/20 px-4 py-3 font-inter text-xs font-semibold text-white">Modifier les informations</button>
+                </aside>
+              </section>
+            )}
+
+
           {view === "project" && (
             <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
               <div className="rounded-[24px] border border-[#172554]/5 bg-white p-7 shadow-sm lg:p-9">
@@ -2579,43 +2617,6 @@ export default function App() {
             <button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
             <button onClick={() => navigateToSection("formules")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Formules</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("project"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
-            {view === "estimate" && estimate && (
-              <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
-                <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 lg:p-9">
-                  <div className="font-inter text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Analyse du projet</div>
-                  <h3 className="mt-3 font-playfair text-3xl text-[#172554]">Estimation du coût</h3>
-                  <p className="mt-4 font-inter text-sm leading-[1.8] text-[#172554]/75">Trimémo a analysé le sujet, le niveau, les consignes et les documents fournis. Le montant est provisoire et inclut les générations prévues pour le projet, y compris les problématiques, le plan, l'introduction et le premier chapitre consultables avant paiement.</p>
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-[#F7FAF8] p-4"><div className="font-inter text-xs text-[#172554]/60">Type de document</div><div className="mt-1 font-inter text-sm font-semibold text-[#172554]">{project.typeDoc}</div></div>
-                    <div className="rounded-2xl bg-[#F7FAF8] p-4"><div className="font-inter text-xs text-[#172554]/60">Niveau académique</div><div className="mt-1 font-inter text-sm font-semibold text-[#172554]">{project.niveau}</div></div>
-                    <div className="rounded-2xl bg-[#F7FAF8] p-4"><div className="font-inter text-xs text-[#172554]/60">Volume demandé</div><div className="mt-1 font-inter text-sm font-semibold text-[#172554]">{estimate.pages} pages · {(estimate.pages * estimate.wordsPerPage).toLocaleString("fr-FR")} mots</div></div>
-                    <div className="rounded-2xl bg-[#F7FAF8] p-4"><div className="font-inter text-xs text-[#172554]/60">Complexité détectée</div><div className="mt-1 font-inter text-sm font-semibold capitalize text-[#172554]">{estimate.complexity === "elevee" ? "Élevée" : estimate.complexity}</div></div>
-                  </div>
-                  <div className="mt-6 rounded-2xl border border-[#172554]/10 p-5">
-                    <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#172554]/60">Critères pris en compte</div>
-                    <ul className="mt-3 space-y-2 font-inter text-sm leading-[1.7] text-[#172554]/80">
-                      {(estimate.detectedRequirements || []).map((item, index) => <li key={index}>• {item}</li>)}
-                      {(estimate.reasons || []).map((item, index) => <li key={"reason-"+index}>• {item}</li>)}
-                    </ul>
-                  </div>
-                  {!estimate.countryDetected && <p className="mt-4 rounded-xl bg-[#FFF8E7] p-3 font-inter text-xs leading-[1.6] text-[#6B4B08]">Le pays n'a pas pu être détecté automatiquement. Le prix utilise provisoirement le marché international. Vérifiez le pays avant le paiement si ce tarif ne correspond pas à votre situation.</p>}
-                </article>
-                <aside className="h-fit rounded-[24px] bg-[#172554] p-7 text-white lg:sticky lg:top-[98px]">
-                  <div className="font-inter text-[11px] uppercase tracking-[0.18em] text-[#D4A23A]">{estimate.marketLabel}</div>
-                  <div className="mt-5 font-inter text-xs text-white/65">Coût approximatif du projet</div>
-                  <div className="mt-2 font-playfair text-4xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : "$"}</div>
-                  <div className="mt-3 font-inter text-xs leading-[1.7] text-white/65">Tarif de base {estimate.baseRate} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : "$"} par page × coefficient de niveau {estimate.levelCoefficient} × coefficient de complexité {estimate.complexityCoefficient}.</div>
-                  {estimate.currency === "XOF" && <div className="mt-3 rounded-xl bg-white/10 p-3 font-inter text-xs leading-[1.6] text-white/80">Si vous payez par PayPal, le montant sera converti en euros selon la parité fixe FCFA/euro : environ {estimate.checkoutAmount} €.</div>}
-                  <div className="mt-5 rounded-xl border border-white/15 p-3 font-inter text-xs leading-[1.7] text-white/75">L'estimation comprend le projet complet. Le travail présenté avant paiement est déjà comptabilisé et ne sera pas facturé une seconde fois.</div>
-                  <button onClick={() => void generateFreePreview()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-50">
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                    Continuer la rédaction
-                  </button>
-                  <button onClick={() => { setEstimate(null); setView("project"); }} className="mt-3 w-full rounded-full border border-white/20 px-4 py-3 font-inter text-xs font-semibold text-white">Modifier les informations</button>
-                </aside>
-              </section>
-            )}
-
             {view === "preview" && preview && (
               <>
                 <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Aperçu</div>
