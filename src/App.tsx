@@ -197,7 +197,7 @@ type Block = {
   content: string;
   wordCount: number;
   status: "pending" | "generating" | "done";
-  sources: { title: string; author?: string; year?: string; url?: string; doi?: string; citation?: string }[];
+  sources: { title: string; author?: string; year?: string; url?: string; doi?: string; citation?: string; verified?: boolean }[];
   footnotes: string[];
   structure: string[];
   kind: "introduction" | "chapter" | "section" | "conclusion";
@@ -2920,7 +2920,7 @@ export default function App() {
           <div className="mx-auto max-w-[1220px]">
             <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-start gap-3">
-                {view !== "home" && (
+                {(
                   <button
                     onClick={() => setView("home")}
                     className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#172554]/10 bg-white"
