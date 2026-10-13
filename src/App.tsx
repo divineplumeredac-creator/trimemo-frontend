@@ -2432,7 +2432,7 @@ export default function App() {
 
           
           
-          {view === "premium" && premium && (
+          {view === "premium" && premium && premiumSection !== "writing" && (
             <section>
               <div className="mb-6">
                 <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
@@ -3479,7 +3479,7 @@ export default function App() {
 
             </section>
           )}
-          {view === "writing" && selectedPlan && selectedProblematic && (
+          {(view === "writing" || (view === "premium" && premiumSection === "writing")) && selectedPlan && selectedProblematic && (
               <section className="min-h-full">
                 <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
                   <aside className="h-fit rounded-2xl border border-[#172554]/10 bg-white p-4 lg:sticky lg:top-5">
