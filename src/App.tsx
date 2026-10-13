@@ -3417,7 +3417,7 @@ export default function App() {
                   <div className="text-xs uppercase tracking-[0.12em] text-[#555]">Aperçu du document académique</div>
                   <h2 className="mt-4 text-xl font-bold">{project.sujet || selectedPlan?.title || "Projet académique"}</h2>
                   <div className="mx-auto mt-4 max-w-[620px] border-t border-b border-[#999] py-3 text-left text-sm">
-                    <div><strong>Problématique :</strong> {preview.problematic.text}</div>
+                    <div><strong>Problématique :</strong> {preview.problematic.question}</div>
                     <div className="mt-2"><strong>Plan retenu :</strong> {preview.plan.title}</div>
                   </div>
                   <div className="mt-3 text-sm">{academicPreviewSegments().reduce((sum, segment) => sum + segment.words, 0).toLocaleString("fr-FR")} / 2 500 mots rédigés</div>
