@@ -2500,7 +2500,9 @@ export default function App() {
                             if (!problematic) return;
                             setSelectedProblematic(problematic);
                             selectPremiumPlan(problematic, plan);
-                            pushToast("success", "Plan retenu. Préparation de l’aperçu rédactionnel de 2 500 mots maximum.");
+                            setView("writing");
+                            setPremiumSection("writing");
+                            pushToast("success", "Plan retenu. Les blocs de rédaction sont prêts.");
                           }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
                         </div>
                         {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#2F6B45]">Plan retenu</div>}
@@ -3397,7 +3399,10 @@ export default function App() {
                               if (!problematic) return;
                               setSelectedProblematic(problematic);
                               selectPremiumPlan(problematic, plan);
-                              pushToast("success", "Plan retenu. Préparation de l’aperçu rédactionnel de 2 500 mots maximum.");
+                              // Confirmer explicitement la navigation après la sélection du plan.
+                              setView("writing");
+                              setPremiumSection("writing");
+                              pushToast("success", "Plan retenu. Les blocs de rédaction sont prêts.");
                             }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
                           </div>
                           {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#2F6B45]">Plan retenu</div>}
