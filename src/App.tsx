@@ -1731,6 +1731,88 @@ export default function App() {
     }
 
     if (block.status === "generating") return;
+    if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
+      // Avant paiement, l'API d'aperçu produit une introduction et le premier chapitre
+      // dans une limite cumulée de 2 500 mots. On répartit le texte en blocs affichables.
+      if (blocks.some((item) => item.status === "done" && item.content.trim())) {
+        const alreadyWritten = blocks.filter((item) => item.status === "done").reduce((sum, item) => sum + countWords(item.content), 0);
+        if (alreadyWritten >= 2500) {
+          pushToast("info", "L’aperçu de 2 500 mots est atteint. Consultez-le, puis payez pour poursuivre la rédaction.");
+          await exportDocument();
+          return;
+        }
+        pushToast("info", "L’aperçu avant paiement est déjà disponible. Consultez-le pour continuer.");
+        await exportDocument();
+        return;
+      }
+      if (!estimate || !project.pricingQuoteToken) {
+        const message = "Analysez d’abord le projet pour obtenir une estimation avant de générer l’aperçu.";
+        pushToast("error", message);
+        setView("project");
+        return;
+      }
+      setActiveBlockId(blockId);
+      setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "generating", error: undefined } : item));
+      try {
+        const response = await fetchWithTimeout(FREE_PREVIEW_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            project: projectPayloadWithoutFiles(project),
+            problematic: selectedProblematic,
+            plan: selectedPlan,
+            count: 1,
+            freePreview: true,
+          }),
+        }, 280000);
+        const data = await readApiResponse(response);
+        const introText = String(data?.introduction?.content || "").trim();
+        const chapterText = String(data?.chapterOne?.content || "").trim();
+        if (!introText || !chapterText) throw new Error("L’aperçu doit contenir l’introduction et le premier chapitre.");
+        const capWords = (value: string, limit: number) => value.split(/\\s+/u).filter(Boolean).slice(0, limit).join(" ");
+        const intro = capWords(introText, 800);
+        const remaining = Math.max(0, 2500 - countWords(intro));
+        const chapter = capWords(chapterText, remaining);
+        const words = chapter.split(/\\s+/u).filter(Boolean);
+        const chapterBlocks = blocks.filter((item) => item.kind === "chapter" || item.kind === "section");
+        const chunks: string[] = [];
+        for (let offset = 0; offset < words.length; offset += 900) chunks.push(words.slice(offset, offset + 900).join(" "));
+        setBlocks((current) => current.map((item) => {
+          if (item.kind === "introduction") return { ...item, content: intro, wordCount: countWords(intro), status: "done", error: undefined };
+          const targetIndex = chapterBlocks.findIndex((entry) => entry.id === item.id);
+          if (targetIndex >= 0 && chunks[targetIndex]) return { ...item, content: chunks[targetIndex], wordCount: countWords(chunks[targetIndex]), status: "done", error: undefined };
+          return item.id === blockId ? { ...item, status: "pending", error: undefined } : item;
+        }));
+        const previewPlan = normalizePlan(data.plan || selectedPlan, 0);
+        const previewProblematic = normalizeProblematic(data.problematic || selectedProblematic, 0);
+        const previewSnapshot: Preview = {
+          problematic: previewProblematic,
+          plan: previewPlan,
+          introduction: { title: String(data.introduction.title || "Introduction générale"), content: intro, wordCount: countWords(intro), incomplete: true },
+          chapterOne: {
+            title: String(data.chapterOne.title || selectedPlan.parts[0]?.chapters[0]?.title || "Chapitre 1"),
+            content: chapter,
+            wordCount: countWords(chapter),
+            partTitle: String(data.chapterOne.partTitle || selectedPlan.parts[0]?.title || ""),
+            chapterNumber: Number(data.chapterOne.chapterNumber || 1),
+            sectionTitles: Array.isArray(data.chapterOne.sectionTitles) ? data.chapterOne.sectionTitles : [],
+          },
+        };
+        setPreview(previewSnapshot);
+        savePendingProject(project);
+        savePendingPreview(previewSnapshot);
+        setSelectedWritingBlockId(blocks.find((item) => item.kind === "introduction")?.id || blockId);
+        setView("writing");
+        pushToast("success", "Aperçu généré : introduction et premier chapitre, dans la limite cumulée de 2 500 mots.");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Impossible de générer l’aperçu.";
+        setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "pending", error: message } : item));
+        pushToast("error", message);
+      } finally {
+        setActiveBlockId(null);
+      }
+      return;
+    }
     if (activeBlockId && activeBlockId !== blockId) {
       pushToast("info", "Un seul bloc peut être rédigé à la fois. Attendez la fin du bloc en cours.");
       return;
