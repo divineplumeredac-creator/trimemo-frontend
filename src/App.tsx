@@ -487,6 +487,7 @@ export default function App() {
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
   const [selectedWritingBlockId, setSelectedWritingBlockId] = useState<string | null>(null);
+  const [writingTab, setWritingTab] = useState<"problematic" | "plan" | "writing" | "preview">("writing");
   const [loading, setLoading] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
@@ -1495,7 +1496,7 @@ export default function App() {
     const internalLabel = (chapter: PlanChapter, section: PlanSection, subsection: PlanSubsection, internal: PlanInternalTitle) =>
       `${chapter.number}.${section.number}.${subsection.number}.${internal.number} : ${internal.title}`;
 
-    const introductionWords = Math.min(1500, Math.max(100, Math.round(Number(plan.introductionGeneral.wordCount || 900))));
+    const introductionWords = Math.min(1000, Math.max(100, Math.round(Number(plan.introductionGeneral.wordCount || 900))));
     const introductionBlock: Block = {
       id: `${plan.id}-introduction-generale`,
       title: plan.introductionGeneral.title || "Introduction générale",
@@ -1595,7 +1596,7 @@ export default function App() {
           return {
             id: `${chapter.id}-bloc-${groupIndex + 1}`,
             title,
-            expectedWords: Math.max(100, groupWords || 900),
+            expectedWords: Math.min(1000, Math.max(100, groupWords || 900)),
             content: "",
             wordCount: 0,
             status: "pending" as const,
@@ -1752,6 +1753,36 @@ export default function App() {
   }
 
   async function exportDocument() {
+    if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
+      const done = blocks.filter((block) => block.status === "done" && block.content.trim());
+      const combined = done.map((block) => block.content).join("\\n\\n");
+      if (countWords(combined) < 1) {
+        pushToast("info", "Rédigez l’introduction et le premier chapitre pour consulter l’aperçu avant paiement.");
+        return;
+      }
+      if (!selectedPlan || !selectedProblematic) {
+        pushToast("error", "Sélectionnez une problématique et un plan avant de poursuivre.");
+        return;
+      }
+      const intro = done.find((block) => block.kind === "introduction");
+      const chapter = done.find((block) => block.kind === "chapter");
+      const previewSnapshot: Preview = {
+        problematic: selectedProblematic,
+        plan: selectedPlan,
+        introduction: { title: intro?.title || "Introduction générale", content: intro?.content || "", wordCount: intro?.wordCount || 0, incomplete: false },
+        chapterOne: { title: chapter?.title || "Chapitre 1", content: chapter?.content || "", wordCount: chapter?.wordCount || 0, partTitle: selectedPlan.parts[0]?.title, chapterNumber: 1, sectionTitles: chapter?.structure || [] },
+      };
+      setPreview(previewSnapshot);
+      try {
+        window.sessionStorage.setItem("trimemo_blocks_pending", JSON.stringify(blocks));
+        window.sessionStorage.setItem("trimemo_selected_block_pending", selectedWritingBlockId || "");
+        window.sessionStorage.setItem("trimemo_preview_pending", JSON.stringify(previewSnapshot));
+      } catch {}
+      setPreviewTab("introduction");
+      setView("preview");
+      pushToast("info", "Consultez l’aperçu, puis choisissez le paiement pour poursuivre la rédaction.");
+      return;
+    }
     const doneBlocks = blocks.filter((block) => block.status === "done" && block.content.trim());
     const pendingBlocks = blocks.filter((block) => block.status !== "done");
     if (!doneBlocks.length) {
@@ -2502,7 +2533,7 @@ export default function App() {
                             selectPremiumPlan(problematic, plan);
                             setView("writing");
                             setPremiumSection("writing");
-                            pushToast("success", "Plan retenu. Les blocs de rédaction sont prêts.");
+                            pushToast("success", "Plan retenu. L’espace de rédaction et ses blocs sont affichés.");
                           }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
                         </div>
                         {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#2F6B45]">Plan retenu</div>}
@@ -2645,6 +2676,12 @@ export default function App() {
                               disabled={activeBlockId !== null}
                               onClick={() => {
                                 const next = blocks[index + 1];
+                                const completedWords = blocks.filter((item) => item.status === "done" && item.content.trim()).reduce((sum, item) => sum + (item.wordCount || countWords(item.content)), 0);
+                                if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token") && completedWords >= 2500) {
+                                  setSelectedWritingBlockId(next.id);
+                                  void exportDocument();
+                                  return;
+                                }
                                 setSelectedWritingBlockId(next.id);
                                 document.getElementById(`writing-block-${next.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                               }}
@@ -3421,6 +3458,23 @@ export default function App() {
           )}
           {view === "writing" && selectedPlan && selectedProblematic && (
               <section className="min-h-full">
+                <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+                  <aside className="h-fit rounded-2xl border border-[#172554]/10 bg-white p-4 lg:sticky lg:top-5">
+                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigation du projet</div>
+                    <nav className="mt-4 space-y-2">
+                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); setWritingTab("problematic"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">1. Problématique</button>
+                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); setWritingTab("plan"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">2. Plan validé</button>
+                      <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#172554] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
+                      <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#172554]/15 px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#F7FAF8]">Aperçu / Exporter</button>
+                    </nav>
+                    <div className="mt-5 rounded-xl bg-[#F7FAF8] p-3">
+                      <div className="font-inter text-[11px] text-[#172554]/60">Progression rédactionnelle</div>
+                      <div className="mt-1 font-inter text-sm font-semibold">{totalDoneWords.toLocaleString("fr-FR")} mots rédigés</div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E5E7EB]"><div className="h-full rounded-full bg-[#1D78C1]" style={{ width: `${Math.min(100, Math.round(totalDoneWords / 2500 * 100))}%` }} /></div>
+                      <div className="mt-1 font-inter text-[10px] text-[#172554]/55">Aperçu indicatif à 2 500 mots cumulés</div>
+                    </div>
+                  </aside>
+                  <div className="min-w-0">
                 <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
                   <div>
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Rédaction</div>
@@ -3564,6 +3618,8 @@ export default function App() {
                       </article>
                     );
                   })}
+                </div>
+                  </div>
                 </div>
               </section>
             )}
