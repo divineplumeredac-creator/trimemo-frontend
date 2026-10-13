@@ -1888,11 +1888,9 @@ export default function App() {
   }
 
   function renderAcademicText(raw: string, previewMode = false) {
-    const source = String(raw || "").replace(/\r\n?/gu, "\n").replace(/[ \t]+(?=#{1,6}\s+)/gu, "\n\n");
     const cleanLine = (value: string) => value
       .replace(/\[\s*(?:https?:\/\/)?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*\]\(https?:\/\/[^)]+\)/giu, "")
       .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/giu, "$1")
-      .replace(/\(?\s*\[?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\]?\s*\)?\s*https?:\/\/\S+/giu, "")
       .replace(/https?:\/\/\S+/giu, "")
       .replace(/\bwww\.[a-z0-9.-]+\.[a-z]{2,}\S*/giu, "")
       .replace(/\s*\(\s*\)\s*/gu, " ")
@@ -1908,26 +1906,50 @@ export default function App() {
           ...(section.subsections || []).flatMap((sub) => [sub.title, ...(sub.internalTitles || []).map((item) => item.title)])
         ])
       ])
-    ]).map((title) => String(title || "").trim().toLocaleLowerCase("fr"));
-    const prepared = source.split("\n").flatMap((rawLine) => rawLine.replace(/[ \t]+(?=#{1,6}\s+)/gu, "\n").split("\n"));
-    return prepared.map((rawLine, index) => {
-      const line = cleanLine(rawLine.replace(/^\s*[-*]\s+/u, ""));
-      if (!line) return <div key={index} className="h-3" />;
-      const heading = line.match(/^(#{1,6})\s+(.+)$/u);
-      const headingText = (heading ? heading[2] : line).replace(/[*_\x60]/gu, "").trim();
-      const plainHeading = !heading && planTitles.includes(headingText.toLocaleLowerCase("fr"));
-      if (heading || plainHeading) {
-        const level = heading ? Math.min(6, heading[1].length) : 3;
-        const className = level <= 2
-          ? "mb-4 mt-8 text-lg font-bold text-[#172554]"
-          : level <= 4
-            ? "mb-3 mt-6 text-base font-bold text-[#172554]"
-            : "mb-2 mt-4 text-sm font-bold text-[#172554]";
+    ]).map((title) => String(title || "").trim().replace(/^[#*\s]+/u, "").toLocaleLowerCase("fr"));
+    // Normalise les titres académiques même lorsqu'ils sont collés au début d'un paragraphe.
+    const headingPattern = /(?=(?:^|\n)\s*(?:#{1,6}\s*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b|\d+(?:\.\d+){1,4}\s+[A-ZÀ-ÖØ-Þ]))/giu;
+    let source = String(raw || "").replace(/\r\n?/gu, "\n");
+    source = source
+      .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
+      .replace(/[ \t]*(\*\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "\n\n$1")
+      .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "\n\n")
+      .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
+      .trim();
+    const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
+      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+      if (lines.length > 1) return lines;
+      const line = lines[0] || "";
+      // Sépare une phrase de prose lorsqu'un titre identifié est suivi sur la même ligne.
+      const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?]{0,180}|CHAPITRE\s+\d+\b[^.!?]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
+      if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
+      return line ? [line] : [];
+    });
+    return rawBlocks.map((rawBlock, index) => {
+      const line = cleanLine(rawBlock.replace(/^\s*[-*]\s+/u, ""));
+      if (!line) return null;
+      const markdownHeading = line.match(/^(#{1,6})\s+(.+)$/u);
+      const headingText = (markdownHeading ? markdownHeading[2] : line)
+        .replace(/[*_\x60]/gu, "").replace(/\s+/gu, " ").trim();
+      const normalizedHeading = headingText.toLocaleLowerCase("fr");
+      const isAcademicHeading = /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)/iu.test(headingText);
+      const plainHeading = planTitles.includes(normalizedHeading) || planTitles.some((title) => title && normalizedHeading === title.replace(/^\d+(?:\.\d+)*\s*/u, ""));
+      if (markdownHeading || isAcademicHeading || plainHeading) {
+        const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\b/iu.test(headingText) ? 1 : /^CHAPITRE\b/iu.test(headingText) ? 2 : 3;
+        const className = level <= 1
+          ? "mb-5 mt-9 text-center text-lg font-bold uppercase tracking-wide text-[#172554]"
+          : level === 2
+            ? "mb-4 mt-8 text-base font-bold uppercase text-[#172554]"
+            : "mb-3 mt-6 text-sm font-bold text-[#172554]";
         return <h4 key={index} className={className}>{headingText}</h4>;
       }
-      const paragraph = line.replace(/\*\*(.*?)\*\*/gu, "$1").replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1");
-      return <p key={index} className="mb-3 text-justify" style={{ textIndent: "1.1cm", whiteSpace: "pre-wrap" }}>{paragraph}</p>;
-    });
+      const paragraph = line
+        .replace(/\*\*(.*?)\*\*/gu, "$1")
+        .replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1")
+        .replace(/^#{1,6}\s*/u, "")
+        .trim();
+      return <p key={index} className={previewMode ? "mb-4 text-justify font-normal" : "mb-4 text-justify font-normal"} style={{ textIndent: "1.25cm", lineHeight: 1.8, whiteSpace: "normal", overflowWrap: "anywhere" }}>{paragraph}</p>;
+    }).filter(Boolean);
   }
 
   function academicPreviewSegments() {
@@ -2752,9 +2774,19 @@ export default function App() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
-                      Exporter le document Word
-                    </button>
+                    {(ownerRoute || window.sessionStorage.getItem("trimemo_premium_token")) ? (
+                      <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
+                        Exporter le document Word
+                      </button>
+                    ) : totalDoneWords >= 2500 ? (
+                      <button type="button" onClick={() => void exportDocument()} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
+                        Voir l’aperçu
+                      </button>
+                    ) : (
+                      <div className="rounded-full border border-[#172554]/10 px-4 py-3 font-inter text-xs text-[#172554]/60">
+                        Aperçu disponible à 2 500 mots ({totalDoneWords.toLocaleString("fr-FR")}/2 500)
+                      </div>
+                    )}
                     {CONTACT_EMAIL && blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
                       <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande de révision humaine - " + (project.sujet || "Document Trimémo"))}`} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
                         Demander une révision humaine
@@ -3464,7 +3496,7 @@ export default function App() {
                     <h3 className={`mb-5 font-bold ${segment.kind === "introduction" ? "text-center text-lg uppercase" : "text-base"}`}>{segment.title}</h3>
                     <div className="font-normal text-[11pt] leading-[1.55] text-[#171717]">
                       {renderAcademicText(
-                        segment.content.replace(/^\s*(?:Introduction générale|Introduction|CHAPITRE\s+\d+[^\n]*|PARTIE\s+[IVXLCDM0-9]+[^\n]*)\s*/i, ""),
+                        segment.content,
                         true
                       )}
                     </div>
@@ -3480,7 +3512,24 @@ export default function App() {
                   <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Poursuivre le document</div>
                   <h3 className="mt-2 font-playfair text-2xl sm:text-3xl">Votre aperçu est terminé</h3>
                   <p className="mx-auto mt-3 max-w-[650px] font-inter text-sm leading-6 text-white/75">Le paiement débloque la suite de la rédaction au point d’arrêt, en conservant la problématique et le plan choisis.</p>
-                  {estimate && <div className="mx-auto mt-4 max-w-[420px] rounded-2xl bg-white/10 p-4 text-center"><div className="font-inter text-xs text-white/65">Montant estimé du projet</div><div className="mt-1 font-playfair text-2xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"}</div></div>}
+                  {estimate && (
+                    <div className="mx-auto mt-5 max-w-[560px] rounded-2xl border border-white/15 bg-white/5 p-4 text-left">
+                      <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#D4A23A]">Récapitulatif de l’analyse initiale</div>
+                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 font-inter text-xs leading-5">
+                        <div><dt className="text-white/60">Document</dt><dd className="font-semibold text-white">{estimate.documentType || project.typeDoc}</dd></div>
+                        <div><dt className="text-white/60">Niveau</dt><dd className="font-semibold text-white">{estimate.level || project.niveau}</dd></div>
+                        <div><dt className="text-white/60">Volume demandé</dt><dd className="font-semibold text-white">{estimate.pages || project.pages} pages</dd></div>
+                        <div><dt className="text-white/60">Complexité évaluée</dt><dd className="font-semibold text-white">{estimate.complexity || "À confirmer"}</dd></div>
+                      </dl>
+                      {estimate.reasons?.length > 0 && <div className="mt-4"><div className="font-inter text-[11px] font-semibold text-white/75">Éléments pris en compte</div><ul className="mt-2 list-disc space-y-1 pl-5 font-inter text-xs leading-5 text-white/75">{estimate.reasons.map((reason, i) => <li key={"estimate-reason-"+i}>{reason}</li>)}</ul></div>}
+                      {estimate.detectedRequirements?.length > 0 && <div className="mt-3"><div className="font-inter text-[11px] font-semibold text-white/75">Exigences détectées</div><ul className="mt-2 list-disc space-y-1 pl-5 font-inter text-xs leading-5 text-white/75">{estimate.detectedRequirements.map((item, i) => <li key={"estimate-requirement-"+i}>{item}</li>)}</ul></div>}
+                      <div className="mt-5 border-t border-white/15 pt-4">
+                        <div className="font-inter text-xs text-white/65">Montant estimé pour terminer et exporter le document complet</div>
+                        <div className="mt-1 font-playfair text-2xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"}</div>
+                        <p className="mt-2 font-inter text-xs leading-5 text-white/70">Ce montant couvre l’ensemble du projet demandé, pas uniquement les {totalDoneWords.toLocaleString("fr-FR")} mots de l’aperçu. Il permet de poursuivre la rédaction au point d’arrêt et d’exporter le document complet.</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="mx-auto mt-5 grid max-w-[420px] gap-3">
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
                       <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-60">
@@ -3659,7 +3708,13 @@ export default function App() {
                       <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); setWritingTab("problematic"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">1. Problématique</button>
                       <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); setWritingTab("plan"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">2. Plan validé</button>
                       <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#172554] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
-                      <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#172554]/15 px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#F7FAF8]">Aperçu / Exporter</button>
+                      {ownerRoute || window.sessionStorage.getItem("trimemo_premium_token") ? (
+                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#172554]/15 px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#F7FAF8]">Exporter le document</button>
+                      ) : totalDoneWords >= 2500 ? (
+                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl bg-[#D4A23A] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554] hover:bg-[#e0b24f]">Voir l’aperçu</button>
+                      ) : (
+                        <div className="rounded-xl border border-[#172554]/10 px-4 py-3 font-inter text-xs leading-5 text-[#172554]/60">L’aperçu se débloque à 2 500 mots.</div>
+                      )}
                     </nav>
                     <div className="mt-5 rounded-xl bg-[#F7FAF8] p-3">
                       <div className="font-inter text-[11px] text-[#172554]/60">Progression rédactionnelle</div>
