@@ -1734,8 +1734,10 @@ export default function App() {
     if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
       const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
       const completedWords = completedBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
-      if (completedWords >= 2500) {
-        pushToast("info", "L’aperçu de 2 500 mots est atteint. Consultez-le, puis payez pour poursuivre la rédaction.");
+      const nextBlockWords = Math.min(block.expectedWords || 900, 1000);
+      if (completedWords >= 2500 || completedWords + nextBlockWords > 2500) {
+        // Ne pas lancer un bloc qui ferait dépasser le plafond gratuit : ouvrir directement l’aperçu verrouillé.
+        setSelectedWritingBlockId(blockId);
         await exportDocument();
         return;
       }
@@ -3411,7 +3413,12 @@ export default function App() {
             )}
 
             {view === "preview" && preview && !ownerRoute && (
-            <section className="mb-7 mx-auto max-w-[900px] rounded-lg border border-[#172554]/10 bg-[#E5E7EB] p-3 sm:p-8">
+            <section
+              className="mb-7 mx-auto max-w-[900px] select-none rounded-lg border border-[#172554]/10 bg-[#E5E7EB] p-3 sm:p-8"
+              onCopy={(event) => event.preventDefault()}
+              onCut={(event) => event.preventDefault()}
+              onContextMenu={(event) => event.preventDefault()}
+            >
               <div className="mx-auto bg-white px-6 py-10 text-[#171717] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "12pt", lineHeight: 1.7 }}>
                 <div className="mb-8 border-b pb-5 text-center">
                   <div className="text-xs uppercase tracking-[0.12em] text-[#555]">Aperçu du document académique</div>
