@@ -807,9 +807,27 @@ export default function App() {
               block.kind !== "introduction" && (!firstChapterPrefix || !block.id.startsWith(firstChapterPrefix))
             );
             const nextBlocks = introductionBlock ? [introductionBlock, seededChapter, ...remainingBlocks] : [seededChapter, ...remainingBlocks];
-            setBlocks(nextBlocks);
-            setSelectedWritingBlockId(introductionBlock?.id || seededChapter.id);
+            // Si le client revient du paiement, restaurer les blocs et leur contenu depuis la session
+            // au lieu de remplacer sa progression par des blocs vierges.
+            let savedBlocks: Block[] = [];
+            let savedSelectedBlockId = "";
+            try {
+              const rawBlocks = window.sessionStorage.getItem("trimemo_blocks_pending");
+              const parsedBlocks = rawBlocks ? JSON.parse(rawBlocks) : null;
+              if (Array.isArray(parsedBlocks) && parsedBlocks.length && parsedBlocks.every((item) => item && typeof item.id === "string" && typeof item.content === "string")) savedBlocks = parsedBlocks;
+              savedSelectedBlockId = window.sessionStorage.getItem("trimemo_selected_block_pending") || "";
+            } catch {}
+            const restoredBlocks = savedBlocks.length
+              ? nextBlocks.map((block) => {
+                  const savedBlock = savedBlocks.find((item) => item.id === block.id);
+                  return savedBlock ? { ...block, ...savedBlock, id: block.id } : block;
+                })
+              : nextBlocks;
+            setBlocks(restoredBlocks);
+            setSelectedWritingBlockId(savedSelectedBlockId || introductionBlock?.id || seededChapter.id);
             setView("writing");
+            window.sessionStorage.removeItem("trimemo_blocks_pending");
+            window.sessionStorage.removeItem("trimemo_selected_block_pending");
             window.localStorage.removeItem("trimemo_preview_pending");
             window.sessionStorage.removeItem("trimemo_preview_pending");
             pushToast("success", "Paiement confirmé. Le premier chapitre est conservé. La rédaction reprend avec l'introduction complète et les chapitres suivants.");
