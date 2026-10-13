@@ -1771,14 +1771,14 @@ export default function App() {
         const data = await readApiResponse(response);
         const content = String(data.content || data.block?.content || data.text || "").trim();
         if (!content) throw new Error("Le serveur n’a retourné aucun contenu pour ce bloc.");
-        const wordCount = countWords(content);
-        if (wordCount > 1000) {
-          const trimmed = content.split(/\\s+/u).filter(Boolean).slice(0, 1000).join(" ");
-          setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, ...data, content: trimmed, wordCount: countWords(trimmed), status: "done", error: undefined } : item));
-        } else {
-          setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, ...data, id: item.id, kind: item.kind, content, wordCount, status: "done", error: undefined } : item));
-        }
-        pushToast("success", `Bloc rédigé : ${Math.min(wordCount, 1000)} mots environ. Vous pouvez passer au bloc suivant.`);
+        const remainingWords = Math.max(0, 2500 - completedWords);
+        const limitedContent = content.split(/\s+/u).filter(Boolean).slice(0, Math.min(1000, remainingWords)).join(" ");
+        const finalCount = countWords(limitedContent);
+        setBlocks((current) => current.map((item) => item.id === blockId ? {
+          ...item, ...data, id: item.id, title: item.title, kind: item.kind, structure: item.structure,
+          content: limitedContent, wordCount: finalCount, status: "done", error: undefined,
+        } : item));
+        pushToast("success", finalCount + " mots rédigés dans ce bloc. " + (completedWords + finalCount >= 2500 ? "L’aperçu académique est disponible." : "Passez au bloc suivant."));
       } catch (error) {
         const message = error instanceof Error ? error.message : "Impossible de rédiger ce bloc.";
         setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "pending", error: message } : item));
