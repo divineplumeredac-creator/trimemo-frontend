@@ -1550,9 +1550,9 @@ export default function App() {
             partLabel(part),
             chapterLabel(chapter),
             sectionLabel(chapter, section),
-            ...section.subsections.flatMap((subsection) => [
+            ...(Array.isArray(section.subsections) ? section.subsections : []).flatMap((subsection) => [
               subsectionLabel(chapter, section, subsection),
-              ...subsection.internalTitles.map((internal) =>
+              ...(Array.isArray(subsection.internalTitles) ? subsection.internalTitles : []).map((internal) =>
                 internalLabel(chapter, section, subsection, internal)
               ),
             ]),
@@ -1654,13 +1654,68 @@ export default function App() {
     setSelectedProblematic(problematic);
     setSelectedPlan(plan);
     setPreview(null);
-    const preparedBlocks = prepareBlocks(plan);
+    let preparedBlocks: Block[] = [];
+    try {
+      preparedBlocks = prepareBlocks(plan);
+    } catch (error) {
+      console.error("Trimémo: préparation des blocs impossible", error);
+      // Préserver un espace de rédaction utilisable même si le plan est incomplet.
+      preparedBlocks = [{
+        id: `${plan.id || "plan"}-introduction-generale`,
+        title: plan.introductionGeneral?.title || "Introduction générale",
+        expectedWords: 900,
+        content: "",
+        wordCount: 0,
+        status: "pending",
+        sources: [],
+        footnotes: [],
+        structure: ["Introduction générale"],
+        kind: "introduction",
+      }, {
+        id: `${plan.id || "plan"}-conclusion-generale`,
+        title: plan.conclusionGeneral?.title || "Conclusion générale",
+        expectedWords: 600,
+        content: "",
+        wordCount: 0,
+        status: "pending",
+        sources: [],
+        footnotes: [],
+        structure: ["Conclusion générale"],
+        kind: "conclusion",
+      }];
+      setGenerationError("La structure du plan est incomplète. Les blocs essentiels sont affichés ; vérifiez le plan pour reconstruire les autres blocs.");
+    }
+    if (!preparedBlocks.length) {
+      preparedBlocks = [{
+        id: `${plan.id || "plan"}-introduction-generale`,
+        title: plan.introductionGeneral?.title || "Introduction générale",
+        expectedWords: 900,
+        content: "",
+        wordCount: 0,
+        status: "pending",
+        sources: [],
+        footnotes: [],
+        structure: ["Introduction générale"],
+        kind: "introduction",
+      }, {
+        id: `${plan.id || "plan"}-conclusion-generale`,
+        title: plan.conclusionGeneral?.title || "Conclusion générale",
+        expectedWords: 600,
+        content: "",
+        wordCount: 0,
+        status: "pending",
+        sources: [],
+        footnotes: [],
+        structure: ["Conclusion générale"],
+        kind: "conclusion",
+      }];
+      setGenerationError("Le plan ne contient aucune partie exploitable. Les blocs essentiels sont affichés, mais le plan doit être vérifié.");
+    }
     setBlocks(preparedBlocks);
     setSelectedWritingBlockId(preparedBlocks[0]?.id || null);
     setPremiumNav("writing");
     setPremiumSection("writing");
     setView("writing");
-    setGenerationError("");
   }
 
   async function generateBlock(blockId: string) {
