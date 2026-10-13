@@ -1514,10 +1514,12 @@ export default function App() {
     const internalLabel = (chapter: PlanChapter, section: PlanSection, subsection: PlanSubsection, internal: PlanInternalTitle) =>
       `${chapter.number}.${section.number}.${subsection.number}.${internal.number} : ${internal.title}`;
 
-    const introductionWords = Math.min(1000, Math.max(100, Math.round(Number(plan.introductionGeneral.wordCount || 900))));
+    const introductionConfig = plan.introductionGeneral || { title: "Introduction générale", wordCount: 900 };
+    const conclusionConfig = plan.conclusionGeneral || { title: "Conclusion générale", wordCount: 600 };
+    const introductionWords = Math.min(1000, Math.max(100, Math.round(Number(introductionConfig.wordCount || 900))));
     const introductionBlock: Block = {
       id: `${plan.id}-introduction-generale`,
-      title: plan.introductionGeneral.title || "Introduction générale",
+      title: introductionConfig.title || "Introduction générale",
       expectedWords: introductionWords,
       content: "",
       wordCount: 0,
@@ -1533,14 +1535,15 @@ export default function App() {
      * Un même bloc peut contenir plusieurs sous-sections et leurs titres internes.
      * On conserve toujours l'ordre du plan et on ne coupe jamais une sous-section.
      */
-    const chapterBlocks = plan.parts.flatMap((part) =>
-      part.chapters.flatMap((chapter) => {
+    const safeParts = Array.isArray(plan.parts) ? plan.parts : [];
+    const chapterBlocks = safeParts.flatMap((part) =>
+      (Array.isArray(part.chapters) ? part.chapters : []).flatMap((chapter) => {
         /*
          * L'unité minimale de regroupement est la SECTION.
          * Une section et toutes ses sous-sections/titres internes restent ensemble.
          * Le seuil de 900 mots est une cible, jamais une contrainte.
          */
-        const sectionUnits = chapter.sections.map((section) => ({
+        const sectionUnits = (Array.isArray(chapter.sections) ? chapter.sections : []).map((section) => ({
           id: section.id,
           title: section.title,
           structure: [
@@ -1629,8 +1632,8 @@ export default function App() {
 
     const conclusionBlock: Block = {
       id: `${plan.id}-conclusion-generale`,
-      title: plan.conclusionGeneral.title || "Conclusion générale",
-      expectedWords: Math.min(1500, Math.max(300, Math.round(Number(plan.conclusionGeneral.wordCount || 600)))),
+      title: conclusionConfig.title || "Conclusion générale",
+      expectedWords: Math.min(1500, Math.max(300, Math.round(Number(conclusionConfig.wordCount || 600)))),
       content: "",
       wordCount: 0,
       status: "pending",
