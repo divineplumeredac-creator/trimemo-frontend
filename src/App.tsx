@@ -3422,6 +3422,33 @@ export default function App() {
                   </div>
                   <div className="mt-3 text-sm">{academicPreviewSegments().reduce((sum, segment) => sum + segment.words, 0).toLocaleString("fr-FR")} / 2 500 mots rédigés</div>
                 </div>
+                <section className="mb-10 border-b border-[#999] pb-8">
+                  <h3 className="mb-5 text-center text-base font-bold uppercase tracking-wide">Sommaire</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="font-semibold">Introduction générale</div>
+                    {preview.plan.parts.map((part) => (
+                      <div key={part.id}>
+                        <div className="font-bold uppercase">PARTIE {part.number}. {part.title}</div>
+                        <div className="mt-2 space-y-2 pl-4">
+                          {part.chapters.map((chapter) => (
+                            <div key={chapter.id}>
+                              <div className="font-semibold">Chapitre {chapter.number}. {chapter.title}</div>
+                              <div className="mt-1 space-y-1 pl-4">
+                                {chapter.sections.map((section) => (
+                                  <div key={section.id}>
+                                    <div>Section {chapter.number}.{section.number}. {section.title}</div>
+                                    {section.subsections.map((sub) => <div key={sub.id} className="pl-4 text-xs">{chapter.number}.{section.number}.{sub.number} {sub.title}</div>)}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    <div className="font-semibold">Conclusion générale</div>
+                  </div>
+                </section>
                 {academicPreviewSegments().map((segment, index) => (
                   <article key={segment.id} className="mb-8">
                     <h3 className={`mb-5 font-bold ${segment.kind === "introduction" ? "text-center text-lg uppercase" : "text-base"}`}>{segment.title}</h3>
@@ -3432,108 +3459,29 @@ export default function App() {
               </div>
             </section>
           )}
-          {view === "preview" && preview && (
-              <div className="grid gap-6 lg:grid-cols-[245px_minmax(0,1fr)]">
-                <aside className="h-fit rounded-[24px] border border-[#172554]/10 bg-white p-4 lg:sticky lg:top-[96px]">
-                  <div className="px-3 pb-3 font-inter text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
-                    Navigation de l’aperçu
-                  </div>
-                  <div className="space-y-2">
-                    <button onClick={() => setPreviewTab("problematic")} className={`w-full rounded-[14px] px-4 py-4 text-left font-inter text-sm font-semibold transition ${previewTab === "problematic" ? "bg-[#172554] text-white" : "bg-[#EAF7EE] text-[#172554] hover:bg-[#DDEFE3]"}`}>Problématique</button>
-                    <button onClick={() => setPreviewTab("plan")} className={`w-full rounded-[14px] px-4 py-4 text-left font-inter text-sm font-semibold transition ${previewTab === "plan" ? "bg-[#172554] text-white" : "bg-[#EAF7EE] text-[#172554] hover:bg-[#DDEFE3]"}`}>Plan</button>
-                    <button onClick={() => setPreviewTab("introduction")} className={`w-full rounded-[14px] px-4 py-4 text-left font-inter text-sm font-semibold transition ${previewTab === "introduction" ? "bg-[#172554] text-white" : "bg-[#EAF7EE] text-[#172554] hover:bg-[#DDEFE3]"}`}>Introduction</button>
-                    <button onClick={() => setPreviewTab("chapter")} className={`w-full rounded-[14px] px-4 py-4 text-left font-inter text-sm font-semibold transition ${previewTab === "chapter" ? "bg-[#172554] text-white" : "bg-[#EAF7EE] text-[#172554] hover:bg-[#DDEFE3]"}`}>Chapitre 1</button>
-                  </div>
-                  <div className="mt-5 rounded-[14px] bg-[#FFF8E7] p-4 font-inter text-xs leading-[1.6] text-[#6B4B08]">Sélectionnez une rubrique pour consulter son contenu.</div>
-                </aside>
-                <section className="min-w-0 rounded-[24px] border border-[#172554]/10 bg-white p-6 sm:p-8 lg:p-10">
-                  {previewTab === "problematic" && (
-                    <div>
-                      <div className="flex items-center justify-between gap-4"><div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Problématique proposée avant paiement</div><Search className="h-5 w-5 text-[#172554]/45" /></div>
-                      <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.problematic.title}</h3>
-                      <p className="mt-6 font-inter text-base leading-[1.9] text-[#172554]/80">{preview.problematic.question || "La problématique n’a pas été retournée par le service."}</p>
-                      {preview.problematic.angle && <p className="mt-6 font-inter text-sm leading-[1.8] text-[#172554]/80"><strong>Angle :</strong> {preview.problematic.angle}</p>}
-                      {preview.problematic.rationale && <div className="mt-6 rounded-[16px] bg-[#EAF7EE] p-5 font-inter text-sm leading-[1.8] text-[#172554]/80">{preview.problematic.rationale}</div>}
-                    </div>
-                  )}
-                  {previewTab === "plan" && (
-                    <div>
-                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Plan proposé avant paiement</div>
-                      <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.plan.title}</h3>
-                      <div className="mt-7 font-inter text-[#172554]">
-                        <div className="border-b border-[#172554]/10 pb-4 text-base font-semibold">Introduction générale <span className="text-xs font-normal text-[#172554]/60">≈ {Number(preview.plan.introductionGeneral?.wordCount || Math.round(project.pages * WORDS_PER_PAGE * 0.1)).toLocaleString("fr-FR")} mots (10 % du volume)</span></div>
-                        <div className="mt-5 space-y-5">
-                          {preview.plan.parts.map((part) => <div key={part.id}>
-                            <div className="text-base font-bold uppercase">PARTIE {part.number}. {part.title}</div>
-                            <div className="mt-3 space-y-3 pl-4">
-                              {part.chapters.map((chapter) => <div key={chapter.id}>
-                                <div className="text-sm font-bold">Chapitre {chapter.number}. {chapter.title}</div>
-                                <div className="mt-2 space-y-1 pl-5">
-                                  {chapter.sections.map((section) => <div key={section.id}>
-                                    <div className="text-sm font-semibold">Section {chapter.number}.{section.number}. {section.title}</div>
-                                    <div className="mt-1 space-y-1 pl-5">
-                                      {section.subsections.map((subsection) => <div key={subsection.id} className="text-xs">§ {chapter.number}.{section.number}.{subsection.number} {subsection.title}</div>)}
-                                    </div>
-                                  </div>)}
-                                </div>
-                              </div>)}
-                            </div>
-                          </div>)}
-                        </div>
-                        <div className="mt-6 border-t border-[#172554]/10 pt-4 text-base font-semibold">Conclusion générale</div>
-                        <div className="mt-4 rounded-xl bg-[#FFF8E7] p-3 text-xs leading-[1.7] text-[#6B4B08]">Le plan présente la structure du mémoire. L’onglet Introduction montre un extrait ; le chapitre 1 permet d’évaluer la qualité de rédaction avant paiement.</div>
-                      </div>
-                    </div>
-                  )}
-                  {previewTab === "chapter" && (
-                    <div>
-                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Premier chapitre · aperçu rédactionnel de 2 500 mots maximum</div>
-                      <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.chapterOne.title}</h3>
-                      <div className="mt-3 font-inter text-xs text-[#172554]/55">{preview.chapterOne.partTitle ? "PARTIE I · " + preview.chapterOne.partTitle + " · " : ""}{preview.chapterOne.wordCount.toLocaleString("fr-FR")} mots environ</div>
-                      <div className="mt-6 whitespace-pre-wrap font-inter text-base leading-[1.95] text-[#172554]/80">{preview.chapterOne.content}</div>
-                    </div>
-                  )}
-                  {previewTab === "introduction" && (
-                    <div>
-                      <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Introduction générale · aperçu rédactionnel</div>
-                      <h3 className="mt-5 font-playfair text-2xl leading-tight text-[#172554] sm:text-3xl">{preview.introduction.title}</h3>
-                      <p className="mt-6 whitespace-pre-wrap font-inter text-base leading-[1.95] text-[#172554]/80">{preview.introduction.content}</p>
-                      <div className="mt-6 rounded-[14px] bg-[#FFF8E7] p-4 font-inter text-sm leading-[1.7] text-[#6B4B08]"><strong>Aperçu rédactionnel :</strong> introduction et premier chapitre, dans la limite totale de 2 500 mots. Le reste du document est débloqué après paiement.</div>
-                    </div>
-                  )}
-                </section>
-              </div>
-            )}
-
             {view === "preview" && preview && (
-              <section className="mt-8 rounded-[24px] border border-[#172554]/5 bg-[#172554] p-7 text-white lg:p-9">
-                <div className="grid gap-8 lg:grid-cols-[1fr_390px] lg:items-center">
-                  <div>
-                    <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Débloquer la suite</div>
-                    <h3 className="mt-3 font-playfair text-3xl">Validez la qualité avant de poursuivre</h3>
-                    <p className="mt-3 max-w-[720px] font-inter text-sm leading-[1.7] text-white/65">Le montant estimé couvre le projet selon le type de document, le niveau, la complexité détectée et le volume demandé. Les propositions, les améliorations et l’aperçu rédactionnel sont pris en compte dans le coût prévisionnel. Le prix global est payé une seule fois avant la poursuite de la rédaction.</p>
-                  </div>
-                  <div className="grid gap-3">
-                    {estimate && <div className="rounded-2xl bg-white/10 p-4 text-center"><div className="font-inter text-xs text-white/65">Montant estimé du projet</div><div className="mt-1 font-playfair text-2xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"}</div><div className="mt-1 font-inter text-[11px] text-white/60">Le paiement intégral autorise la poursuite de ce seul projet. La correction humaine reste une option payante distincte.</div></div>}
+              <section className="mx-auto mt-6 max-w-[900px] rounded-[24px] bg-[#172554] p-6 text-white sm:p-8">
+                <div className="text-center">
+                  <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Poursuivre le document</div>
+                  <h3 className="mt-2 font-playfair text-2xl sm:text-3xl">Votre aperçu est terminé</h3>
+                  <p className="mx-auto mt-3 max-w-[650px] font-inter text-sm leading-6 text-white/75">Le paiement débloque la suite de la rédaction au point d’arrêt, en conservant la problématique et le plan choisis.</p>
+                  {estimate && <div className="mx-auto mt-4 max-w-[420px] rounded-2xl bg-white/10 p-4 text-center"><div className="font-inter text-xs text-white/65">Montant estimé du projet</div><div className="mt-1 font-playfair text-2xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"}</div></div>}
+                  <div className="mx-auto mt-5 grid max-w-[420px] gap-3">
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
                       <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-60">
                         {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                        Payer avec PayPal
+                        Payer pour continuer avec PayPal
                       </button>
                     ) : (
-                      <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-center font-inter text-xs leading-[1.7] text-white/70">
-                        Le paiement en ligne sera activé après la configuration sécurisée du compte marchand.
-                      </div>
+                      <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-center font-inter text-xs leading-5 text-white/70">Le paiement PayPal n’est pas encore activé.</div>
                     )}
                     {String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true" ? (
                       <button onClick={() => void startPayment("mobile-money")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 font-inter text-sm font-semibold text-white disabled:opacity-60">
                         {paymentLoading === "mobile-money" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                        Payer par Mobile Money
+                        Payer pour continuer par Mobile Money
                       </button>
                     ) : (
-                      <div className="rounded-full border border-white/15 bg-white/5 px-4 py-3 text-center font-inter text-xs text-white/60">
-                        Mobile Money : prestataire à connecter
-                      </div>
+                      <div className="rounded-full border border-white/15 bg-white/5 px-4 py-3 text-center font-inter text-xs text-white/60">Mobile Money : prestataire à connecter</div>
                     )}
                   </div>
                 </div>
