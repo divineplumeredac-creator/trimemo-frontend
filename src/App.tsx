@@ -1882,10 +1882,22 @@ export default function App() {
     pushToast("success", "Contenu copié.");
   }
 
+  function academicPreviewSegments() {
+    const finished = blocks.filter((block) => block.status === "done" && block.content.trim());
+    let remaining = 2500;
+    return finished.flatMap((block) => {
+      if (remaining <= 0) return [];
+      const words = block.content.trim().split(/\s+/u).filter(Boolean);
+      const selected = words.slice(0, remaining);
+      remaining -= selected.length;
+      return selected.length ? [{ id: block.id, title: block.title, kind: block.kind, content: selected.join(" "), words: selected.length, structure: block.structure || [] }] : [];
+    });
+  }
+
   async function exportDocument() {
     if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
       const done = blocks.filter((block) => block.status === "done" && block.content.trim());
-      const combined = done.map((block) => block.content).join("\\n\\n");
+      const combined = done.map((block) => block.content).join("\n\n");
       if (countWords(combined) < 1) {
         pushToast("info", "Rédigez l’introduction et le premier chapitre pour consulter l’aperçu avant paiement.");
         return;
@@ -1894,18 +1906,14 @@ export default function App() {
         pushToast("error", "Sélectionnez une problématique et un plan avant de poursuivre.");
         return;
       }
-      const intro = done.find((block) => block.kind === "introduction");
-      const firstChapter = selectedPlan.parts[0]?.chapters[0];
-      const firstChapterBlocks = firstChapter
-        ? done.filter((block) => block.id.startsWith(`${firstChapter.id}-bloc-`) || block.id === `${selectedPlan.id}-chapter-one-preview`)
-        : done.filter((block) => block.kind === "chapter");
-      const chapterContent = firstChapterBlocks.map((block) => block.content).filter(Boolean).join("\\n\\n");
-      const chapterWords = firstChapterBlocks.reduce((sum, block) => sum + (block.wordCount || countWords(block.content)), 0);
+      const segments = academicPreviewSegments();
+      const intro = segments.find((block) => block.kind === "introduction");
+      const others = segments.filter((block) => block.kind !== "introduction");
       const previewSnapshot: Preview = {
         problematic: selectedProblematic,
         plan: selectedPlan,
-        introduction: { title: intro?.title || "Introduction générale", content: intro?.content || "", wordCount: intro?.wordCount || 0, incomplete: false },
-        chapterOne: { title: firstChapter?.title || firstChapterBlocks[0]?.title || "Chapitre 1", content: chapterContent, wordCount: chapterWords, partTitle: selectedPlan.parts[0]?.title, chapterNumber: 1, sectionTitles: firstChapterBlocks.flatMap((block) => block.structure || []) },
+        introduction: { title: intro?.title || "Introduction générale", content: intro?.content || "", wordCount: intro?.words || 0, incomplete: true },
+        chapterOne: { title: "Suite de la rédaction", content: others.map((block) => [block.title, block.content].join("\n\n")).join("\n\n"), wordCount: others.reduce((sum, block) => sum + block.words, 0), partTitle: "", chapterNumber: 1, sectionTitles: others.flatMap((block) => block.structure) },
       };
       setPreview(previewSnapshot);
       try {
@@ -3357,7 +3365,27 @@ export default function App() {
               </div>
             )}
 
-            {view === "preview" && preview && (
+            {view === "preview" && preview && !ownerRoute && (
+            <section className="mb-7 mx-auto max-w-[900px] rounded-lg border border-[#172554]/10 bg-[#E5E7EB] p-3 sm:p-8">
+              <div className="mx-auto bg-white px-6 py-10 text-[#171717] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "12pt", lineHeight: 1.7 }}>
+                <div className="mb-8 border-b pb-5 text-center">
+                  <div className="text-xs uppercase tracking-[0.12em] text-[#555]">Aperçu du document académique</div>
+                  <h2 className="mt-4 text-xl font-bold">{project.sujet || selectedPlan?.title || "Projet académique"}</h2>
+                  <div className="mt-3 text-sm">{academicPreviewSegments().reduce((sum, segment) => sum + segment.words, 0).toLocaleString("fr-FR")} / 2 500 mots rédigés</div>
+                </div>
+                {academicPreviewSegments().map((segment, index) => (
+                  <article key={segment.id} className="mb-8">
+                    <h3 className={`mb-5 font-bold ${segment.kind === "introduction" ? "text-center text-lg uppercase" : "text-base"}`}>{segment.title}</h3>
+                    {segment.content.split(/\n\s*\n/u).filter(Boolean).map((paragraph, paragraphIndex) => (
+                      <p key={paragraphIndex} className="mb-3 text-justify" style={{ textIndent: paragraphIndex === 0 ? 0 : "1.25cm", whiteSpace: "pre-wrap" }}>{paragraph}</p>
+                    ))}
+                  </article>
+                ))}
+                <div className="mt-10 border-t pt-4 text-center text-xs italic text-[#555]">Fin de l’aperçu. Le paiement permet de poursuivre la rédaction au point d’arrêt.</div>
+              </div>
+            </section>
+          )}
+          {view === "preview" && preview && (
               <div className="grid gap-6 lg:grid-cols-[245px_minmax(0,1fr)]">
                 <aside className="h-fit rounded-[24px] border border-[#172554]/10 bg-white p-4 lg:sticky lg:top-[96px]">
                   <div className="px-3 pb-3 font-inter text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
