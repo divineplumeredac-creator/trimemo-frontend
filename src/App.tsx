@@ -537,6 +537,13 @@ export default function App() {
   }, [ownerRoute]);
 
   useEffect(() => {
+    // Un lien de reprise doit être restauré exclusivement depuis le projet distant,
+    // jamais depuis l'ancien état local du navigateur.
+    const sharedProjectId = new URLSearchParams(window.location.search).get("project");
+    if (sharedProjectId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sharedProjectId)) {
+      filesHydrated.current = true;
+      return;
+    }
     try {
       const raw = window.localStorage.getItem(stateStorageKey);
       if (!raw) return;
