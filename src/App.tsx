@@ -1922,7 +1922,15 @@ export default function App() {
       // Sépare une phrase de prose lorsqu'un titre identifié est suivi sur la même ligne.
       const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?]{0,180}|CHAPITRE\s+\d+\b[^.!?]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
       if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
-      return line ? [line] : [];
+      if (!line) return [];
+      // Si le moteur a renvoyé tout un bloc sur une seule ligne, rétablit des paragraphes lisibles sans réécrire le texte.
+      const sentences = line.split(/(?<=[.!?])\\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/u).filter(Boolean);
+      if (sentences.length >= 4) {
+        const paragraphs: string[] = [];
+        for (let i = 0; i < sentences.length; i += 3) paragraphs.push(sentences.slice(i, i + 3).join(" ").trim());
+        return paragraphs;
+      }
+      return [line];
     });
     return rawBlocks.map((rawBlock, index) => {
       const line = cleanLine(rawBlock.replace(/^\s*[-*]\s+/u, ""));
