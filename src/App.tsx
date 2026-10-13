@@ -1769,11 +1769,11 @@ export default function App() {
         const introText = String(data?.introduction?.content || "").trim();
         const chapterText = String(data?.chapterOne?.content || "").trim();
         if (!introText || !chapterText) throw new Error("L’aperçu doit contenir l’introduction et le premier chapitre.");
-        const capWords = (value: string, limit: number) => value.split(/\\s+/u).filter(Boolean).slice(0, limit).join(" ");
+        const capWords = (value: string, limit: number) => value.split(/\s+/u).filter(Boolean).slice(0, limit).join(" ");
         const intro = capWords(introText, 800);
         const remaining = Math.max(0, 2500 - countWords(intro));
         const chapter = capWords(chapterText, remaining);
-        const words = chapter.split(/\\s+/u).filter(Boolean);
+        const words = chapter.split(/\s+/u).filter(Boolean);
         const chapterBlocks = blocks.filter((item) => item.kind === "chapter" || item.kind === "section");
         const chunks: string[] = [];
         for (let offset = 0; offset < words.length; offset += 900) chunks.push(words.slice(offset, offset + 900).join(" "));
