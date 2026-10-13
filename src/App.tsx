@@ -1627,9 +1627,18 @@ export default function App() {
   }
 
   function selectPremiumPlan(problematic: Problematic, plan: Plan) {
+    // Valider un plan doit ouvrir l'espace de rédaction, comme dans l'espace propriétaire.
+    // La sélection ne déclenche plus une génération automatique d'aperçu générique.
     setSelectedProblematic(problematic);
     setSelectedPlan(plan);
-    void generateFreePreview(problematic, plan);
+    setPreview(null);
+    const preparedBlocks = prepareBlocks(plan);
+    setBlocks(preparedBlocks);
+    setSelectedWritingBlockId(preparedBlocks[0]?.id || null);
+    setPremiumNav("writing");
+    setPremiumSection("writing");
+    setView("writing");
+    setGenerationError("");
   }
 
   async function generateBlock(blockId: string) {
