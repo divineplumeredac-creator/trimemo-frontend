@@ -1076,16 +1076,18 @@ export default function App() {
     pushToast("info", `Mode propriétaire : test ${formulaId} sans paiement.`);
   }
 
-  async function generatePublicProblematics() {
-    if (!project.sujet.trim() || !estimate || !project.pricingQuoteToken) {
-      pushToast("error", "Renseignez le projet et lancez l’analyse tarifaire avant de continuer.");
+  async function generatePublicProblematics(estimateOverride?: ProjectEstimate, projectOverride?: ProjectData) {
+    const activeEstimate = estimateOverride || estimate;
+    const activeProject = projectOverride || project;
+    if (!activeProject.sujet.trim() || !activeEstimate || !activeProject.pricingQuoteToken) {
+      pushToast("error", "Renseignez les informations du projet avant de continuer.");
       setView("project");
       return;
     }
     setLoading(true);
     setGenerationError("");
     try {
-      const requestProject = { ...project, pricingQuoteToken: project.pricingQuoteToken };
+      const requestProject = { ...activeProject, pricingQuoteToken: activeProject.pricingQuoteToken };
       const personalQuestion = String(requestProject.problematiquePersonnelle || "").trim();
       let problematics: Problematic[] = [];
       if (personalQuestion) {
@@ -1366,14 +1368,16 @@ export default function App() {
       }, 90000);
       const data = await readApiResponse(response);
       if (!data?.estimate?.pricingQuoteToken) throw new Error("L'estimation du projet n'a pas été signée par le serveur.");
-      setEstimate(data.estimate as ProjectEstimate);
-      setProject((current) => ({
-        ...current,
+      const analyzedEstimate = data.estimate as ProjectEstimate;
+      const analyzedProject: ProjectData = {
+        ...project,
         country: String(data.estimate.country || ""),
         pricingQuoteToken: String(data.estimate.pricingQuoteToken),
-      }));
-      setView("estimate");
-      window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+      };
+      // L’estimation est calculée et conservée, mais elle reste masquée jusqu’à l’aperçu final.
+      setEstimate(analyzedEstimate);
+      setProject(analyzedProject);
+      await generatePublicProblematics(analyzedEstimate, analyzedProject);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible d'analyser le projet.";
       setGenerationError(message);
