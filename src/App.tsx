@@ -1908,7 +1908,6 @@ export default function App() {
       ])
     ]).map((title) => String(title || "").trim().replace(/^[#*\s]+/u, "").toLocaleLowerCase("fr"));
     // Normalise les titres académiques même lorsqu'ils sont collés au début d'un paragraphe.
-    const headingPattern = /(?=(?:^|\n)\s*(?:#{1,6}\s*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b|\d+(?:\.\d+){1,4}\s+[A-ZÀ-ÖØ-Þ]))/giu;
     let source = String(raw || "").replace(/\r\n?/gu, "\n");
     source = source
       .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
