@@ -1882,6 +1882,28 @@ export default function App() {
     pushToast("success", "Contenu copié.");
   }
 
+  function renderAcademicText(raw: string, previewMode = false) {
+    const lines = String(raw || "").split("\n");
+    const cleanLine = (line: string) => line
+      .replace(/https?:\/\/\S+/giu, "")
+      .replace(/\b(?:www\.)[a-z0-9.-]+\.[a-z]{2,}\S*/giu, "")
+      .replace(/\s{2,}/gu, " ")
+      .trim();
+    return lines.map((rawLine, index) => {
+      const line = cleanLine(rawLine);
+      if (!line) return <div key={index} className="h-3" />;
+      const heading = line.match(/^#{1,4}\s+(.+)$/u);
+      const plainHeading = !heading && (selectedPlan?.parts || []).some((part) =>
+        [part.title, ...(part.chapters || []).flatMap((chapter) => [chapter.title, ...(chapter.sections || []).flatMap((section) => [section.title, ...(section.subsections || []).map((sub) => sub.title)])])].some((title) => String(title || "").trim().toLocaleLowerCase("fr") === line.toLocaleLowerCase("fr"))
+      );
+      if (heading || plainHeading) {
+        const text = heading ? heading[1] : line;
+        return <h4 key={index} className={`mb-3 mt-6 font-bold text-[#172554] ${previewMode ? "text-base" : "text-[16px]"}`}>{text}</h4>;
+      }
+      return <p key={index} className="mb-3 text-justify" style={{ textIndent: "1.1cm", whiteSpace: "pre-wrap" }}>{line}</p>;
+    });
+  }
+
   function academicPreviewSegments() {
     const finished = blocks.filter((block) => block.status === "done" && block.content.trim());
     let remaining = 2500;
@@ -2766,7 +2788,7 @@ export default function App() {
                           )}
 
                           {block.content ? (
-                            <div className="whitespace-pre-wrap">{block.content}</div>
+                            <div>{renderAcademicText(block.content)}</div>
                           ) : (
                             <div className="flex min-h-[420px] items-center justify-center text-center">
                               <div>
@@ -3371,14 +3393,16 @@ export default function App() {
                 <div className="mb-8 border-b pb-5 text-center">
                   <div className="text-xs uppercase tracking-[0.12em] text-[#555]">Aperçu du document académique</div>
                   <h2 className="mt-4 text-xl font-bold">{project.sujet || selectedPlan?.title || "Projet académique"}</h2>
+                  <div className="mx-auto mt-4 max-w-[620px] border-t border-b border-[#999] py-3 text-left text-sm">
+                    <div><strong>Problématique :</strong> {preview.problematic.text}</div>
+                    <div className="mt-2"><strong>Plan retenu :</strong> {preview.plan.title}</div>
+                  </div>
                   <div className="mt-3 text-sm">{academicPreviewSegments().reduce((sum, segment) => sum + segment.words, 0).toLocaleString("fr-FR")} / 2 500 mots rédigés</div>
                 </div>
                 {academicPreviewSegments().map((segment, index) => (
                   <article key={segment.id} className="mb-8">
                     <h3 className={`mb-5 font-bold ${segment.kind === "introduction" ? "text-center text-lg uppercase" : "text-base"}`}>{segment.title}</h3>
-                    {segment.content.split(/\n\s*\n/u).filter(Boolean).map((paragraph, paragraphIndex) => (
-                      <p key={paragraphIndex} className="mb-3 text-justify" style={{ textIndent: paragraphIndex === 0 ? 0 : "1.25cm", whiteSpace: "pre-wrap" }}>{paragraph}</p>
-                    ))}
+                    <div>{renderAcademicText(segment.content, true)}</div>
                   </article>
                 ))}
                 <div className="mt-10 border-t pt-4 text-center text-xs italic text-[#555]">Fin de l’aperçu. Le paiement permet de poursuivre la rédaction au point d’arrêt.</div>
