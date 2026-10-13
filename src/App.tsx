@@ -3144,7 +3144,7 @@ export default function App() {
                   ["01", "Votre formule", "Vous choisissez la formule qui correspond à votre niveau ou à votre besoin."],
                   ["02", "Votre dossier", "Sujet, contexte, consignes et documents sont transmis au moteur de génération."],
                   ["03", "Choix et validation", "Générez jusqu’à trois problématiques, améliorez-les ou proposez-en d’autres, puis comparez jusqu’à trois plans avant de choisir."],
-                  ["04", "Aperçu rédactionnel puis accès complet", "Après validation de la problématique et du plan, rédigez jusqu’à 2 500 mots, de l’introduction au premier chapitre. Le prix inclut toutes les générations du projet ; le paiement débloque la suite et l’export Word."],
+                  ["04", "Aperçu rédactionnel puis accès complet", "Après validation de la problématique et du plan, rédigez jusqu’à 2 500 mots pour examiner le document en cours. Ces mots sont inclus dans le prix global du document : ils ne sont ni gratuits ni facturés une seconde fois. Le paiement permet de poursuivre la rédaction et d’exporter le document complet."],
                 ].map(([n, title, text]) => (
                   <div key={n} className="rounded-[20px] border border-[#172554]/5 bg-white p-6">
                     <div className="font-inter text-[11px] tracking-[0.2em] text-[#D4A23A]">{n}</div>
@@ -3336,7 +3336,7 @@ export default function App() {
                   <div className="mt-2 font-playfair text-4xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"}</div>
                   <div className="mt-3 font-inter text-xs leading-[1.7] text-white/65">Tarif de base {estimate.baseRate} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"} par page × coefficient de niveau {estimate.levelCoefficient} × coefficient de complexité {estimate.complexityCoefficient}.</div>
                   {estimate.currency === "XOF" && <div className="mt-3 rounded-xl bg-white/10 p-3 font-inter text-xs leading-[1.6] text-white/80">Si vous payez par PayPal, le montant sera converti en euros selon la parité fixe FCFA/euro : environ {estimate.checkoutAmount} €.</div>}
-                  <div className="mt-5 rounded-xl border border-white/15 p-3 font-inter text-xs leading-[1.7] text-white/75">L'estimation comprend le projet complet. Le travail présenté avant paiement est déjà comptabilisé et ne sera pas facturé une seconde fois.</div>
+                  <div className="mt-5 rounded-xl border border-white/15 p-3 font-inter text-xs leading-[1.7] text-white/75">Le montant affiché couvre le document complet. Les 2 500 mots de l’aperçu sont inclus dans ce prix global : ils ne sont pas gratuits et ne seront pas facturés une seconde fois.</div>
                   <button onClick={() => void generatePublicProblematics()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-50">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                     Commencer les problématiques
@@ -3533,7 +3533,7 @@ export default function App() {
                       <div className="mt-5 border-t border-white/15 pt-4">
                         <div className="font-inter text-xs text-white/65">Montant estimé pour terminer et exporter le document complet</div>
                         <div className="mt-1 font-playfair text-2xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"}</div>
-                        <p className="mt-2 font-inter text-xs leading-5 text-white/70">Ce montant couvre l’ensemble du projet demandé, pas uniquement les {totalDoneWords.toLocaleString("fr-FR")} mots de l’aperçu. Il permet de poursuivre la rédaction au point d’arrêt et d’exporter le document complet.</p>
+                        <p className="mt-2 font-inter text-xs leading-5 text-white/70">Ce montant couvre l’ensemble du document demandé, y compris les {totalDoneWords.toLocaleString("fr-FR")} mots déjà rédigés pour l’aperçu. Ces mots sont comptabilisés dans le prix global : ils ne sont ni gratuits ni facturés une seconde fois. Après paiement, la rédaction reprend au point d’arrêt et le document complet pourra être exporté.</p>
                       </div>
                     </div>
                   )}
