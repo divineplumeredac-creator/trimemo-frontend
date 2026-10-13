@@ -3422,7 +3422,7 @@ export default function App() {
               onCut={(event) => event.preventDefault()}
               onContextMenu={(event) => event.preventDefault()}
             >
-              <div className="mx-auto bg-white px-6 py-10 text-[#171717] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "12pt", lineHeight: 1.7 }}>
+              <div className="mx-auto bg-white px-6 py-10 text-[#171717] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "11pt", lineHeight: 1.55, fontWeight: 400 }}>
                 <div className="mb-8 border-b pb-5 text-center">
                   <div className="text-xs uppercase tracking-[0.12em] text-[#555]">Aperçu du document académique</div>
                   <h2 className="mt-4 text-xl font-bold">{project.sujet || selectedPlan?.title || "Projet académique"}</h2>
@@ -3462,7 +3462,12 @@ export default function App() {
                 {academicPreviewSegments().map((segment, index) => (
                   <article key={segment.id} className="mb-8">
                     <h3 className={`mb-5 font-bold ${segment.kind === "introduction" ? "text-center text-lg uppercase" : "text-base"}`}>{segment.title}</h3>
-                    <div>{renderAcademicText(segment.content, true)}</div>
+                    <div className="font-normal text-[11pt] leading-[1.55] text-[#171717]">
+                      {renderAcademicText(
+                        segment.content.replace(/^\s*(?:Introduction générale|Introduction|CHAPITRE\s+\d+[^\n]*|PARTIE\s+[IVXLCDM0-9]+[^\n]*)\s*/i, ""),
+                        true
+                      )}
+                    </div>
                   </article>
                 ))}
                 <div className="mt-10 border-t pt-4 text-center text-xs italic text-[#555]">Fin de l’aperçu. Le paiement permet de poursuivre la rédaction au point d’arrêt.</div>
@@ -3480,18 +3485,22 @@ export default function App() {
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
                       <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-60">
                         {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                        Payer pour continuer avec PayPal
+                        Payer pour continuer
                       </button>
                     ) : (
-                      <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-center font-inter text-xs leading-5 text-white/70">Le paiement PayPal n’est pas encore activé.</div>
+                      <button type="button" disabled className="flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-full bg-[#D4A23A]/50 font-inter text-sm font-semibold text-[#172554]" title="Le prestataire de paiement doit être activé dans la configuration de Trimémo.">
+                        <LockKeyhole className="h-4 w-4" />
+                        Payer pour continuer
+                      </button>
                     )}
-                    {String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true" ? (
+                    {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() !== "true" && String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() !== "true" && (
+                      <p className="text-center font-inter text-xs leading-5 text-white/70">Le paiement n’est pas encore activé. La configuration du prestataire est nécessaire pour encaisser les paiements.</p>
+                    )}
+                    {String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true" && (
                       <button onClick={() => void startPayment("mobile-money")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 font-inter text-sm font-semibold text-white disabled:opacity-60">
                         {paymentLoading === "mobile-money" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
                         Payer pour continuer par Mobile Money
                       </button>
-                    ) : (
-                      <div className="rounded-full border border-white/15 bg-white/5 px-4 py-3 text-center font-inter text-xs text-white/60">Mobile Money : prestataire à connecter</div>
                     )}
                   </div>
                 </div>
