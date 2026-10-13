@@ -3482,6 +3482,23 @@ export default function App() {
 
             </section>
           )}
+          {(view === "writing" || (view === "premium" && premiumSection === "writing")) && (!selectedPlan || !selectedProblematic) && (
+            <section className="grid min-h-[60vh] gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+              <aside className="h-fit rounded-2xl border border-[#172554]/10 bg-white p-4">
+                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigation du projet</div>
+                <nav className="mt-4 space-y-2">
+                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">1. Problématique</button>
+                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">2. Plan validé</button>
+                  <button type="button" onClick={() => { const p = selectedPlan || premium?.plans?.[0]; const q = selectedProblematic || premium?.problematics?.[0]; if (p && q) selectPremiumPlan(q, p); }} className="w-full rounded-xl bg-[#172554] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
+                </nav>
+              </aside>
+              <div className="rounded-2xl border border-amber-200 bg-white p-6 font-inter text-sm leading-6 text-[#172554]/75">
+                <h2 className="font-playfair text-2xl text-[#172554]">Préparation de l’espace de rédaction</h2>
+                <p className="mt-3">Le plan ou la problématique n’a pas été restauré correctement. Utilisez le menu de gauche pour revenir au plan, puis validez-le à nouveau.</p>
+                {generationError && <p className="mt-3 text-red-700">{generationError}</p>}
+              </div>
+            </section>
+          )}
           {(view === "writing" || (view === "premium" && premiumSection === "writing")) && selectedPlan && selectedProblematic && (
               <section className="min-h-full">
                 <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
