@@ -659,12 +659,9 @@ export default function App() {
   }, [ownerRoute, ownerSessionValid, project, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount]);
 
   useEffect(() => {
-    // Les problématiques et les plans sont accessibles avant paiement. Seule la rédaction complète
-    // reste verrouillée sans jeton; les endpoints serveur appliquent eux-mêmes les autorisations.
-    if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token") && view === "writing") {
-      setBlocks([]);
-      setView(preview ? "preview" : "premium");
-    }
+    // L'espace de rédaction doit rester visible après validation du plan.
+    // Le verrouillage commercial intervient au moment de poursuivre après l'aperçu,
+    // jamais en effaçant les blocs ni en redirigeant la vue dès son ouverture.
     if (ownerRoute && !ownerSessionValid) return;
     try {
       window.localStorage.setItem(stateStorageKey, JSON.stringify({
