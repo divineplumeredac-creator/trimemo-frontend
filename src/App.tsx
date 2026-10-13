@@ -1897,7 +1897,7 @@ export default function App() {
       .replace(/[ \t]{2,}/gu, " ")
       .replace(/\s+([,.;:!?])/gu, "$1")
       .trim();
-    const planTitles = (selectedPlan?.parts || []).flatMap((part) => [
+    const planTitleValues = (selectedPlan?.parts || []).flatMap((part) => [
       part.title,
       ...(part.chapters || []).flatMap((chapter) => [
         chapter.title,
@@ -1906,7 +1906,20 @@ export default function App() {
           ...(section.subsections || []).flatMap((sub) => [sub.title, ...(sub.internalTitles || []).map((item) => item.title)])
         ])
       ])
-    ]).map((title) => String(title || "").trim().replace(/^[#*\s]+/u, "").toLocaleLowerCase("fr"));
+    ]).map((title) => String(title || "").trim().replace(/^[#*\s]+/u, "")).filter(Boolean);
+    const planTitles = planTitleValues.map((title) => title.toLocaleLowerCase("fr"));
+    const splitDuplicatedHeading = (value: string) => {
+      const line = value.replace(/^#{1,6}\s*/u, "").replace(/[*_\x60]/gu, "").trim();
+      const prefix = line.match(/^(CHAPITRE\s+\d+\s*[:.\-–]?\s*|SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*|SOUS-SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*)/iu);
+      if (!prefix) return null;
+      const rest = line.slice(prefix[0].length).trim();
+      const candidates = [...planTitleValues].sort((a, b) => b.length - a.length);
+      const title = candidates.find((candidate) => rest.toLocaleLowerCase("fr").startsWith(candidate.toLocaleLowerCase("fr")));
+      if (!title) return null;
+      const remainder = rest.slice(title.length).trim().replace(/^[:.\-–+\s]+/u, "");
+      if (!remainder || remainder.length < 8) return null;
+      return { heading: prefix[0] + title, subtitle: remainder };
+    };
     // Normalise les titres académiques même lorsqu'ils sont collés au début d'un paragraphe.
     let source = String(raw || "").replace(/\r\n?/gu, "\n");
     source = source
@@ -1939,6 +1952,8 @@ export default function App() {
       const headingText = (markdownHeading ? markdownHeading[2] : line)
         .replace(/[*_\x60]/gu, "").replace(/\s+/gu, " ").trim();
       const normalizedHeading = headingText.toLocaleLowerCase("fr");
+      const splitHeading = splitDuplicatedHeading(headingText);
+      const displayHeading = splitHeading?.heading || headingText;
       const isAcademicHeading = /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)/iu.test(headingText);
       const plainHeading = planTitles.includes(normalizedHeading) || planTitles.some((title) => title && normalizedHeading === title.replace(/^\d+(?:\.\d+)*\s*/u, ""));
       if (markdownHeading || isAcademicHeading || plainHeading) {
@@ -1948,7 +1963,12 @@ export default function App() {
           : level === 2
             ? "mb-4 mt-8 text-base font-bold uppercase text-[#172554]"
             : "mb-3 mt-6 text-sm font-bold text-[#172554]";
-        return <h4 key={index} className={className}>{headingText}</h4>;
+        return (
+          <React.Fragment key={index}>
+            <h4 className={className}>{displayHeading}</h4>
+            {splitHeading?.subtitle && <h5 className="mb-4 mt-2 text-sm font-semibold leading-6 text-[#444]">{splitHeading.subtitle}</h5>}
+          </React.Fragment>
+        );
       }
       const paragraph = line
         .replace(/\*\*(.*?)\*\*/gu, "$1")
