@@ -1883,24 +1883,45 @@ export default function App() {
   }
 
   function renderAcademicText(raw: string, previewMode = false) {
-    const lines = String(raw || "").split("\n");
-    const cleanLine = (line: string) => line
+    const source = String(raw || "").replace(/\r\n?/gu, "\n").replace(/[ \t]+(?=#{1,6}\s+)/gu, "\n\n");
+    const cleanLine = (value: string) => value
+      .replace(/\[\s*(?:https?:\/\/)?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*\]\(https?:\/\/[^)]+\)/giu, "")
+      .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/giu, "$1")
+      .replace(/\(?\s*\[?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\]?\s*\)?\s*https?:\/\/\S+/giu, "")
       .replace(/https?:\/\/\S+/giu, "")
-      .replace(/\b(?:www\.)[a-z0-9.-]+\.[a-z]{2,}\S*/giu, "")
-      .replace(/\s{2,}/gu, " ")
+      .replace(/\bwww\.[a-z0-9.-]+\.[a-z]{2,}\S*/giu, "")
+      .replace(/\s*\(\s*\)\s*/gu, " ")
+      .replace(/[ \t]{2,}/gu, " ")
+      .replace(/\s+([,.;:!?])/gu, "$1")
       .trim();
-    return lines.map((rawLine, index) => {
-      const line = cleanLine(rawLine);
+    const planTitles = (selectedPlan?.parts || []).flatMap((part) => [
+      part.title,
+      ...(part.chapters || []).flatMap((chapter) => [
+        chapter.title,
+        ...(chapter.sections || []).flatMap((section) => [
+          section.title,
+          ...(section.subsections || []).flatMap((sub) => [sub.title, ...(sub.internalTitles || []).map((item) => item.title)])
+        ])
+      ])
+    ]).map((title) => String(title || "").trim().toLocaleLowerCase("fr"));
+    const prepared = source.split("\n").flatMap((rawLine) => rawLine.replace(/[ \t]+(?=#{1,6}\s+)/gu, "\n").split("\n"));
+    return prepared.map((rawLine, index) => {
+      const line = cleanLine(rawLine.replace(/^\s*[-*]\s+/u, ""));
       if (!line) return <div key={index} className="h-3" />;
-      const heading = line.match(/^#{1,4}\s+(.+)$/u);
-      const plainHeading = !heading && (selectedPlan?.parts || []).some((part) =>
-        [part.title, ...(part.chapters || []).flatMap((chapter) => [chapter.title, ...(chapter.sections || []).flatMap((section) => [section.title, ...(section.subsections || []).map((sub) => sub.title)])])].some((title) => String(title || "").trim().toLocaleLowerCase("fr") === line.toLocaleLowerCase("fr"))
-      );
+      const heading = line.match(/^(#{1,6})\s+(.+)$/u);
+      const headingText = (heading ? heading[2] : line).replace(/[*_\x60]/gu, "").trim();
+      const plainHeading = !heading && planTitles.includes(headingText.toLocaleLowerCase("fr"));
       if (heading || plainHeading) {
-        const text = heading ? heading[1] : line;
-        return <h4 key={index} className={`mb-3 mt-6 font-bold text-[#172554] ${previewMode ? "text-base" : "text-[16px]"}`}>{text}</h4>;
+        const level = heading ? Math.min(6, heading[1].length) : 3;
+        const className = level <= 2
+          ? "mb-4 mt-8 text-lg font-bold text-[#172554]"
+          : level <= 4
+            ? "mb-3 mt-6 text-base font-bold text-[#172554]"
+            : "mb-2 mt-4 text-sm font-bold text-[#172554]";
+        return <h4 key={index} className={className}>{headingText}</h4>;
       }
-      return <p key={index} className="mb-3 text-justify" style={{ textIndent: "1.1cm", whiteSpace: "pre-wrap" }}>{line}</p>;
+      const paragraph = line.replace(/\*\*(.*?)\*\*/gu, "$1").replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1");
+      return <p key={index} className="mb-3 text-justify" style={{ textIndent: "1.1cm", whiteSpace: "pre-wrap" }}>{paragraph}</p>;
     });
   }
 
@@ -1909,10 +1930,12 @@ export default function App() {
     let remaining = 2500;
     return finished.flatMap((block) => {
       if (remaining <= 0) return [];
-      const words = block.content.trim().split(/\s+/u).filter(Boolean);
-      const selected = words.slice(0, remaining);
+      const matches = [...block.content.matchAll(/\S+/gu)];
+      const selected = matches.slice(0, remaining);
       remaining -= selected.length;
-      return selected.length ? [{ id: block.id, title: block.title, kind: block.kind, content: selected.join(" "), words: selected.length, structure: block.structure || [] }] : [];
+      const end = selected.length ? selected[selected.length - 1].index + selected[selected.length - 1][0].length : 0;
+      const content = end > 0 ? block.content.slice(0, end).trim() : "";
+      return content ? [{ id: block.id, title: block.title, kind: block.kind, content, words: selected.length, structure: block.structure || [] }] : [];
     });
   }
 
@@ -3757,7 +3780,7 @@ export default function App() {
                           )}
 
                           {block.content ? (
-                            <div className="whitespace-pre-wrap">{block.content}</div>
+                            <div>{renderAcademicText(block.content)}</div>
                           ) : (
                             <div className="flex min-h-[420px] items-center justify-center text-center">
                               <div>
