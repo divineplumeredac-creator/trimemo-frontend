@@ -1783,12 +1783,17 @@ export default function App() {
         return;
       }
       const intro = done.find((block) => block.kind === "introduction");
-      const chapter = done.find((block) => block.kind === "chapter");
+      const firstChapter = selectedPlan.parts[0]?.chapters[0];
+      const firstChapterBlocks = firstChapter
+        ? done.filter((block) => block.id.startsWith(`${firstChapter.id}-bloc-`) || block.id === `${selectedPlan.id}-chapter-one-preview`)
+        : done.filter((block) => block.kind === "chapter");
+      const chapterContent = firstChapterBlocks.map((block) => block.content).filter(Boolean).join("\\n\\n");
+      const chapterWords = firstChapterBlocks.reduce((sum, block) => sum + (block.wordCount || countWords(block.content)), 0);
       const previewSnapshot: Preview = {
         problematic: selectedProblematic,
         plan: selectedPlan,
         introduction: { title: intro?.title || "Introduction générale", content: intro?.content || "", wordCount: intro?.wordCount || 0, incomplete: false },
-        chapterOne: { title: chapter?.title || "Chapitre 1", content: chapter?.content || "", wordCount: chapter?.wordCount || 0, partTitle: selectedPlan.parts[0]?.title, chapterNumber: 1, sectionTitles: chapter?.structure || [] },
+        chapterOne: { title: firstChapter?.title || firstChapterBlocks[0]?.title || "Chapitre 1", content: chapterContent, wordCount: chapterWords, partTitle: selectedPlan.parts[0]?.title, chapterNumber: 1, sectionTitles: firstChapterBlocks.flatMap((block) => block.structure || []) },
       };
       setPreview(previewSnapshot);
       try {
