@@ -21,6 +21,7 @@ const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
 const PLANS_API = `${API_BASE_URL}/api/generate-plans`;
 const FREE_PREVIEW_API = `${API_BASE_URL}/api/generate-free-preview`;
 const ESTIMATE_API = `${API_BASE_URL}/api/estimate-project`;
+const PROJECT_STATE_API = `${API_BASE_URL}/api/project-state`;
 const BLOCK_API = `${API_BASE_URL}/api/generate-block`;
 const WORDS_PER_PAGE = 320;
 const LOGO_SRC = "/trimemo-logo.webp";
@@ -505,6 +506,9 @@ export default function App() {
   const [problematicGenerationCount, setProblematicGenerationCount] = useState(0);
   const [planGenerationCount, setPlanGenerationCount] = useState(0);
   const filesHydrated = useRef(false);
+  const cloudHydrated = useRef(false);
+  const cloudLoadStarted = useRef(false);
+  const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalDoneWords = useMemo(
     () => blocks.filter((b) => b.status === "done").reduce((sum, b) => sum + b.wordCount, 0),
@@ -564,11 +568,87 @@ export default function App() {
     }
   }, [ownerRoute, stateStorageKey]);
 
+  // Restauration depuis Supabase si le projet est ouvert avec son lien de reprise (?project=UUID).
+  useEffect(() => {
+    if (cloudLoadStarted.current) return;
+    cloudLoadStarted.current = true;
+    const sharedProjectId = new URLSearchParams(window.location.search).get("project");
+    if (!sharedProjectId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sharedProjectId)) {
+      cloudHydrated.current = true;
+      return;
+    }
+    cloudHydrated.current = false;
+    (async () => {
+      try {
+        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.error || "Impossible de récupérer le projet distant.");
+        if (data.found && data.state) {
+          const saved = data.state;
+          const remoteProject = saved.project ? { ...saved.project, projectId: sharedProjectId, files: [] } : null;
+          if (remoteProject) setProject(remoteProject);
+          if (saved.formula) setFormula(saved.formula);
+          if (saved.preview) setPreview(saved.preview);
+          if (saved.estimate) setEstimate(saved.estimate);
+          if (saved.premium) setPremium(saved.premium);
+          if (saved.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
+          if (saved.selectedPlan) setSelectedPlan(saved.selectedPlan);
+          if (Array.isArray(saved.blocks)) setBlocks(saved.blocks);
+          if (saved.view) setView(saved.view);
+          if (saved.previewTab) setPreviewTab(saved.previewTab);
+          if (saved.premiumNav) setPremiumNav(saved.premiumNav);
+          if (saved.premiumSection) setPremiumSection(saved.premiumSection);
+          if (saved.selectedWritingBlockId) setSelectedWritingBlockId(saved.selectedWritingBlockId);
+          if (saved.problematicImprovementComments) setProblematicImprovementComments(saved.problematicImprovementComments);
+          if (saved.planImprovementComments) setPlanImprovementComments(saved.planImprovementComments);
+          if (Number.isFinite(saved.problematicGenerationCount)) setProblematicGenerationCount(saved.problematicGenerationCount);
+          if (Number.isFinite(saved.planGenerationCount)) setPlanGenerationCount(saved.planGenerationCount);
+          try { window.localStorage.setItem(stateStorageKey, JSON.stringify(saved)); } catch {}
+        }
+      } catch (error) {
+        console.error("TRIMEMO_CLOUD_PROJECT_LOAD_FAILED", String(error));
+        pushToast("error", "Le projet distant n’a pas pu être chargé. Les données locales restent disponibles.");
+      } finally {
+        cloudHydrated.current = true;
+        filesHydrated.current = true;
+      }
+    })();
+  }, [stateStorageKey]);
+
   // Persistance des fichiers joints (clé séparée) une fois la restauration faite.
   useEffect(() => {
     if (!filesHydrated.current) return;
     storeProjectFiles(project);
   }, [project.files, project.projectId]);
+
+  // Synchronisation serveur de l'état complet du projet. Les fichiers sont gérés séparément.
+  useEffect(() => {
+    if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid)) return;
+    if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+    cloudSaveTimer.current = setTimeout(async () => {
+      const { paidPreviewSnapshot, ...persistedProject } = project;
+      const state = {
+        project: { ...persistedProject, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) },
+        formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, view, previewTab,
+        premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments,
+        planImprovementComments, problematicGenerationCount, planGenerationCount,
+      };
+      try {
+        const response = await fetch(PROJECT_STATE_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId: project.projectId, state }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.error || "Échec de la sauvegarde serveur.");
+        window.dispatchEvent(new CustomEvent("trimemo-cloud-save", { detail: { ok: true, savedAt: data.savedAt } }));
+      } catch (error) {
+        console.error("TRIMEMO_CLOUD_PROJECT_SAVE_FAILED", String(error));
+        window.dispatchEvent(new CustomEvent("trimemo-cloud-save", { detail: { ok: false } }));
+      }
+    }, 900);
+    return () => { if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current); };
+  }, [ownerRoute, ownerSessionValid, project, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount]);
 
   useEffect(() => {
     // Les problématiques et les plans sont accessibles avant paiement. Seule la rédaction complète
