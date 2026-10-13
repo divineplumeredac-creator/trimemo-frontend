@@ -1738,9 +1738,8 @@ export default function App() {
     if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
       const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
       const completedWords = completedBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
-      const nextBlockWords = Math.min(block.expectedWords || 900, 1000);
-      if (completedWords >= 2500 || completedWords + nextBlockWords > 2500) {
-        // Ne pas lancer un bloc qui ferait dépasser le plafond gratuit : ouvrir directement l’aperçu verrouillé.
+      if (completedWords >= 2500) {
+        // Une fois les 2 500 mots atteints, tout nouveau bloc ouvre l’aperçu verrouillé.
         setSelectedWritingBlockId(blockId);
         await exportDocument();
         return;
