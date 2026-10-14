@@ -1532,8 +1532,9 @@ export default function App() {
       }, 0);
     };
     const plannedBodyWords = countPlannedWords({ parts: plan.parts, conclusionGeneral: plan.conclusionGeneral });
-    const planTotalWords = Number(plan.totalWords || plan.targetWords || plan.volumeWords || 0);
-    const requestedPages = Number(plan.totalPages || plan.pageCount || plan.pages || 0);
+    const planVolume = plan as unknown as Record<string, unknown>;
+    const planTotalWords = Number(planVolume.totalWords || planVolume.targetWords || planVolume.volumeWords || 0);
+    const requestedPages = Number(planVolume.totalPages || planVolume.pageCount || planVolume.pages || 0);
     const inferredTotalWords = planTotalWords > 0
       ? planTotalWords
       : requestedPages > 0
