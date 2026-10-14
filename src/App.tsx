@@ -1945,7 +1945,7 @@ export default function App() {
     // Ré-isoler seulement les intitulés exacts du plan validé.
     // Aucune heuristique générale sur le gras ou la numérotation : cela coupait le contenu.
     for (const title of [...planTitleValues].sort((a, b) => b.length - a.length)) {
-      const escapedTitle = title.replace(/[.*+?^\${}()|[\]\\]/gu, "\\$&");
+      const escapedTitle = title.split("").map((character) => "\\.^$|?*+()[]{}".includes(character) ? "\\" + character : character).join("");
       const titlePattern = new RegExp("(^|\\n|[ \\t])(" + escapedTitle + ")(?=$|[ \\t\\n:：.])", "giu");
       source = source.replace(titlePattern, (_match, boundary, matchedTitle) =>
         (boundary.trim() ? boundary + "\n\n" : "\n\n") + matchedTitle + "\n\n"
