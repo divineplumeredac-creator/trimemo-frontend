@@ -901,6 +901,20 @@ export default function App() {
             }
           }
         }
+        // Rattacher le projet payé au compte client afin qu'il apparaisse dans le tableau de bord.
+        try {
+          const clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+          if (clientSession?.token && saved?.projectId) {
+            await fetch(CLIENT_ACCOUNT_API, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "link", token: clientSession.token, projectId: saved.projectId, subject: saved.sujet || "Projet académique", paid: true }),
+            });
+          }
+        } catch (accountLinkError) {
+          console.error("[Trimémo] association du projet payé au compte client impossible", accountLinkError);
+        }
+        window.sessionStorage.removeItem("trimemo_pending_paypal_order");
         window.localStorage.removeItem("trimemo_project_pending");
         window.localStorage.removeItem("trimemo_preview_pending");
         window.sessionStorage.removeItem("trimemo_preview_pending");
