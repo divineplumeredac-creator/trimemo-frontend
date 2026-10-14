@@ -620,7 +620,9 @@ export default function App() {
           if (saved.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
           if (saved.selectedPlan) setSelectedPlan(saved.selectedPlan);
           if (Array.isArray(saved.blocks)) setBlocks(saved.blocks);
-          if (saved.view) setView(saved.view);
+          // Un projet ouvert depuis le tableau de bord reprend toujours dans la rédaction.
+          setView("writing");
+          setWritingTab("writing");
           if (saved.previewTab) setPreviewTab(saved.previewTab);
           if (saved.premiumNav) setPremiumNav(saved.premiumNav);
           if (saved.premiumSection) setPremiumSection(saved.premiumSection);
@@ -655,7 +657,10 @@ export default function App() {
       const { paidPreviewSnapshot, ...persistedProject } = project;
       const state = {
         project: { ...persistedProject, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) },
-        formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, view, previewTab,
+        formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
+        // Ne jamais sauvegarder l'écran du tableau de bord comme écran de reprise du mémoire.
+        view: view === "dashboard" || view === "account" || view === "home" ? "writing" : view,
+        previewTab,
         premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments,
         planImprovementComments, problematicGenerationCount, planGenerationCount,
       };
