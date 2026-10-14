@@ -1483,6 +1483,92 @@ export default function App() {
     }
   }
 
+  async function loadClientProjects() {
+    let session: { token: string; email?: string } | null = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token) {
+      setClientAuthMode("login");
+      setClientAuthError("");
+      setView("account");
+      return;
+    }
+    try {
+      const response = await fetch(CLIENT_ACCOUNT_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list", token: session.token }),
+      });
+      const data = await readApiResponse(response);
+      setClientProjects(Array.isArray(data.projects) ? data.projects : []);
+      setClientEmailDisplay(String(data.user?.email || session.email || ""));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de charger votre espace client.";
+      pushToast("error", message);
+      if (/session a expiré|connectez-vous/i.test(message)) {
+        window.localStorage.removeItem("trimemo_client_session");
+        setClientAuthMode("login");
+        setClientAuthError(message);
+        setView("account");
+      }
+    }
+  }
+
+  async function submitClientAuth() {
+    setClientAuthBusy(true);
+    setClientAuthError("");
+    try {
+      const response = await fetch(CLIENT_ACCOUNT_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: clientAuthMode, email: clientEmail.trim(), password: clientPassword }),
+      });
+      const data = await readApiResponse(response);
+      if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
+      const session = { token: String(data.token), email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id) };
+      window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
+      setClientEmailDisplay(session.email);
+      setClientPassword("");
+
+      // Sauvegarder l'état courant sur le serveur avant d'associer le projet au compte.
+      const persistedProject = { ...project, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
+      const state = {
+        project: persistedProject, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
+        view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
+        problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
+      };
+      const saveResponse = await fetch(PROJECT_STATE_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: project.projectId, state }),
+      });
+      const saveData = await saveResponse.json().catch(() => ({}));
+      if (!saveResponse.ok) throw new Error(saveData.error || "Le projet n'a pas pu être sauvegardé avant l'association au compte.");
+
+      const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet || "Projet académique", paid: false }),
+      });
+      const linkData = await readApiResponse(linkResponse);
+      if (!linkData.success) throw new Error("Le projet n'a pas pu être associé au compte client.");
+
+      pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : "Connexion réussie. Votre projet est associé à votre compte.");
+      if (pendingPaymentMethod) {
+        const method = pendingPaymentMethod;
+        setPendingPaymentMethod(null);
+        setView("preview");
+        await startPayment(method);
+      } else {
+        setView("dashboard");
+        await loadClientProjects();
+      }
+    } catch (error) {
+      setClientAuthError(error instanceof Error ? error.message : "La création du compte ou la connexion a échoué.");
+    } finally {
+      setClientAuthBusy(false);
+    }
+  }
+
   async function startPayment(method: "paypal" | "mobile-money") {
     let clientSession: { token: string; email?: string } | null = null;
     try { clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
