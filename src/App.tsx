@@ -2117,9 +2117,8 @@ export default function App() {
       } else {
         pushToast("success", "Document Word académique généré avec bibliographie et mise en forme.");
       }
-      // Conserver le projet et le jeton premium après le téléchargement.
-      // Un échec du navigateur ne doit jamais effacer le mémoire ni son contexte.
-      pushToast("success", "Le fichier Word a été transmis au navigateur. Vérifiez vos téléchargements avant de quitter le projet.");
+      // Le projet et le jeton premium sont conservés après l'export pour permettre
+      // une nouvelle tentative si le navigateur n'enregistre pas le téléchargement.
     } catch (error) {
       pushToast("error", error instanceof Error ? error.message : "Export Word impossible.");
     } finally {
