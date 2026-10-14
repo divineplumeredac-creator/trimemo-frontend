@@ -483,7 +483,7 @@ export default function App() {
   const [selectedProblematic, setSelectedProblematic] = useState<Problematic | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">("home");
+  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => new URLSearchParams(window.location.search).get("account") === "signup" ? "account" : "home");
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
@@ -580,6 +580,13 @@ export default function App() {
       if (saved?.planImprovementComments) setPlanImprovementComments(saved.planImprovementComments);
       if (Number.isFinite(saved?.problematicGenerationCount)) setProblematicGenerationCount(saved.problematicGenerationCount);
       if (Number.isFinite(saved?.planGenerationCount)) setPlanGenerationCount(saved.planGenerationCount);
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("account") === "signup") {
+        setView("account");
+        const method = params.get("method");
+        if (method === "paypal" || method === "mobile-money") setPendingPaymentMethod(method);
+        setClientAuthMode("signup");
+      }
     } catch {
       window.localStorage.removeItem(stateStorageKey);
     } finally {
@@ -1591,13 +1598,19 @@ export default function App() {
     let clientSession: { token: string; email?: string } | null = null;
     try { clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     if (!clientSession?.token) {
-      setPendingPaymentMethod(method);
-      setClientAuthMode("signup");
-      setClientEmail(project.email || "");
-      setClientPassword("");
-      setClientAuthError("");
-      setView("account");
-      pushToast("info", "Créez votre compte client pour conserver votre projet avant de payer.");
+      try {
+        const pendingState = {
+          project: (() => { const { paidPreviewSnapshot, ...savedProject } = project; return { ...savedProject, files: [] }; })(),
+          formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
+          view: "account", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
+          problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
+        };
+        window.localStorage.setItem(stateStorageKey, JSON.stringify(pendingState));
+        savePendingProject(project);
+      } catch (saveError) {
+        console.error("[Trimémo] impossible de sauvegarder avant création du compte", saveError);
+      }
+      window.location.href = "/?account=signup&method=" + encodeURIComponent(method);
       return;
     }
     if (!estimate || !project.pricingQuoteToken) {
