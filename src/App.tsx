@@ -3593,7 +3593,9 @@ export default function App() {
                     <h3 className={`mb-5 font-bold ${segment.kind === "introduction" ? "text-center text-lg uppercase" : "text-base"}`}>{segment.title}</h3>
                     <div className="font-normal text-[11pt] leading-[1.5] text-[#171717]">
                       {renderAcademicText(
-                        segment.content,
+                        segment.kind === "introduction"
+                          ? segment.content.replace(/^\\s*(?:#{1,3}\\s*)?(?:\\*\\*)?INTRODUCTION(?: GÉNÉRALE)?(?:\\*\\*)?\\s*(?:[:.\\-–]?\\s*\\n+|$)/iu, "")
+                          : segment.content,
                         true
                       )}
                     </div>
