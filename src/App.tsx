@@ -1932,7 +1932,38 @@ export default function App() {
       .trim();
     const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
       const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-      if (lines.length > 1) return lines;
+      if (lines.length > 1) {
+        // Les retours à la ligne simples proviennent souvent de l'extraction ou du wrapping
+        // d'un paragraphe. Ne les convertis pas automatiquement en paragraphes distincts.
+        const grouped: string[] = [];
+        let proseLines: string[] = [];
+        const flushProse = () => {
+          if (proseLines.length) grouped.push(proseLines.join(" ").replace(/\s+/gu, " ").trim());
+          proseLines = [];
+        };
+        for (const candidate of lines) {
+          const candidateText = candidate
+            .replace(/^#{1,6}\s*/u, "")
+            .replace(/[*_\x60]/gu, "")
+            .replace(/\s+/gu, " ")
+            .trim();
+          const normalizedCandidate = candidateText.toLocaleLowerCase("fr");
+          const candidateIsHeading =
+            /^#{1,6}\s+\S/u.test(candidate) ||
+            /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)/iu.test(candidateText) ||
+            /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(candidateText) ||
+            planTitles.includes(normalizedCandidate) ||
+            planTitles.some((title) => title && normalizedCandidate === title.replace(/^\d+(?:\.\d+)*\s*/u, ""));
+          if (candidateIsHeading) {
+            flushProse();
+            grouped.push(candidate);
+          } else {
+            proseLines.push(candidate);
+          }
+        }
+        flushProse();
+        return grouped;
+      }
       const line = lines[0] || "";
       // Sépare une phrase de prose lorsqu'un titre identifié est suivi sur la même ligne.
       const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
@@ -3497,7 +3528,7 @@ export default function App() {
               onCut={(event) => event.preventDefault()}
               onContextMenu={(event) => event.preventDefault()}
             >
-              <div className="mx-auto bg-white px-6 py-10 text-[#171717] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "11pt", lineHeight: 1.55, fontWeight: 400 }}>
+              <div className="mx-auto bg-white px-6 py-10 text-[#171717] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "11pt", lineHeight: 1.5, fontWeight: 400 }}>
                 <div className="mb-8 border-b pb-5 text-center">
                   <div className="text-xs uppercase tracking-[0.12em] text-[#555]">Aperçu du document académique</div>
                   <h2 className="mt-4 text-xl font-bold">{project.sujet || selectedPlan?.title || "Projet académique"}</h2>
@@ -3537,7 +3568,7 @@ export default function App() {
                 {academicPreviewSegments().map((segment, index) => (
                   <article key={segment.id} className="mb-8">
                     <h3 className={`mb-5 font-bold ${segment.kind === "introduction" ? "text-center text-lg uppercase" : "text-base"}`}>{segment.title}</h3>
-                    <div className="font-normal text-[11pt] leading-[1.55] text-[#171717]">
+                    <div className="font-normal text-[11pt] leading-[1.5] text-[#171717]">
                       {renderAcademicText(
                         segment.content,
                         true
