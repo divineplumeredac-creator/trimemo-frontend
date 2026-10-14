@@ -957,6 +957,26 @@ export default function App() {
     window.setTimeout(() => setToasts((current) => current.filter((toast) => toast.id !== id)), 4200);
   }
 
+  function startNewClientProject() {
+    // Nouveau projet = nouvel identifiant et nouveau droit de paiement.
+    window.sessionStorage.removeItem("trimemo_premium_token");
+    window.sessionStorage.removeItem("trimemo_premium_project_id");
+    setProject({
+      projectId: createProjectId(), formula: formula || "MASTER", sujet: "", domaine: "", contexte: "",
+      problematiquePersonnelle: "", planPersonnel: "", consignes: "", niveau: "", typeDoc: "Mémoire",
+      pages: 0, email: "", files: [],
+    });
+    setPreview(null);
+    setEstimate(null);
+    setPremium(null);
+    setSelectedProblematic(null);
+    setSelectedPlan(null);
+    setBlocks([]);
+    setSelectedWritingBlockId(null);
+    setView("project");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function goToProject() {
     // L'achat Premium couvre uniquement le projet auquel il est rattaché.
     window.sessionStorage.removeItem("trimemo_premium_token");
@@ -3386,7 +3406,7 @@ export default function App() {
           <div className="mx-auto max-w-5xl">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div><div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Espace personnel</div><h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">Mes projets</h1><p className="mt-2 font-inter text-sm text-[#172554]/65">{clientEmailDisplay || "Retrouvez vos projets et leur progression."}</p></div>
-              <div className="flex gap-2"><button onClick={() => { setView("project"); }} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-sm font-semibold text-[#172554]">Nouveau projet</button><button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setView("home"); }} className="rounded-full border border-[#172554]/20 px-5 py-3 font-inter text-sm">Déconnexion</button></div>
+              <div className="flex gap-2"><button onClick={startNewClientProject} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-sm font-semibold text-[#172554]">Nouveau projet</button><button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setView("home"); }} className="rounded-full border border-[#172554]/20 px-5 py-3 font-inter text-sm">Déconnexion</button></div>
             </div>
             <div className="mt-8 grid gap-4">
               {clientProjects.length ? clientProjects.map((item) => (
