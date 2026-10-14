@@ -2110,20 +2110,16 @@ export default function App() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1500);
       const missingLinks = Number(response.headers.get("X-Trimemo-Bibliography-Missing-Links") || 0);
       if (missingLinks > 0) {
         pushToast("info", `${missingLinks} référence(s) n’ont ni DOI ni lien : vérifiez-les manuellement avant de remettre le document.`);
       } else {
         pushToast("success", "Document Word académique généré avec bibliographie et mise en forme.");
       }
-      try { window.localStorage.removeItem("trimemo_project_pending"); window.localStorage.removeItem("trimemo_pending_files"); window.sessionStorage.removeItem("trimemo_pending_files_content"); window.sessionStorage.removeItem("trimemo_project"); window.localStorage.removeItem("trimemo_preview_pending"); window.sessionStorage.removeItem("trimemo_preview_pending"); } catch {}
-      if (!ownerRoute) {
-        window.sessionStorage.removeItem("trimemo_premium_token");
-        setPreview(null); setPremium(null); setSelectedProblematic(null); setSelectedPlan(null); setBlocks([]); setProblematicGenerationCount(0); setPlanGenerationCount(0);
-        setProject({ projectId: createProjectId(), formula: "MASTER", sujet: "", domaine: "", contexte: "", problematiquePersonnelle: "", planPersonnel: "", consignes: "", niveau: "", typeDoc: "Mémoire", pages: 0, email: "", files: [] });
-        setEstimate(null); setView("home");
-      }
+      // Conserver le projet et le jeton premium après le téléchargement.
+      // Un échec du navigateur ne doit jamais effacer le mémoire ni son contexte.
+      pushToast("success", "Le fichier Word a été transmis au navigateur. Vérifiez vos téléchargements avant de quitter le projet.");
     } catch (error) {
       pushToast("error", error instanceof Error ? error.message : "Export Word impossible.");
     } finally {
@@ -2818,8 +2814,8 @@ export default function App() {
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     {(ownerRoute || window.sessionStorage.getItem("trimemo_premium_token")) ? (
-                      <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
-                        Exporter le document Word
+                      <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
+                        {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                       </button>
                     ) : totalDoneWords >= 2500 ? (
                       <button type="button" onClick={() => void exportDocument()} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
