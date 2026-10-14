@@ -853,13 +853,13 @@ export default function App() {
                 })
               : nextBlocks;
             setBlocks(restoredBlocks);
-            setSelectedWritingBlockId(savedSelectedBlockId || introductionBlock?.id || seededChapter.id);
+            setSelectedWritingBlockId(introductionBlock?.id || savedSelectedBlockId || seededChapter.id);
             setView("writing");
             window.sessionStorage.removeItem("trimemo_blocks_pending");
             window.sessionStorage.removeItem("trimemo_selected_block_pending");
             window.localStorage.removeItem("trimemo_preview_pending");
             window.sessionStorage.removeItem("trimemo_preview_pending");
-            pushToast("success", "Paiement confirmé. Le premier chapitre est conservé. La rédaction reprend avec l'introduction complète et les chapitres suivants.");
+            pushToast("success", "Paiement confirmé. Votre projet est restauré. La rédaction s’ouvre sur l’introduction générale ; les autres blocs restent accessibles.");
           } else {
             const personalQuestion = String(saved.problematiquePersonnelle || saved.problematique || "").trim();
 
