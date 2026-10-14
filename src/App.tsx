@@ -799,6 +799,7 @@ export default function App() {
         }
         window.sessionStorage.setItem("trimemo_premium_token", String(data.premium_token));
         const saved = data.project || loadPendingProject(stateStorageKey) || null;
+        if (saved?.projectId) window.sessionStorage.setItem("trimemo_premium_project_id", String(saved.projectId));
         if (!saved) throw new Error("Le paiement est confirmé, mais les données du projet n'ont pas pu être restaurées. Contactez le support avec la référence de commande.");
         if (saved) {
           setProject(saved);
@@ -957,6 +958,9 @@ export default function App() {
   }
 
   function goToProject() {
+    // L'achat Premium couvre uniquement le projet auquel il est rattaché.
+    window.sessionStorage.removeItem("trimemo_premium_token");
+    window.sessionStorage.removeItem("trimemo_premium_project_id");
     const selectedFormula = formula || project.formula || "MASTER";
     setFormula(selectedFormula);
     setEstimate(null);
@@ -1913,7 +1917,7 @@ export default function App() {
     }
 
     if (block.status === "generating") return;
-    if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
+    if (!ownerRoute && !(window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) {
       const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
       const completedWords = completedBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
       if (completedWords >= 2500) {
@@ -3000,7 +3004,7 @@ export default function App() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
-                    {(ownerRoute || window.sessionStorage.getItem("trimemo_premium_token")) ? (
+                    {(ownerRoute || (window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) ? (
                       <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
                         {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                       </button>
