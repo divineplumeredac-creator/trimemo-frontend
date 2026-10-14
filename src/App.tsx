@@ -741,8 +741,22 @@ export default function App() {
 
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
-    const id = params.get("order_id") || params.get("token") || params.get("transaction_id");
-    if (!payment || !id) return;
+    const queryOrderId = params.get("order_id") || params.get("token") || params.get("transaction_id");
+    // Certains retours PayPal intégrés ne transmettent pas immédiatement le token dans l'URL.
+    // La référence de commande est sauvegardée avant la redirection et sert de reprise sécurisée.
+    const id = queryOrderId || (payment === "paypal" ? window.sessionStorage.getItem("trimemo_pending_paypal_order") : null);
+    if (!payment || payment === "paypal_cancelled") {
+      if (payment === "paypal_cancelled") {
+        window.sessionStorage.removeItem("trimemo_pending_paypal_order");
+        pushToast("info", "Paiement annulé. Votre projet est conservé ; vous pouvez reprendre le paiement.");
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      return;
+    }
+    if (!id) {
+      pushToast("error", "Le retour de paiement ne contient pas la référence PayPal. Votre projet est conservé ; relancez le paiement ou contactez le support.");
+      return;
+    }
 
     (async () => {
       try {
@@ -1489,6 +1503,19 @@ export default function App() {
       });
       const data = await readApiResponse(response);
       if (!data.url) throw new Error("Aucune URL de paiement n’a été retournée.");
+      if (method === "paypal" && data.id) {
+        window.sessionStorage.setItem("trimemo_pending_paypal_order", String(data.id));
+      }
+      // Forcer une sauvegarde locale immédiatement avant de quitter la plateforme.
+      try {
+        const state = {
+          project: (() => { const { paidPreviewSnapshot, ...savedProject } = paymentProject; return { ...savedProject, files: [] }; })(),
+          formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
+          view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
+          problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
+        };
+        window.localStorage.setItem(stateStorageKey, JSON.stringify(state));
+      } catch {}
       window.location.href = data.url;
     } catch (error) {
       pushToast("error", error instanceof Error ? error.message : "Impossible d’initialiser le paiement.");
@@ -1887,7 +1914,7 @@ export default function App() {
     pushToast("success", "Contenu copié.");
   }
 
-  function renderAcademicText(raw: string, previewMode = false) {
+  function renderAcademicText(raw: string, previewMode = false, blockStructure: string[] = [], blockKind = "") {
     const cleanLine = (value: string) => value
       .replace(/\[\s*(?:https?:\/\/)?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*\]\(https?:\/\/[^)]+\)/giu, "")
       .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/giu, "$1")
@@ -1922,6 +1949,17 @@ export default function App() {
     };
     // Normalise les titres académiques même lorsqu'ils sont collés au début d'un paragraphe.
     let source = String(raw || "").replace(/\r\n?/gu, "\n");
+    // Chaque bloc de chapitre reçoit les libellés de partie et de chapitre du plan validé
+    // lorsqu'ils sont absents du texte généré. On ne modifie pas le corps scientifique.
+    if (!previewMode && (blockKind === "chapter" || blockKind === "chapter_intro")) {
+      const structuralHeadings = blockStructure.filter((item) => /^(?:PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+)\s*[:.\-–]?/iu.test(String(item || "").trim()));
+      const missingHeadings = structuralHeadings.filter((item) => {
+        const label = String(item).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\    let source = String(raw || "").replace(/\r\n?/gu, "\n");
+    source = source");
+        return !new RegExp("(^|\\n)\\s*(?:#{1,6}\\s*)?" + label, "imu").test(source);
+      });
+      if (missingHeadings.length) source = missingHeadings.map((item) => "## " + item).join("\n\n") + "\n\n" + source;
+    }
     source = source
       .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
       // Les titres numérotés internes doivent devenir des blocs distincts, même s'ils arrivent au milieu d'une phrase aplatie.
@@ -1941,9 +1979,11 @@ export default function App() {
       // Si le moteur a renvoyé tout un bloc sur une seule ligne, rétablit des paragraphes lisibles sans réécrire le texte.
       const sentences = line.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/u).filter(Boolean);
       // Ne pas fabriquer des paragraphes d'une ou deux phrases : regrouper le texte aplati par unités de 4 à 6 phrases.
-      if (sentences.length >= 7) {
+      if (sentences.length >= 4) {
         const paragraphs: string[] = [];
-        const groupSize = sentences.length >= 12 ? 5 : 4;
+        // Rétablir des paragraphes académiques lisibles lorsque le moteur a aplati l'introduction.
+        // Trois phrases au maximum par paragraphe évitent un unique bloc massif sans créer une phrase par ligne.
+        const groupSize = sentences.length >= 10 ? 3 : 2;
         for (let i = 0; i < sentences.length; i += groupSize) {
           paragraphs.push(sentences.slice(i, i + groupSize).join(" ").trim());
         }
@@ -2886,7 +2926,7 @@ export default function App() {
                           )}
 
                           {block.content ? (
-                            <div>{renderAcademicText(block.content)}</div>
+                            <div>{renderAcademicText(block.content, false, block.structure, block.kind)}</div>
                           ) : (
                             <div className="flex min-h-[420px] items-center justify-center text-center">
                               <div>
