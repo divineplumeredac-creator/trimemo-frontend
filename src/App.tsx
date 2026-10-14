@@ -1938,17 +1938,17 @@ export default function App() {
     let source = String(raw || "").replace(/\r\n?/gu, "\n");
     source = source
       // Séparer uniquement les marqueurs structurels explicites. Les titres du plan sont traités séparément.
-      .replace(/[ \\t]*(#{1,6}\\s+)/gu, "\\n\\n$1")
-      .replace(/[ \\t]*(\\*\\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\\s+[IVXLCDM0-9]+|CHAPITRE\\s+\\d+|SECTION\\s+\\d+(?:\\.\\d+)*|SOUS-SECTION\\s+\\d+(?:\\.\\d+)*))/giu, "\\n\\n$1")
-      .replace(/\\n[ \\t]*\\n(?:[ \\t]*\\n)+/gu, "\\n\\n")
+      .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
+      .replace(/[ \t]*(\*{1,2}(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "\n\n$1")
+      .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
       .trim();
-    // Si un titre exact du plan est fusionné avec du texte, on le ré-isole.
+    // Ré-isoler seulement les intitulés exacts du plan validé.
     // Aucune heuristique générale sur le gras ou la numérotation : cela coupait le contenu.
     for (const title of [...planTitleValues].sort((a, b) => b.length - a.length)) {
-      const escapedTitle = title.replace(/[.*+?^${}()|[\\]\\\\]/gu, "\\\\$&");
-      const titlePattern = new RegExp("(^|\\\\n|[ \\t])(" + escapedTitle + ")(?=$|[ \\t\\\\n:：.])", "giu");
+      const escapedTitle = title.replace(/[.*+?^\${}()|[\]\\]/gu, "\\$&");
+      const titlePattern = new RegExp("(^|\\n|[ \\t])(" + escapedTitle + ")(?=$|[ \\t\\n:：.])", "giu");
       source = source.replace(titlePattern, (_match, boundary, matchedTitle) =>
-        (boundary.trim() ? boundary + "\\n\\n" : "\\n\\n") + matchedTitle + "\\n\\n"
+        (boundary.trim() ? boundary + "\n\n" : "\n\n") + matchedTitle + "\n\n"
       );
     }
     const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
