@@ -1543,28 +1543,30 @@ export default function App() {
       setClientEmailDisplay(session.email);
       setClientPassword("");
 
-      // Sauvegarder l'état courant sur le serveur avant d'associer le projet au compte.
-      const persistedProject = { ...project, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
-      const state = {
-        project: persistedProject, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
-        view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
-        problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
-      };
-      const saveResponse = await fetch(PROJECT_STATE_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: project.projectId, state }),
-      });
-      const saveData = await saveResponse.json().catch(() => ({}));
-      if (!saveResponse.ok) throw new Error(saveData.error || "Le projet n'a pas pu être sauvegardé avant l'association au compte.");
+      // Ne créer une entrée de projet que si un vrai sujet est déjà renseigné.
+      if (String(project.sujet || "").trim()) {
+        const persistedProject = { ...project, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
+        const state = {
+          project: persistedProject, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
+          view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
+          problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
+        };
+        const saveResponse = await fetch(PROJECT_STATE_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId: project.projectId, state }),
+        });
+        const saveData = await saveResponse.json().catch(() => ({}));
+        if (!saveResponse.ok) throw new Error(saveData.error || "Le projet n'a pas pu être sauvegardé avant l'association au compte.");
 
-      const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet || "Projet académique", paid: false }),
-      });
-      const linkData = await readApiResponse(linkResponse);
-      if (!linkData.success) throw new Error("Le projet n'a pas pu être associé au compte client.");
+        const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet, paid: false }),
+        });
+        const linkData = await readApiResponse(linkResponse);
+        if (!linkData.success) throw new Error("Le projet n'a pas pu être associé au compte client.");
+      }
 
       pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : "Connexion réussie. Votre projet est associé à votre compte.");
       if (pendingPaymentMethod) {
