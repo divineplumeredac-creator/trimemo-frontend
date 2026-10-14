@@ -1924,20 +1924,20 @@ export default function App() {
     };
 
     const splitDuplicatedHeading = (value: string) => {
-      const line = value.replace(/^#{1,6}\\s*/u, "").replace(/[*_\\x60]/gu, "").trim();
-      const prefix = line.match(/^(CHAPITRE\\s+\\d+\\s*[:.\\-–]?\\s*|SECTION\\s+\\d+(?:\\.\\d+)*\\s*[:.\\-–]?\\s*|SOUS-SECTION\\s+\\d+(?:\\.\\d+)*\\s*[:.\\-–]?\\s*)/iu);
+      const line = value.replace(/^#{1,6}\s*/u, "").replace(/[*_\x60]/gu, "").trim();
+      const prefix = line.match(/^(CHAPITRE\s+\d+\s*[:.\-–]?\s*|SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*|SOUS-SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*)/iu);
       const rest = prefix ? line.slice(prefix[0].length).trim() : line;
       const candidates = [...planTitleValues].sort((x, y) => y.length - x.length);
       const title = candidates.find((candidate) => rest.toLocaleLowerCase("fr").startsWith(candidate.toLocaleLowerCase("fr")));
       if (!title) return null;
-      const body = rest.slice(title.length).trim().replace(/^[:.\\-–+\\s]+/u, "");
+      const body = rest.slice(title.length).trim().replace(/^[:.\-–+\s]+/u, "");
       if (!body || body.length < 8) return null;
       return { heading: (prefix?.[0] || "") + title, body };
     };
     // Normalise les titres académiques même lorsqu'ils sont collés au début d'un paragraphe.
     let source = String(raw || "").replace(/\r\n?/gu, "\n");
     source = source
-      .replace(/(^|\\n)\\s*(\\*\\*|__)([^\\n*]{3,180}?)\\2\\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/gu, "$1$2$3$2\\n\\n")
+      .replace(/(^|\n)\s*(\*\*|__)([^\n*]{3,180}?)\2\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/gu, "$1$2$3$2\n\n")
       .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
       // Les titres numérotés internes doivent devenir des blocs distincts, même s'ils arrivent au milieu d'une phrase aplatie.
       .replace(/[ \t]+(?=(?:\d+\.){2,5}\d+\s*[:.)\-–]?\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "\n\n")
