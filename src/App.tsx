@@ -2076,11 +2076,8 @@ export default function App() {
     // lorsqu'ils sont absents du texte généré. On ne modifie pas le corps scientifique.
     if (!previewMode && (blockKind === "chapter" || blockKind === "chapter_intro")) {
       const structuralHeadings = blockStructure.filter((item) => /^(?:PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+)\s*[:.\-–]?/iu.test(String(item || "").trim()));
-      const missingHeadings = structuralHeadings.filter((item) => {
-        const label = String(item).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\    let source = String(raw || "").replace(/\r\n?/gu, "\n");
-    source = source");
-        return !new RegExp("(^|\\n)\\s*(?:#{1,6}\\s*)?" + label, "imu").test(source);
-      });
+      const existingLines = source.split("\n").map((line) => line.trim().replace(/^#{1,6}\s*/, "").toLocaleLowerCase("fr"));
+      const missingHeadings = structuralHeadings.filter((item) => !existingLines.includes(String(item).trim().toLocaleLowerCase("fr")));
       if (missingHeadings.length) source = missingHeadings.map((item) => "## " + item).join("\n\n") + "\n\n" + source;
     }
     source = source
