@@ -846,20 +846,28 @@ export default function App() {
               if (Array.isArray(parsedBlocks) && parsedBlocks.length && parsedBlocks.every((item) => item && typeof item.id === "string" && typeof item.content === "string")) savedBlocks = parsedBlocks;
               savedSelectedBlockId = window.sessionStorage.getItem("trimemo_selected_block_pending") || "";
             } catch {}
+            // La liste des blocs sauvegardée avant le paiement est la source de vérité :
+            // elle contient les blocs déjà rédigés et le prochain bloc qui attend la rédaction.
+            // Ne pas remplacer le chapitre partiellement rédigé par un bloc synthétique d'aperçu.
             const restoredBlocks = savedBlocks.length
-              ? nextBlocks.map((block) => {
+              ? prepared.map((block) => {
                   const savedBlock = savedBlocks.find((item) => item.id === block.id);
                   return savedBlock ? { ...block, ...savedBlock, id: block.id } : block;
                 })
               : nextBlocks;
             setBlocks(restoredBlocks);
-            setSelectedWritingBlockId(introductionBlock?.id || savedSelectedBlockId || seededChapter.id);
+            const nextPendingBlock = restoredBlocks.find((block) => block.status !== "done" || !block.content.trim());
+            const selectedBlock = nextPendingBlock?.id
+              || restoredBlocks.find((block) => block.content.trim())?.id
+              || introductionBlock?.id
+              || seededChapter.id;
+            setSelectedWritingBlockId(selectedBlock);
             setView("writing");
             window.sessionStorage.removeItem("trimemo_blocks_pending");
             window.sessionStorage.removeItem("trimemo_selected_block_pending");
             window.localStorage.removeItem("trimemo_preview_pending");
             window.sessionStorage.removeItem("trimemo_preview_pending");
-            pushToast("success", "Paiement confirmé. Votre projet est restauré. La rédaction s’ouvre sur l’introduction générale ; les autres blocs restent accessibles.");
+            pushToast("success", "Paiement confirmé. La rédaction reprend au prochain bloc non rédigé, en conservant le contenu déjà produit.");
           } else {
             const personalQuestion = String(saved.problematiquePersonnelle || saved.problematique || "").trim();
 
