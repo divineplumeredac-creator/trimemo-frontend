@@ -1517,7 +1517,31 @@ export default function App() {
 
     const introductionConfig = plan.introductionGeneral || { title: "Introduction générale", wordCount: 900 };
     const conclusionConfig = plan.conclusionGeneral || { title: "Conclusion générale", wordCount: 600 };
-    const introductionWords = Math.min(1000, Math.max(100, Math.round(Number(introductionConfig.wordCount || 900))));
+    // Le volume cible de l'introduction représente 10 % du volume total planifié.
+    // Les volumes explicitement fournis par le plan priment ; sinon, estimation prudente par unité académique.
+    const countPlannedWords = (value: unknown): number => {
+      if (!value || typeof value !== "object") return 0;
+      const item = value as Record<string, unknown>;
+      const explicit = Number(item.wordCount ?? item.expectedWords ?? item.targetWords ?? 0);
+      if (Number.isFinite(explicit) && explicit > 0) return explicit;
+      return Object.entries(item).reduce((sum, [key, child]) => {
+        if (["wordCount", "expectedWords", "targetWords"].includes(key)) return sum;
+        if (Array.isArray(child)) return sum + child.reduce((subtotal, entry) => subtotal + countPlannedWords(entry), 0);
+        if (child && typeof child === "object") return sum + countPlannedWords(child);
+        return sum;
+      }, 0);
+    };
+    const plannedBodyWords = countPlannedWords({ parts: plan.parts, conclusionGeneral: plan.conclusionGeneral });
+    const planTotalWords = Number(plan.totalWords || plan.targetWords || plan.volumeWords || 0);
+    const requestedPages = Number(plan.totalPages || plan.pageCount || plan.pages || 0);
+    const inferredTotalWords = planTotalWords > 0
+      ? planTotalWords
+      : requestedPages > 0
+        ? requestedPages * 320
+        : plannedBodyWords > 0
+          ? plannedBodyWords
+          : Number(introductionConfig.wordCount || 900) * 10;
+    const introductionWords = Math.max(100, Math.round(inferredTotalWords * 0.1));
     const introductionBlock: Block = {
       id: `${plan.id}-introduction-generale`,
       title: introductionConfig.title || "Introduction générale",
@@ -2013,7 +2037,7 @@ export default function App() {
         return (
           <React.Fragment key={index}>
             <h4 className="mb-3 mt-5 text-sm font-bold text-[#172554]">{splitNumbered.heading}</h4>
-            <p className="mb-6 text-justify font-normal" style={{ textIndent: "0.6cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{splitNumbered.body}</p>
+            <p className="mb-4 text-justify font-normal" style={{ textIndent: "0.5cm", lineHeight: 1.6, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{splitNumbered.body}</p>
           </React.Fragment>
         );
       }
