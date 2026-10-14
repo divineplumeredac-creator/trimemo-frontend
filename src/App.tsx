@@ -2021,17 +2021,17 @@ export default function App() {
   }
 
   function academicPreviewSegments() {
+    // L’aperçu est une vue du contenu déjà rédigé : ne jamais tronquer un bloc
+    // au milieu d’une phrase ou d’un paragraphe pour respecter une limite globale.
     const finished = blocks.filter((block) => block.status === "done" && block.content.trim());
-    let remaining = 2500;
-    return finished.flatMap((block) => {
-      if (remaining <= 0) return [];
-      const matches = [...block.content.matchAll(/\S+/gu)];
-      const selected = matches.slice(0, remaining);
-      remaining -= selected.length;
-      const end = selected.length ? selected[selected.length - 1].index + selected[selected.length - 1][0].length : 0;
-      const content = end > 0 ? block.content.slice(0, end).trim() : "";
-      return content ? [{ id: block.id, title: block.title, kind: block.kind, content, words: selected.length, structure: block.structure || [] }] : [];
-    });
+    return finished.map((block) => ({
+      id: block.id,
+      title: block.title,
+      kind: block.kind,
+      content: block.content,
+      words: countWords(block.content),
+      structure: block.structure || [],
+    }));
   }
 
   async function exportDocument() {
