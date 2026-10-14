@@ -1937,14 +1937,20 @@ export default function App() {
     // Normalise les titres académiques même lorsqu'ils sont collés au début d'un paragraphe.
     let source = String(raw || "").replace(/\r\n?/gu, "\n");
     source = source
-      .replace(/(^|\n)\s*(\*\*|__)([^\n*]{3,180}?)\2\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/gu, "$1$2$3$2\n\n")
-      .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
-      // Les titres numérotés internes doivent devenir des blocs distincts, même s'ils arrivent au milieu d'une phrase aplatie.
-      .replace(/[ \t]+(?=(?:\d+\.){2,5}\d+\s*[:.)\-–]?\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "\n\n")
-      .replace(/[ \t]*(\*\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "\n\n$1")
-      .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "\n\n")
-      .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
+      // Séparer uniquement les marqueurs structurels explicites. Les titres du plan sont traités séparément.
+      .replace(/[ \\t]*(#{1,6}\\s+)/gu, "\\n\\n$1")
+      .replace(/[ \\t]*(\\*\\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\\s+[IVXLCDM0-9]+|CHAPITRE\\s+\\d+|SECTION\\s+\\d+(?:\\.\\d+)*|SOUS-SECTION\\s+\\d+(?:\\.\\d+)*))/giu, "\\n\\n$1")
+      .replace(/\\n[ \\t]*\\n(?:[ \\t]*\\n)+/gu, "\\n\\n")
       .trim();
+    // Si un titre exact du plan est fusionné avec du texte, on le ré-isole.
+    // Aucune heuristique générale sur le gras ou la numérotation : cela coupait le contenu.
+    for (const title of [...planTitleValues].sort((a, b) => b.length - a.length)) {
+      const escapedTitle = title.replace(/[.*+?^${}()|[\\]\\\\]/gu, "\\\\$&");
+      const titlePattern = new RegExp("(^|\\\\n|[ \\t])(" + escapedTitle + ")(?=$|[ \\t\\\\n:：.])", "giu");
+      source = source.replace(titlePattern, (_match, boundary, matchedTitle) =>
+        (boundary.trim() ? boundary + "\\n\\n" : "\\n\\n") + matchedTitle + "\\n\\n"
+      );
+    }
     const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
       const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
       if (lines.length > 1) {
@@ -1984,17 +1990,8 @@ export default function App() {
       const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
       if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
       if (!line) return [];
-      // Si le moteur a renvoyé tout un bloc sur une seule ligne, rétablit des paragraphes lisibles sans réécrire le texte.
-      const sentences = line.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/u).filter(Boolean);
-      // Ne pas fabriquer des paragraphes d'une ou deux phrases : regrouper le texte aplati par unités de 4 à 6 phrases.
-      if (sentences.length >= 7) {
-        const paragraphs: string[] = [];
-        const groupSize = sentences.length >= 12 ? 5 : 4;
-        for (let i = 0; i < sentences.length; i += groupSize) {
-          paragraphs.push(sentences.slice(i, i + groupSize).join(" ").trim());
-        }
-        return paragraphs;
-      }
+      // Ne pas couper arbitrairement les phrases en groupes de taille fixe.
+      // Sans frontière fiable, conserver le paragraphe intact.
       return [line];
     });
     return rawBlocks.map((rawBlock, index) => {
