@@ -1908,6 +1908,21 @@ export default function App() {
       ])
     ]).map((title) => String(title || "").trim().replace(/^[#*\s]+/u, "")).filter(Boolean);
     const planTitles = planTitleValues.map((title) => title.toLocaleLowerCase("fr"));
+    // Sépare un titre numéroté du texte courant lorsque l'IA les a fusionnés.
+    // La séparation s'appuie sur le titre du plan, jamais sur la seule numérotation.
+    const splitNumberedHeading = (value: string) => {
+      const line = value.replace(/^#{1,6}\s*/u, "").replace(/[*_\x60]/gu, "").trim();
+      const prefix = line.match(/^((?:\d+\.){1,5}\d+)\s*[:.)\-–]?\s+/u);
+      if (!prefix) return null;
+      const rest = line.slice(prefix[0].length).trim();
+      const candidates = [...planTitleValues].sort((a, b) => b.length - a.length);
+      const title = candidates.find((candidate) => rest.toLocaleLowerCase("fr").startsWith(candidate.toLocaleLowerCase("fr")));
+      if (!title) return null;
+      const body = rest.slice(title.length).trim().replace(/^[:.\-–+\s]+/u, "");
+      if (!body || body.length < 8) return null;
+      return { heading: prefix[1] + ": " + title, body };
+    };
+
     const splitDuplicatedHeading = (value: string) => {
       const line = value.replace(/^#{1,6}\s*/u, "").replace(/[*_\x60]/gu, "").trim();
       const prefix = line.match(/^(CHAPITRE\s+\d+\s*[:.\-–]?\s*|SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*|SOUS-SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*)/iu);
@@ -1990,10 +2005,21 @@ export default function App() {
         .replace(/[*_\x60]/gu, "").replace(/\s+/gu, " ").trim();
       const normalizedHeading = headingText.toLocaleLowerCase("fr");
       const splitHeading = splitDuplicatedHeading(headingText);
-      const displayHeading = splitHeading?.heading || headingText;
-      const numberedHeading = /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(headingText);
+      const splitNumbered = splitNumberedHeading(headingText);
+      const displayHeading = splitNumbered?.heading || splitHeading?.heading || headingText;
+      const numberedHeading = /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(headingText)
+        && !/[.!?]\s+[A-ZÀ-ÖØ-ÞÀ-ÿ«“]/u.test(headingText)
+        && headingText.length < 180;
       const isAcademicHeading = /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)/iu.test(headingText);
       const plainHeading = planTitles.includes(normalizedHeading) || planTitles.some((title) => title && normalizedHeading === title.replace(/^\d+(?:\.\d+)*\s*/u, ""));
+      if (splitNumbered) {
+        return (
+          <React.Fragment key={index}>
+            <h4 className="mb-3 mt-5 text-sm font-bold text-[#172554]">{splitNumbered.heading}</h4>
+            <p className="mb-6 text-left font-normal" style={{ textIndent: "1.1cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal" }}>{splitNumbered.body}</p>
+          </React.Fragment>
+        );
+      }
       if (markdownHeading || isAcademicHeading || numberedHeading || plainHeading) {
         const numberDepth = (headingText.match(/\./gu) || []).length;
         const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\b/iu.test(headingText) ? 1 : /^CHAPITRE\b/iu.test(headingText) ? 2 : numberedHeading ? Math.min(5, numberDepth + 2) : 3;
@@ -2016,7 +2042,7 @@ export default function App() {
         .replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1")
         .replace(/^#{1,6}\s*/u, "")
         .trim();
-      return <p key={index} className={previewMode ? "mb-6 text-left font-normal" : "mb-6 text-left font-normal"} style={{ textIndent: "1.1cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "anywhere" }}>{paragraph}</p>;
+      return <p key={index} className={previewMode ? "mb-6 text-left font-normal" : "mb-6 text-left font-normal"} style={{ textIndent: "1.1cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal" }}>{paragraph}</p>;
     }).filter(Boolean);
   }
 
