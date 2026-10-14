@@ -1573,6 +1573,64 @@ export default function App() {
     }
   }
 
+  async function openClientProject(projectId: string) {
+    let session: { token: string; email?: string } | null = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token) {
+      setClientAuthMode("login");
+      setClientAuthError("Connectez-vous pour ouvrir vos projets.");
+      setView("account");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(CLIENT_ACCOUNT_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resume", token: session.token, projectId }),
+      });
+      const data = await readApiResponse(response);
+      if (!data.state?.project) throw new Error("Le contenu du projet n'a pas été retourné par le serveur.");
+      const saved = data.state;
+      const remoteProject = { ...saved.project, projectId, files: [] };
+      setProject(remoteProject);
+      setFormula(saved.formula || saved.project.formula || null);
+      setPreview(saved.preview || null);
+      setEstimate(saved.estimate || null);
+      setPremium(saved.premium || null);
+      setSelectedProblematic(saved.selectedProblematic || null);
+      setSelectedPlan(saved.selectedPlan || null);
+      setBlocks(Array.isArray(saved.blocks) ? saved.blocks : []);
+      setPreviewTab(saved.previewTab || "problematic");
+      setPremiumNav(saved.premiumNav || "writing");
+      setPremiumSection(saved.premiumSection || "writing");
+      setSelectedWritingBlockId(saved.selectedWritingBlockId || saved.blocks?.find((block: Block) => block.status !== "done")?.id || saved.blocks?.[0]?.id || null);
+      setProblematicImprovementComments(saved.problematicImprovementComments || {});
+      setPlanImprovementComments(saved.planImprovementComments || {});
+      setProblematicGenerationCount(Number(saved.problematicGenerationCount || 0));
+      setPlanGenerationCount(Number(saved.planGenerationCount || 0));
+      if (data.premium_token) {
+        window.sessionStorage.setItem("trimemo_premium_token", String(data.premium_token));
+        window.sessionStorage.setItem("trimemo_premium_project_id", projectId);
+      } else {
+        window.sessionStorage.removeItem("trimemo_premium_token");
+        window.sessionStorage.removeItem("trimemo_premium_project_id");
+      }
+      setClientEmailDisplay(String(session.email || ""));
+      setView("writing");
+      setWritingTab("writing");
+      window.history.replaceState({}, document.title, window.location.pathname);
+      pushToast("success", data.project?.payment_status === "paid"
+        ? "Projet payé restauré. Vous pouvez poursuivre la rédaction, puis revenir plus tard."
+        : "Projet restauré. La poursuite de la rédaction nécessitera le paiement Premium.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de restaurer ce projet.";
+      pushToast("error", message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function submitClientAuth() {
     setClientAuthBusy(true);
     setClientAuthError("");
@@ -3410,7 +3468,7 @@ export default function App() {
             </div>
             <div className="mt-8 grid gap-4">
               {clientProjects.length ? clientProjects.map((item) => (
-                <button key={item.project_id} onClick={() => { window.location.href = "/?project=" + encodeURIComponent(item.project_id); }} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#172554]/10 bg-white p-5 text-left shadow-sm transition hover:border-[#D4A23A]">
+                <button key={item.project_id} onClick={() => { void openClientProject(item.project_id); }} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#172554]/10 bg-white p-5 text-left shadow-sm transition hover:border-[#D4A23A]">
                   <span><span className="block font-playfair text-xl font-semibold text-[#172554]">{item.subject || "Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#172554]/60">Dernière mise à jour : {item.updated_at ? new Date(item.updated_at).toLocaleString("fr-FR") : "Non disponible"}</span></span>
                   <span className="rounded-full bg-[#EAF7EE] px-3 py-2 font-inter text-xs font-semibold text-[#172554]">{item.payment_status === "paid" ? "Premium payé" : "Projet enregistré"}</span>
                 </button>
