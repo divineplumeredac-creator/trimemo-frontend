@@ -493,6 +493,8 @@ export default function App() {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientAuthMode, setClientAuthMode] = useState<"signup" | "login">("signup");
+  const [clientFirstName, setClientFirstName] = useState("");
+  const [clientLastName, setClientLastName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPassword, setClientPassword] = useState("");
   const [clientAuthError, setClientAuthError] = useState("");
@@ -1534,7 +1536,7 @@ export default function App() {
       const response = await fetch(CLIENT_ACCOUNT_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: clientAuthMode, email: clientEmail.trim(), password: clientPassword }),
+        body: JSON.stringify({ action: clientAuthMode, firstName: clientFirstName.trim(), lastName: clientLastName.trim(), email: clientEmail.trim(), password: clientPassword }),
       });
       const data = await readApiResponse(response);
       if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
@@ -3318,8 +3320,18 @@ export default function App() {
           <div className="mx-auto max-w-xl rounded-3xl border border-[#172554]/10 bg-white p-6 shadow-sm sm:p-9">
             <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Compte client Trimémo</div>
             <h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">{clientAuthMode === "signup" ? "Créez votre compte" : "Connectez-vous"}</h1>
-            <p className="mt-3 font-inter text-sm leading-6 text-[#172554]/70">Votre projet, votre plan validé et votre progression seront rattachés à votre espace personnel.</p>
+            <p className="mt-3 font-inter text-sm leading-6 text-[#172554]/70">Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture de PayPal.</p>
             <form className="mt-7 space-y-4" onSubmit={(event) => { event.preventDefault(); void submitClientAuth(); }}>
+              {clientAuthMode === "signup" && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block font-inter text-sm font-medium text-[#172554]">Prénom
+                    <input type="text" required autoComplete="given-name" value={clientFirstName} onChange={(event) => setClientFirstName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="Votre prénom" />
+                  </label>
+                  <label className="block font-inter text-sm font-medium text-[#172554]">Nom
+                    <input type="text" required autoComplete="family-name" value={clientLastName} onChange={(event) => setClientLastName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="Votre nom" />
+                  </label>
+                </div>
+              )}
               <label className="block font-inter text-sm font-medium text-[#172554]">Adresse e-mail
                 <input type="email" required autoComplete="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="vous@exemple.com" />
               </label>
