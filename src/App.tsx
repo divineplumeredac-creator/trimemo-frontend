@@ -1940,9 +1940,13 @@ export default function App() {
       if (!line) return [];
       // Si le moteur a renvoyé tout un bloc sur une seule ligne, rétablit des paragraphes lisibles sans réécrire le texte.
       const sentences = line.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/u).filter(Boolean);
-      if (sentences.length >= 4) {
+      // Ne pas fabriquer des paragraphes d'une ou deux phrases : regrouper le texte aplati par unités de 4 à 6 phrases.
+      if (sentences.length >= 7) {
         const paragraphs: string[] = [];
-        for (let i = 0; i < sentences.length; i += 2) paragraphs.push(sentences.slice(i, i + 2).join(" ").trim());
+        const groupSize = sentences.length >= 12 ? 5 : 4;
+        for (let i = 0; i < sentences.length; i += groupSize) {
+          paragraphs.push(sentences.slice(i, i + groupSize).join(" ").trim());
+        }
         return paragraphs;
       }
       return [line];
@@ -1956,15 +1960,19 @@ export default function App() {
       const normalizedHeading = headingText.toLocaleLowerCase("fr");
       const splitHeading = splitDuplicatedHeading(headingText);
       const displayHeading = splitHeading?.heading || headingText;
+      const numberedHeading = /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(headingText);
       const isAcademicHeading = /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)/iu.test(headingText);
       const plainHeading = planTitles.includes(normalizedHeading) || planTitles.some((title) => title && normalizedHeading === title.replace(/^\d+(?:\.\d+)*\s*/u, ""));
-      if (markdownHeading || isAcademicHeading || plainHeading) {
-        const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\b/iu.test(headingText) ? 1 : /^CHAPITRE\b/iu.test(headingText) ? 2 : 3;
+      if (markdownHeading || isAcademicHeading || numberedHeading || plainHeading) {
+        const numberDepth = (headingText.match(/\./gu) || []).length;
+        const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\b/iu.test(headingText) ? 1 : /^CHAPITRE\b/iu.test(headingText) ? 2 : numberedHeading ? Math.min(5, numberDepth + 2) : 3;
         const className = level <= 1
           ? "mb-5 mt-9 text-center text-lg font-bold uppercase tracking-wide text-[#172554]"
           : level === 2
             ? "mb-4 mt-8 text-base font-bold uppercase text-[#172554]"
-            : "mb-3 mt-6 text-sm font-bold text-[#172554]";
+            : numberedHeading
+              ? "mb-3 mt-5 text-sm font-bold text-[#172554]"
+              : "mb-3 mt-6 text-sm font-bold text-[#172554]";
         return (
           <React.Fragment key={index}>
             <h4 className={className}>{displayHeading}</h4>
@@ -2014,7 +2022,13 @@ export default function App() {
         problematic: selectedProblematic,
         plan: selectedPlan,
         introduction: { title: intro?.title || "Introduction générale", content: intro?.content || "", wordCount: intro?.words || 0, incomplete: true },
-        chapterOne: { title: "Suite de la rédaction", content: others.map((block) => [block.title, block.content].join("\n\n")).join("\n\n"), wordCount: others.reduce((sum, block) => sum + block.words, 0), partTitle: "", chapterNumber: 1, sectionTitles: others.flatMap((block) => block.structure) },
+        chapterOne: { title: "Suite de la rédaction", content: others.map((block) => {
+          const content = String(block.content || "").trim();
+          const title = String(block.title || "").trim();
+          // Le titre de bloc est ajouté uniquement s'il n'est pas déjà présent au début du contenu.
+          const startsWithTitle = title && content.slice(0, Math.max(title.length + 80, 160)).toLocaleLowerCase("fr").includes(title.toLocaleLowerCase("fr"));
+          return startsWithTitle ? content : [title, content].filter(Boolean).join("\n\n");
+        }).join("\n\n"), wordCount: others.reduce((sum, block) => sum + block.words, 0), partTitle: "", chapterNumber: 1, sectionTitles: others.flatMap((block) => block.structure) },
       };
       setPreview(previewSnapshot);
       try {
