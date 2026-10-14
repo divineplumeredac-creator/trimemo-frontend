@@ -1568,7 +1568,7 @@ export default function App() {
         if (!linkData.success) throw new Error("Le projet n'a pas pu être associé au compte client.");
       }
 
-      pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : "Connexion réussie. Votre projet est associé à votre compte.");
+      pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : String(project.sujet || "").trim() ? "Connexion réussie. Votre projet est associé à votre compte." : "Connexion réussie. Chargement de votre espace client.");
       if (pendingPaymentMethod) {
         const method = pendingPaymentMethod;
         setPendingPaymentMethod(null);
