@@ -26,6 +26,7 @@ const BLOCK_API = `${API_BASE_URL}/api/generate-block`;
 const WORDS_PER_PAGE = 320;
 const LOGO_SRC = "/trimemo-logo.webp";
 const OWNER_AUTH_API = `${API_BASE_URL}/api/owner-auth`;
+const CLIENT_ACCOUNT_API = `${API_BASE_URL}/api/client-account`;
 const EXPORT_API = `${API_BASE_URL}/api/export`;
 // Adresse configurée dans Vercel avec VITE_CONTACT_EMAIL.
 const CONTACT_EMAIL = String(import.meta.env.VITE_CONTACT_EMAIL || "").trim();
@@ -482,7 +483,7 @@ export default function App() {
   const [selectedProblematic, setSelectedProblematic] = useState<Problematic | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing">("home");
+  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">("home");
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
@@ -491,6 +492,14 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
+  const [clientAuthMode, setClientAuthMode] = useState<"signup" | "login">("signup");
+  const [clientEmail, setClientEmail] = useState("");
+  const [clientPassword, setClientPassword] = useState("");
+  const [clientAuthError, setClientAuthError] = useState("");
+  const [clientAuthBusy, setClientAuthBusy] = useState(false);
+  const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
+  const [clientProjects, setClientProjects] = useState<Array<{project_id:string;subject:string;payment_status:string;updated_at:string}>>([]);
+  const [clientEmailDisplay, setClientEmailDisplay] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ownerRoute] = useState(() => typeof window !== "undefined" && window.location.pathname === "/owner");
@@ -1475,6 +1484,18 @@ export default function App() {
   }
 
   async function startPayment(method: "paypal" | "mobile-money") {
+    let clientSession: { token: string; email?: string } | null = null;
+    try { clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!clientSession?.token) {
+      setPendingPaymentMethod(method);
+      setClientAuthMode("signup");
+      setClientEmail(project.email || "");
+      setClientPassword("");
+      setClientAuthError("");
+      setView("account");
+      pushToast("info", "Créez votre compte client pour conserver votre projet avant de payer.");
+      return;
+    }
     if (!estimate || !project.pricingQuoteToken) {
       pushToast("error", "Relancez l'analyse du projet avant le paiement.");
       setView("project");
@@ -3141,6 +3162,12 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }}
+              className="hidden rounded-full border border-white/25 px-4 py-2 font-inter text-[12px] text-white sm:inline-flex"
+            >
+              Mon compte
+            </button>
+            <button
               onClick={goToProject}
               className="inline-flex h-10 items-center gap-2 rounded-full bg-[#D4A23A] px-5 font-inter text-[13px] font-medium"
             >
@@ -3156,6 +3183,7 @@ export default function App() {
             <button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
             <button onClick={() => navigateToSection("formules")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Formules</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("project"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
+            <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon compte client</button>
             {view === "preview" && preview && (
               <>
                 <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Aperçu</div>
@@ -3184,6 +3212,51 @@ export default function App() {
             )}
           </div>
         </div>
+      )}
+
+      {view === "account" && (
+        <section className="min-h-[72vh] bg-[#F8FAFC] px-5 py-12">
+          <div className="mx-auto max-w-xl rounded-3xl border border-[#172554]/10 bg-white p-6 shadow-sm sm:p-9">
+            <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Compte client Trimémo</div>
+            <h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">{clientAuthMode === "signup" ? "Créez votre compte" : "Connectez-vous"}</h1>
+            <p className="mt-3 font-inter text-sm leading-6 text-[#172554]/70">Votre projet, votre plan validé et votre progression seront rattachés à votre espace personnel.</p>
+            <form className="mt-7 space-y-4" onSubmit={(event) => { event.preventDefault(); void submitClientAuth(); }}>
+              <label className="block font-inter text-sm font-medium text-[#172554]">Adresse e-mail
+                <input type="email" required autoComplete="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="vous@exemple.com" />
+              </label>
+              <label className="block font-inter text-sm font-medium text-[#172554]">Mot de passe
+                <input type="password" required minLength={8} autoComplete={clientAuthMode === "signup" ? "new-password" : "current-password"} value={clientPassword} onChange={(event) => setClientPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="8 caractères minimum" />
+              </label>
+              {clientAuthError && <div role="alert" className="rounded-xl bg-red-50 p-3 font-inter text-sm text-red-700">{clientAuthError}</div>}
+              <button type="submit" disabled={clientAuthBusy} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#172554] px-5 py-3 font-inter text-sm font-semibold text-white disabled:opacity-60">
+                {clientAuthBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : clientAuthMode === "signup" ? "Créer mon compte et continuer" : "Se connecter"}
+              </button>
+            </form>
+            <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : "signup"); setClientAuthError(""); }} className="mt-5 w-full font-inter text-sm text-[#1D78C1]">
+              {clientAuthMode === "signup" ? "J’ai déjà un compte : me connecter" : "Je n’ai pas encore de compte : m’inscrire"}
+            </button>
+            <button type="button" onClick={() => { setPendingPaymentMethod(null); setView("preview"); }} className="mt-4 w-full font-inter text-xs text-[#172554]/60">Retour à mon aperçu</button>
+          </div>
+        </section>
+      )}
+
+      {view === "dashboard" && (
+        <section className="min-h-[72vh] bg-[#F8FAFC] px-5 py-12">
+          <div className="mx-auto max-w-5xl">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div><div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Espace personnel</div><h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">Mes projets</h1><p className="mt-2 font-inter text-sm text-[#172554]/65">{clientEmailDisplay || "Retrouvez vos projets et leur progression."}</p></div>
+              <div className="flex gap-2"><button onClick={() => { setView("project"); }} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-sm font-semibold text-[#172554]">Nouveau projet</button><button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setView("home"); }} className="rounded-full border border-[#172554]/20 px-5 py-3 font-inter text-sm">Déconnexion</button></div>
+            </div>
+            <div className="mt-8 grid gap-4">
+              {clientProjects.length ? clientProjects.map((item) => (
+                <button key={item.project_id} onClick={() => { window.location.href = "/?project=" + encodeURIComponent(item.project_id); }} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#172554]/10 bg-white p-5 text-left shadow-sm transition hover:border-[#D4A23A]">
+                  <span><span className="block font-playfair text-xl font-semibold text-[#172554]">{item.subject || "Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#172554]/60">Dernière mise à jour : {item.updated_at ? new Date(item.updated_at).toLocaleString("fr-FR") : "Non disponible"}</span></span>
+                  <span className="rounded-full bg-[#EAF7EE] px-3 py-2 font-inter text-xs font-semibold text-[#172554]">{item.payment_status === "paid" ? "Premium payé" : "Projet enregistré"}</span>
+                </button>
+              )) : <div className="rounded-2xl border border-dashed border-[#172554]/20 bg-white p-8 font-inter text-sm text-[#172554]/70">Aucun projet enregistré dans ce compte pour le moment.</div>}
+            </div>
+          </div>
+        </section>
       )}
 
       {view === "home" && (
