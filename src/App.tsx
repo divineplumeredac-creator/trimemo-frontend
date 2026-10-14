@@ -2016,7 +2016,7 @@ export default function App() {
         return (
           <React.Fragment key={index}>
             <h4 className="mb-3 mt-5 text-sm font-bold text-[#172554]">{splitNumbered.heading}</h4>
-            <p className="mb-6 text-left font-normal" style={{ textIndent: "1.1cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal" }}>{splitNumbered.body}</p>
+            <p className="mb-6 text-justify font-normal" style={{ textIndent: "0.6cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{splitNumbered.body}</p>
           </React.Fragment>
         );
       }
@@ -2033,7 +2033,7 @@ export default function App() {
         return (
           <React.Fragment key={index}>
             <h4 className={className}>{displayHeading}</h4>
-            {splitHeading?.body && <p className="mb-6 text-left font-normal" style={{ textIndent: "1.1cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal" }}>{splitHeading.body}</p>}
+            {splitHeading?.body && <p className="mb-6 text-justify font-normal" style={{ textIndent: "0.6cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{splitHeading.body}</p>}
           </React.Fragment>
         );
       }
@@ -2042,7 +2042,7 @@ export default function App() {
         .replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1")
         .replace(/^#{1,6}\s*/u, "")
         .trim();
-      return <p key={index} className={previewMode ? "mb-6 text-left font-normal" : "mb-6 text-left font-normal"} style={{ textIndent: "1.1cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal" }}>{paragraph}</p>;
+      return <p key={index} className="mb-6 text-justify font-normal" style={{ textIndent: "0.6cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{paragraph}</p>;
     }).filter(Boolean);
   }
 
