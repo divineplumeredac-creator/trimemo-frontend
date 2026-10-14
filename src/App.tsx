@@ -2038,7 +2038,7 @@ export default function App() {
         return (
           <React.Fragment key={index}>
             <h4 className="mb-3 mt-5 text-sm font-bold text-[#172554]">{splitNumbered.heading}</h4>
-            <p className="mb-4 text-justify font-normal" style={{ textIndent: "0.5cm", lineHeight: 1.6, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{splitNumbered.body}</p>
+            <p className="mb-4 text-justify font-normal" style={{ textIndent: "0.5cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{splitNumbered.body}</p>
           </React.Fragment>
         );
       }
