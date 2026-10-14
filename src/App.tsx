@@ -3776,8 +3776,8 @@ export default function App() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={exportDocument} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white">
-                      Exporter le document Word
+                    <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
+                      {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                     </button>
                     {CONTACT_EMAIL && blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
                       <button
