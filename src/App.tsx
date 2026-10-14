@@ -1908,47 +1908,90 @@ export default function App() {
       ])
     ]).map((title) => String(title || "").trim().replace(/^[#*\s]+/u, "")).filter(Boolean);
     const planTitles = planTitleValues.map((title) => title.toLocaleLowerCase("fr"));
-    const splitDuplicatedHeading = (value: string) => {
+    // Sépare un titre numéroté du texte courant lorsque l'IA les a fusionnés.
+    // La séparation s'appuie sur le titre du plan, jamais sur la seule numérotation.
+    const splitNumberedHeading = (value: string) => {
       const line = value.replace(/^#{1,6}\s*/u, "").replace(/[*_\x60]/gu, "").trim();
-      const prefix = line.match(/^(CHAPITRE\s+\d+\s*[:.\-–]?\s*|SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*|SOUS-SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*)/iu);
+      const prefix = line.match(/^((?:\d+\.){1,5}\d+)\s*[:.)\-–]?\s+/u);
       if (!prefix) return null;
       const rest = line.slice(prefix[0].length).trim();
       const candidates = [...planTitleValues].sort((a, b) => b.length - a.length);
       const title = candidates.find((candidate) => rest.toLocaleLowerCase("fr").startsWith(candidate.toLocaleLowerCase("fr")));
       if (!title) return null;
-      const remainder = rest.slice(title.length).trim().replace(/^[:.\-–+\s]+/u, "");
-      if (!remainder || remainder.length < 8) return null;
-      return { heading: prefix[0] + title, subtitle: remainder };
+      const body = rest.slice(title.length).trim().replace(/^[:.\-–+\s]+/u, "");
+      if (!body || body.length < 8) return null;
+      return { heading: prefix[1] + ": " + title, body };
+    };
+
+    const splitDuplicatedHeading = (value: string) => {
+      const line = value.replace(/^#{1,6}\s*/u, "").replace(/[*_\x60]/gu, "").trim();
+      const prefix = line.match(/^(CHAPITRE\s+\d+\s*[:.\-–]?\s*|SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*|SOUS-SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*)/iu);
+      const rest = prefix ? line.slice(prefix[0].length).trim() : line;
+      const candidates = [...planTitleValues].sort((x, y) => y.length - x.length);
+      const title = candidates.find((candidate) => rest.toLocaleLowerCase("fr").startsWith(candidate.toLocaleLowerCase("fr")));
+      if (!title) return null;
+      const body = rest.slice(title.length).trim().replace(/^[:.\-–+\s]+/u, "");
+      if (!body || body.length < 8) return null;
+      return { heading: (prefix?.[0] || "") + title, body };
     };
     // Normalise les titres académiques même lorsqu'ils sont collés au début d'un paragraphe.
     let source = String(raw || "").replace(/\r\n?/gu, "\n");
     source = source
+      // Séparer uniquement les marqueurs structurels explicites. Les titres du plan sont traités séparément.
       .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
-      // Les titres numérotés internes doivent devenir des blocs distincts, même s'ils arrivent au milieu d'une phrase aplatie.
-      .replace(/[ \t]+(?=(?:\d+\.){2,5}\d+\s*[:.)\-–]?\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "\n\n")
-      .replace(/[ \t]*(\*\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "\n\n$1")
-      .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "\n\n")
+      .replace(/[ \t]*(\*{1,2}(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "\n\n$1")
       .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
       .trim();
+    // Ré-isoler seulement les intitulés exacts du plan validé.
+    // Aucune heuristique générale sur le gras ou la numérotation : cela coupait le contenu.
+    for (const title of [...planTitleValues].sort((a, b) => b.length - a.length)) {
+      const escapedTitle = title.split("").map((character) => "\\.^$|?*+()[]{}".includes(character) ? "\\" + character : character).join("");
+      const titlePattern = new RegExp("(^|\\n|[ \\t])(" + escapedTitle + ")(?=$|[ \\t\\n:：.])", "giu");
+      source = source.replace(titlePattern, (_match, boundary, matchedTitle) =>
+        (boundary.trim() ? boundary + "\n\n" : "\n\n") + matchedTitle + "\n\n"
+      );
+    }
     const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
       const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-      if (lines.length > 1) return lines;
+      if (lines.length > 1) {
+        // Les retours à la ligne simples proviennent souvent de l'extraction ou du wrapping
+        // d'un paragraphe. Ne les convertis pas automatiquement en paragraphes distincts.
+        const grouped: string[] = [];
+        let proseLines: string[] = [];
+        const flushProse = () => {
+          if (proseLines.length) grouped.push(proseLines.join(" ").replace(/\s+/gu, " ").trim());
+          proseLines = [];
+        };
+        for (const candidate of lines) {
+          const candidateText = candidate
+            .replace(/^#{1,6}\s*/u, "")
+            .replace(/[*_\x60]/gu, "")
+            .replace(/\s+/gu, " ")
+            .trim();
+          const normalizedCandidate = candidateText.toLocaleLowerCase("fr");
+          const candidateIsHeading =
+            /^#{1,6}\s+\S/u.test(candidate) ||
+            /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)/iu.test(candidateText) ||
+            /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(candidateText) ||
+            planTitles.includes(normalizedCandidate) ||
+            planTitles.some((title) => title && normalizedCandidate === title.replace(/^\d+(?:\.\d+)*\s*/u, ""));
+          if (candidateIsHeading) {
+            flushProse();
+            grouped.push(candidate);
+          } else {
+            proseLines.push(candidate);
+          }
+        }
+        flushProse();
+        return grouped;
+      }
       const line = lines[0] || "";
       // Sépare une phrase de prose lorsqu'un titre identifié est suivi sur la même ligne.
       const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
       if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
       if (!line) return [];
-      // Si le moteur a renvoyé tout un bloc sur une seule ligne, rétablit des paragraphes lisibles sans réécrire le texte.
-      const sentences = line.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/u).filter(Boolean);
-      // Ne pas fabriquer des paragraphes d'une ou deux phrases : regrouper le texte aplati par unités de 4 à 6 phrases.
-      if (sentences.length >= 7) {
-        const paragraphs: string[] = [];
-        const groupSize = sentences.length >= 12 ? 5 : 4;
-        for (let i = 0; i < sentences.length; i += groupSize) {
-          paragraphs.push(sentences.slice(i, i + groupSize).join(" ").trim());
-        }
-        return paragraphs;
-      }
+      // Ne pas couper arbitrairement les phrases en groupes de taille fixe.
+      // Sans frontière fiable, conserver le paragraphe intact.
       return [line];
     });
     return rawBlocks.map((rawBlock, index) => {
@@ -1959,10 +2002,21 @@ export default function App() {
         .replace(/[*_\x60]/gu, "").replace(/\s+/gu, " ").trim();
       const normalizedHeading = headingText.toLocaleLowerCase("fr");
       const splitHeading = splitDuplicatedHeading(headingText);
-      const displayHeading = splitHeading?.heading || headingText;
-      const numberedHeading = /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(headingText);
+      const splitNumbered = splitNumberedHeading(headingText);
+      const displayHeading = splitNumbered?.heading || splitHeading?.heading || headingText;
+      const numberedHeading = /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(headingText)
+        && !/[.!?]\s+[A-ZÀ-ÖØ-ÞÀ-ÿ«“]/u.test(headingText)
+        && headingText.length < 180;
       const isAcademicHeading = /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)/iu.test(headingText);
       const plainHeading = planTitles.includes(normalizedHeading) || planTitles.some((title) => title && normalizedHeading === title.replace(/^\d+(?:\.\d+)*\s*/u, ""));
+      if (splitNumbered) {
+        return (
+          <React.Fragment key={index}>
+            <h4 className="mb-3 mt-5 text-sm font-bold text-[#172554]">{splitNumbered.heading}</h4>
+            <p className="mb-6 text-justify font-normal" style={{ textIndent: "0.6cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{splitNumbered.body}</p>
+          </React.Fragment>
+        );
+      }
       if (markdownHeading || isAcademicHeading || numberedHeading || plainHeading) {
         const numberDepth = (headingText.match(/\./gu) || []).length;
         const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\b/iu.test(headingText) ? 1 : /^CHAPITRE\b/iu.test(headingText) ? 2 : numberedHeading ? Math.min(5, numberDepth + 2) : 3;
@@ -1976,7 +2030,7 @@ export default function App() {
         return (
           <React.Fragment key={index}>
             <h4 className={className}>{displayHeading}</h4>
-            {splitHeading?.subtitle && <h5 className="mb-4 mt-2 text-sm font-semibold leading-6 text-[#444]">{splitHeading.subtitle}</h5>}
+            {splitHeading?.body && <p className="mb-6 text-justify font-normal" style={{ textIndent: "0.6cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{splitHeading.body}</p>}
           </React.Fragment>
         );
       }
@@ -1985,22 +2039,22 @@ export default function App() {
         .replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1")
         .replace(/^#{1,6}\s*/u, "")
         .trim();
-      return <p key={index} className={previewMode ? "mb-6 text-left font-normal" : "mb-6 text-left font-normal"} style={{ textIndent: "1.1cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "anywhere" }}>{paragraph}</p>;
+      return <p key={index} className="mb-6 text-justify font-normal" style={{ textIndent: "0.6cm", lineHeight: 1.5, whiteSpace: "normal", overflowWrap: "break-word", wordBreak: "normal", textAlign: "justify", textJustify: "inter-word" }}>{paragraph}</p>;
     }).filter(Boolean);
   }
 
   function academicPreviewSegments() {
+    // L’aperçu est une vue du contenu déjà rédigé : ne jamais tronquer un bloc
+    // au milieu d’une phrase ou d’un paragraphe pour respecter une limite globale.
     const finished = blocks.filter((block) => block.status === "done" && block.content.trim());
-    let remaining = 2500;
-    return finished.flatMap((block) => {
-      if (remaining <= 0) return [];
-      const matches = [...block.content.matchAll(/\S+/gu)];
-      const selected = matches.slice(0, remaining);
-      remaining -= selected.length;
-      const end = selected.length ? selected[selected.length - 1].index + selected[selected.length - 1][0].length : 0;
-      const content = end > 0 ? block.content.slice(0, end).trim() : "";
-      return content ? [{ id: block.id, title: block.title, kind: block.kind, content, words: selected.length, structure: block.structure || [] }] : [];
-    });
+    return finished.map((block) => ({
+      id: block.id,
+      title: block.title,
+      kind: block.kind,
+      content: block.content,
+      words: countWords(block.content),
+      structure: block.structure || [],
+    }));
   }
 
   async function exportDocument() {
@@ -3497,7 +3551,7 @@ export default function App() {
               onCut={(event) => event.preventDefault()}
               onContextMenu={(event) => event.preventDefault()}
             >
-              <div className="mx-auto bg-white px-6 py-10 text-[#171717] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "11pt", lineHeight: 1.55, fontWeight: 400 }}>
+              <div className="mx-auto bg-white px-6 py-10 text-[#171717] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "11pt", lineHeight: 1.5, fontWeight: 400 }}>
                 <div className="mb-8 border-b pb-5 text-center">
                   <div className="text-xs uppercase tracking-[0.12em] text-[#555]">Aperçu du document académique</div>
                   <h2 className="mt-4 text-xl font-bold">{project.sujet || selectedPlan?.title || "Projet académique"}</h2>
@@ -3537,7 +3591,7 @@ export default function App() {
                 {academicPreviewSegments().map((segment, index) => (
                   <article key={segment.id} className="mb-8">
                     <h3 className={`mb-5 font-bold ${segment.kind === "introduction" ? "text-center text-lg uppercase" : "text-base"}`}>{segment.title}</h3>
-                    <div className="font-normal text-[11pt] leading-[1.55] text-[#171717]">
+                    <div className="font-normal text-[11pt] leading-[1.5] text-[#171717]">
                       {renderAcademicText(
                         segment.content,
                         true
