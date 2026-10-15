@@ -483,7 +483,7 @@ export default function App() {
   const [selectedProblematic, setSelectedProblematic] = useState<Problematic | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => new URLSearchParams(window.location.search).get("account") === "signup" ? "account" : "home");
+  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return params.get("account") === "signup" || params.get("reset-password") === "1" ? "account" : "home"; });
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
@@ -492,12 +492,18 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
-  const [clientAuthMode, setClientAuthMode] = useState<"signup" | "login">("signup");
+  const [clientAuthMode, setClientAuthMode] = useState<"signup" | "login" | "forgot" | "reset">(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reset-password") === "1" && new URLSearchParams(window.location.hash.replace(/^#/, "")).get("access_token")) return "reset";
+    return "signup";
+  });
   const [clientFirstName, setClientFirstName] = useState("");
   const [clientLastName, setClientLastName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPassword, setClientPassword] = useState("");
+  const [clientRecoveryToken, setClientRecoveryToken] = useState(() => new URLSearchParams(window.location.hash.replace(/^#/, "")).get("access_token") || "");
   const [clientAuthError, setClientAuthError] = useState("");
+  const [clientAuthNotice, setClientAuthNotice] = useState("");
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientProjects, setClientProjects] = useState<Array<{project_id:string;subject:string;payment_status:string;updated_at:string}>>([]);
@@ -1634,7 +1640,28 @@ export default function App() {
   async function submitClientAuth() {
     setClientAuthBusy(true);
     setClientAuthError("");
+    setClientAuthNotice("");
     try {
+      if (clientAuthMode === "forgot" || clientAuthMode === "reset") {
+        const response = await fetch(CLIENT_ACCOUNT_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(clientAuthMode === "forgot"
+            ? { action: "forgot-password", email: clientEmail.trim() }
+            : { action: "reset-password", recoveryToken: clientRecoveryToken, password: clientPassword }),
+        });
+        const data = await readApiResponse(response);
+        setClientPassword("");
+        if (clientAuthMode === "forgot") {
+          setClientAuthNotice(data.message || "Si un compte correspond à cette adresse, un lien de réinitialisation sera envoyé.");
+        } else {
+          setClientAuthMode("login");
+          setClientRecoveryToken("");
+          window.history.replaceState({}, document.title, window.location.pathname);
+          setClientAuthNotice(data.message || "Mot de passe modifié. Vous pouvez maintenant vous connecter.");
+        }
+        return;
+      }
       const response = await fetch(CLIENT_ACCOUNT_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -3427,8 +3454,8 @@ export default function App() {
         <section className="min-h-[72vh] bg-[#F8FAFC] px-5 py-12">
           <div className="mx-auto max-w-xl rounded-3xl border border-[#172554]/10 bg-white p-6 shadow-sm sm:p-9">
             <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Compte client Trimémo</div>
-            <h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">{clientAuthMode === "signup" ? "Créez votre compte" : "Connectez-vous"}</h1>
-            <p className="mt-3 font-inter text-sm leading-6 text-[#172554]/70">Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture de PayPal.</p>
+            <h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
+            <p className="mt-3 font-inter text-sm leading-6 text-[#172554]/70">{clientAuthMode === "signup" ? "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture de PayPal." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
             <form className="mt-7 space-y-4" onSubmit={(event) => { event.preventDefault(); void submitClientAuth(); }}>
               {clientAuthMode === "signup" && (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -3440,20 +3467,23 @@ export default function App() {
                   </label>
                 </div>
               )}
-              <label className="block font-inter text-sm font-medium text-[#172554]">Adresse e-mail
+              {clientAuthMode !== "reset" && <label className="block font-inter text-sm font-medium text-[#172554]">Adresse e-mail
                 <input type="email" required autoComplete="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="vous@exemple.com" />
-              </label>
-              <label className="block font-inter text-sm font-medium text-[#172554]">Mot de passe
-                <input type="password" required minLength={8} autoComplete={clientAuthMode === "signup" ? "new-password" : "current-password"} value={clientPassword} onChange={(event) => setClientPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="8 caractères minimum" />
-              </label>
+              </label>}
+              {clientAuthMode !== "forgot" && <label className="block font-inter text-sm font-medium text-[#172554]">{clientAuthMode === "reset" ? "Nouveau mot de passe" : "Mot de passe"}
+                <input type="password" required minLength={8} autoComplete={clientAuthMode === "signup" || clientAuthMode === "reset" ? "new-password" : "current-password"} value={clientPassword} onChange={(event) => setClientPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="8 caractères minimum" />
+              </label>}
               {clientAuthError && <div role="alert" className="rounded-xl bg-red-50 p-3 font-inter text-sm text-red-700">{clientAuthError}</div>}
-              <button type="submit" disabled={clientAuthBusy} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#172554] px-5 py-3 font-inter text-sm font-semibold text-white disabled:opacity-60">
-                {clientAuthBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : clientAuthMode === "signup" ? "Créer mon compte et continuer" : "Se connecter"}
+              {clientAuthNotice && <div role="status" className="rounded-xl bg-[#EAF7EE] p-3 font-inter text-sm text-[#172554]">{clientAuthNotice}</div>}
+              <button type="submit" disabled={clientAuthBusy || (clientAuthMode === "reset" && !clientRecoveryToken)} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#172554] px-5 py-3 font-inter text-sm font-semibold text-white disabled:opacity-60">
+                {clientAuthBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : clientAuthMode === "signup" ? "Créer mon compte et continuer" : clientAuthMode === "login" ? "Se connecter" : clientAuthMode === "forgot" ? "Envoyer le lien de réinitialisation" : "Modifier mon mot de passe"}
               </button>
+              {clientAuthMode === "reset" && !clientRecoveryToken && <p className="font-inter text-sm text-red-700">Ce lien est invalide ou incomplet. Demandez un nouveau lien de réinitialisation.</p>}
             </form>
-            <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : "signup"); setClientAuthError(""); }} className="mt-5 w-full font-inter text-sm text-[#1D78C1]">
-              {clientAuthMode === "signup" ? "J’ai déjà un compte : me connecter" : "Je n’ai pas encore de compte : m’inscrire"}
-            </button>
+            {clientAuthMode === "login" && <button type="button" onClick={() => { setClientAuthMode("forgot"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#1D78C1]">Mot de passe oublié ?</button>}
+            {clientAuthMode !== "reset" && <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : "signup"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#1D78C1]">
+              {clientAuthMode === "signup" ? "J’ai déjà un compte : me connecter" : clientAuthMode === "login" ? "Je n’ai pas encore de compte : m’inscrire" : "Retour à la connexion"}
+            </button>}
             <button type="button" onClick={() => { setPendingPaymentMethod(null); setView("preview"); }} className="mt-4 w-full font-inter text-xs text-[#172554]/60">Retour à mon aperçu</button>
           </div>
         </section>
