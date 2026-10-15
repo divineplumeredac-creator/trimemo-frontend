@@ -575,7 +575,7 @@ export default function App() {
       const recoveryToken = hash.get("access_token") || params.get("access_token") || params.get("token_hash") || "";
       if (recoveryToken) setClientRecoveryToken(recoveryToken);
       const recoveryError = hash.get("error_description") || params.get("error_description") || "";
-      if (recoveryError) setClientAuthError(decodeURIComponent(recoveryError.replace(/\+/g, " ")));
+      if (recoveryError) setClientAuthError(recoveryError);
       else if (!recoveryToken) setClientAuthError("Le lien ne contient pas de jeton de récupération valide. Demandez un nouveau lien.");
       filesHydrated.current = true;
       return;
