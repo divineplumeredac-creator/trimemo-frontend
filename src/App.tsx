@@ -1628,7 +1628,13 @@ export default function App() {
       setPreviewTab(saved.previewTab || "problematic");
       setPremiumNav(saved.premiumNav || "writing");
       setPremiumSection(saved.premiumSection || "writing");
-      setSelectedWritingBlockId(saved.selectedWritingBlockId || saved.blocks?.find((block: Block) => block.status !== "done")?.id || saved.blocks?.[0]?.id || null);
+      // Toujours reprendre au premier bloc incomplet. Un ancien identifiant sélectionné ne doit jamais ramener à l'introduction déjà rédigée.
+      setSelectedWritingBlockId(
+        saved.blocks?.find((block: Block) => block.status !== "done" || !String(block.content || "").trim())?.id
+        || saved.blocks?.find((block: Block) => block.id === saved.selectedWritingBlockId)?.id
+        || saved.blocks?.[0]?.id
+        || null
+      );
       setProblematicImprovementComments(saved.problematicImprovementComments || {});
       setPlanImprovementComments(saved.planImprovementComments || {});
       setProblematicGenerationCount(Number(saved.problematicGenerationCount || 0));
@@ -2059,7 +2065,12 @@ export default function App() {
       setActiveBlockId(blockId);
       setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "generating", error: undefined } : item));
       try {
-        const preceding = completedBlocks.slice(-3).map((item) => ({ title: item.title, content: item.content, sources: item.sources || [] }));
+        const preceding = completedBlocks.map((item, index) => ({
+          title: item.title,
+          // Conserver tout l'historique des titres ; texte complet pour les trois derniers blocs.
+          content: index >= completedBlocks.length - 3 ? item.content : String(item.content || "").slice(0, 1200),
+          sources: item.sources || [],
+        }));
         const response = await fetchWithTimeout(BLOCK_API, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -2111,10 +2122,13 @@ export default function App() {
     ));
 
     try {
-      const preceding = blocks
-        .filter((item) => item.status === "done")
-        .slice(-3)
-        .map((item) => ({ title: item.title, content: item.content, sources: item.sources || [] }));
+      const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
+      const preceding = completedBlocks.map((item, index) => ({
+        title: item.title,
+        // L'historique complet des titres évite de répéter les unités déjà traitées.
+        content: index >= completedBlocks.length - 3 ? item.content : String(item.content || "").slice(0, 1200),
+        sources: item.sources || [],
+      }));
 
       const payload = {
         project: ownerRoute ? project : projectPayloadWithoutFiles(project),
