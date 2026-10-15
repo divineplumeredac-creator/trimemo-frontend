@@ -494,14 +494,17 @@ export default function App() {
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientAuthMode, setClientAuthMode] = useState<"signup" | "login" | "forgot" | "reset">(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("reset-password") === "1" && new URLSearchParams(window.location.hash.replace(/^#/, "")).get("access_token")) return "reset";
-    return "signup";
+    return params.get("reset-password") === "1" ? "reset" : "signup";
   });
   const [clientFirstName, setClientFirstName] = useState("");
   const [clientLastName, setClientLastName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPassword, setClientPassword] = useState("");
-  const [clientRecoveryToken, setClientRecoveryToken] = useState(() => new URLSearchParams(window.location.hash.replace(/^#/, "")).get("access_token") || "");
+  const [clientRecoveryToken, setClientRecoveryToken] = useState(() => {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const query = new URLSearchParams(window.location.search);
+    return hash.get("access_token") || query.get("access_token") || "";
+  });
   const [clientAuthError, setClientAuthError] = useState("");
   const [clientAuthNotice, setClientAuthNotice] = useState("");
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
