@@ -503,7 +503,7 @@ export default function App() {
   const [clientRecoveryToken, setClientRecoveryToken] = useState(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const query = new URLSearchParams(window.location.search);
-    return hash.get("access_token") || query.get("access_token") || "";
+    return hash.get("access_token") || query.get("access_token") || query.get("token_hash") || "";
   });
   const [clientAuthError, setClientAuthError] = useState("");
   const [clientAuthNotice, setClientAuthNotice] = useState("");
@@ -562,6 +562,21 @@ export default function App() {
     // jamais depuis l'ancien état local du navigateur.
     const sharedProjectId = new URLSearchParams(window.location.search).get("project");
     if (sharedProjectId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sharedProjectId)) {
+      filesHydrated.current = true;
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    // Le retour de récupération doit primer sur l'état de navigation sauvegardé.
+    // Sinon une ancienne vue (par exemple la commande) masque le formulaire de mot de passe.
+    if (params.get("reset-password") === "1") {
+      setView("account");
+      setClientAuthMode("reset");
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const recoveryToken = hash.get("access_token") || params.get("access_token") || params.get("token_hash") || "";
+      if (recoveryToken) setClientRecoveryToken(recoveryToken);
+      const recoveryError = hash.get("error_description") || params.get("error_description") || "";
+      if (recoveryError) setClientAuthError(decodeURIComponent(recoveryError.replace(/\+/g, " ")));
+      else if (!recoveryToken) setClientAuthError("Le lien ne contient pas de jeton de récupération valide. Demandez un nouveau lien.");
       filesHydrated.current = true;
       return;
     }
