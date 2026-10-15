@@ -1849,7 +1849,7 @@ export default function App() {
      */
     const safeParts = Array.isArray(plan.parts) ? plan.parts : [];
     const chapterBlocks = safeParts.flatMap((part) =>
-      (Array.isArray(part.chapters) ? part.chapters : []).flatMap((chapter) => {
+      (Array.isArray(part.chapters) ? part.chapters : []).flatMap((chapter, chapterIndex) => {
         /*
          * L'unité minimale de regroupement est la SECTION.
          * Une section et toutes ses sous-sections/titres internes restent ensemble.
@@ -1858,9 +1858,9 @@ export default function App() {
         const sectionUnits = (Array.isArray(chapter.sections) ? chapter.sections : []).map((section) => ({
           id: section.id,
           title: section.title,
+          // Chaque unité porte son propre titre. Les titres parents sont ajoutés
+          // uniquement au premier bloc réel de la partie/du chapitre.
           structure: [
-            partLabel(part),
-            chapterLabel(chapter),
             sectionLabel(chapter, section),
             ...(Array.isArray(section.subsections) ? section.subsections : []).flatMap((subsection) => [
               subsectionLabel(chapter, section, subsection),
@@ -1881,7 +1881,10 @@ export default function App() {
             status: "pending" as const,
             sources: [],
             footnotes: [],
-            structure: [partLabel(part), chapterLabel(chapter)],
+            structure: [
+              ...(chapterIndex === 0 ? [partLabel(part)] : []),
+              chapterLabel(chapter),
+            ],
             kind: "chapter" as const,
           }];
         }
@@ -1921,7 +1924,15 @@ export default function App() {
           const groupWords = Math.round(
             chapterWords * group.length / sectionUnits.length
           );
-          const structure = group.flatMap((unit) => unit.structure);
+          const structure = [
+            ...(groupIndex === 0
+              ? [
+                  ...(chapterIndex === 0 ? [partLabel(part)] : []),
+                  chapterLabel(chapter),
+                ]
+              : []),
+            ...group.flatMap((unit) => unit.structure),
+          ];
           const title = group.length === 1
             ? group[0].title
             : group.map((unit) => unit.title).join(" + ");
