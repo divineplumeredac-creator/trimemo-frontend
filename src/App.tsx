@@ -247,6 +247,19 @@ function projectPayloadWithoutFiles(project: ProjectData, includePreviewSnapshot
   return { ...cleanProject, ...(includePreviewSnapshot && paidPreviewSnapshot ? { paidPreviewSnapshot } : {}), files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
 }
 
+function projectStateAuthHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+    if (session?.token) return { Authorization: "Bearer " + String(session.token) };
+  } catch {}
+  try {
+    const token = window.sessionStorage.getItem("trimemo_owner_session");
+    if (token) return { Authorization: "Bearer " + token };
+  } catch {}
+  return {};
+}
+
 // Le projet « en attente de paiement » est conservé SANS les fichiers (base64) : ils feraient dépasser le quota du navigateur.
 function savePendingPreview(preview: Preview): boolean {
   try {
@@ -634,7 +647,7 @@ export default function App() {
     cloudHydrated.current = false;
     (async () => {
       try {
-        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`);
+        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`, { headers: projectStateAuthHeaders() });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Impossible de récupérer le projet distant.");
         if (data.found && data.state) {
@@ -679,7 +692,7 @@ export default function App() {
 
   // Synchronisation serveur de l'état complet du projet. Les fichiers sont gérés séparément.
   useEffect(() => {
-    if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid)) return;
+    if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid) || !projectStateAuthHeaders().Authorization) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
@@ -695,7 +708,7 @@ export default function App() {
       try {
         const response = await fetch(PROJECT_STATE_API, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...projectStateAuthHeaders() },
           body: JSON.stringify({ projectId: project.projectId, state }),
         });
         const data = await response.json().catch(() => ({}));
@@ -1716,7 +1729,7 @@ export default function App() {
         };
         const saveResponse = await fetch(PROJECT_STATE_API, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...projectStateAuthHeaders() },
           body: JSON.stringify({ projectId: project.projectId, state }),
         });
         const saveData = await saveResponse.json().catch(() => ({}));
