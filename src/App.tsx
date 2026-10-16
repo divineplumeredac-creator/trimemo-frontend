@@ -249,13 +249,14 @@ function projectPayloadWithoutFiles(project: ProjectData, includePreviewSnapshot
 
 function projectStateAuthHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
-  try {
-    const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
-    if (session?.token) return { Authorization: "Bearer " + String(session.token) };
-  } catch {}
+  // Le jeton propriétaire doit primer si un ancien compte client reste présent dans le navigateur.
   try {
     const token = window.sessionStorage.getItem("trimemo_owner_session");
     if (token) return { Authorization: "Bearer " + token };
+  } catch {}
+  try {
+    const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+    if (session?.token) return { Authorization: "Bearer " + String(session.token) };
   } catch {}
   return {};
 }
