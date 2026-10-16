@@ -247,13 +247,15 @@ function projectPayloadWithoutFiles(project: ProjectData, includePreviewSnapshot
   return { ...cleanProject, ...(includePreviewSnapshot && paidPreviewSnapshot ? { paidPreviewSnapshot } : {}), files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
 }
 
-function projectStateAuthHeaders(): Record<string, string> {
+function projectStateAuthHeaders(ownerRoute = false): Record<string, string> {
   if (typeof window === "undefined") return {};
-  // Le jeton propriétaire doit primer si un ancien compte client reste présent dans le navigateur.
-  try {
-    const token = window.sessionStorage.getItem("trimemo_owner_session");
-    if (token) return { Authorization: "Bearer " + token };
-  } catch {}
+  if (ownerRoute) {
+    try {
+      const token = window.sessionStorage.getItem("trimemo_owner_session");
+      if (token) return { Authorization: "Bearer " + token };
+    } catch {}
+    return {};
+  }
   try {
     const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
     if (session?.token) return { Authorization: "Bearer " + String(session.token) };
@@ -648,7 +650,7 @@ export default function App() {
     cloudHydrated.current = false;
     (async () => {
       try {
-        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`, { headers: projectStateAuthHeaders() });
+        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`, { headers: projectStateAuthHeaders(ownerRoute) });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Impossible de récupérer le projet distant.");
         if (data.found && data.state) {
@@ -693,7 +695,7 @@ export default function App() {
 
   // Synchronisation serveur de l'état complet du projet. Les fichiers sont gérés séparément.
   useEffect(() => {
-    if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid) || !projectStateAuthHeaders().Authorization) return;
+    if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid) || !projectStateAuthHeaders(ownerRoute).Authorization) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
@@ -709,7 +711,7 @@ export default function App() {
       try {
         const response = await fetch(PROJECT_STATE_API, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...projectStateAuthHeaders() },
+          headers: { "Content-Type": "application/json", ...projectStateAuthHeaders(ownerRoute) },
           body: JSON.stringify({ projectId: project.projectId, state }),
         });
         const data = await response.json().catch(() => ({}));
