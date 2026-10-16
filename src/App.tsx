@@ -830,7 +830,11 @@ export default function App() {
         const response = await fetch(`${API_URL}?action=${action}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, project: loadPendingProject(stateStorageKey) }),
+          body: JSON.stringify({
+            id,
+            project: loadPendingProject(stateStorageKey),
+            clientToken: (() => { try { return JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null")?.token || ""; } catch { return ""; } })(),
+          }),
         });
         const data = await readApiResponse(response);
         if (data.status !== "PAID") {
@@ -1805,7 +1809,7 @@ export default function App() {
       const response = await fetch(`${API_URL}?action=${method === "paypal" ? "create-paypal-order" : "create-mobile-money"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true) }),
+        body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true), clientToken: clientSession.token }),
       });
       const data = await readApiResponse(response);
       if (!data.url) throw new Error("Aucune URL de paiement n’a été retournée.");
