@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   Activity, AlertTriangle, BarChart3, CheckCircle2, CircleDollarSign, Cpu, CreditCard,
   FileText, FolderOpen, LayoutDashboard, LogOut, RefreshCcw, ShieldCheck, SlidersHorizontal,
-  Users, Wallet, XCircle,
+  Users, Wallet,
 } from "lucide-react";
 
 type Tab = "overview" | "clients" | "projects" | "orders" | "pricing" | "usage" | "logs";
@@ -96,7 +96,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
     } finally { if(!quiet) setLoading(false); }
   },[api,tab]);
 
-  useEffect(()=>{void refresh("overview");},[refresh]);
+  useEffect(()=>{void refresh("overview");},[api]);
 
   function selectTab(next:Tab) { setTab(next); setSearch(""); setNotice(""); void refresh(next); }
   async function updateClient(client:any) {
@@ -120,9 +120,6 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   }
   function updateRate(market:string,type:string,value:string) {
     setSettings((current:any)=>({...current,pricing_config:{...current.pricing_config,markets:{...current.pricing_config.markets,[market]:{...current.pricing_config.markets[market],rates:{...current.pricing_config.markets[market].rates,[type]:value}}}}}));
-  }
-  function updateCoefficient(group:string,key:string,value:string) {
-    setSettings((current:any)=>({...current,pricing_config:{...current.pricing_config,[group]:{...current.pricing_config[group],[key]:value}}}));
   }
   function updateQuota(key:string,value:string) { setSettings((current:any)=>({...current,quotas:{...current.quotas,[key]:value}})); }
   function updateCost(key:string,value:string) { setSettings((current:any)=>({...current,usage_costs:{...current.usage_costs,[key]:value===""?null:value}})); }
@@ -216,7 +213,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
             <div className="mt-5 grid gap-4 xl:grid-cols-2">{Object.keys(settings.pricing_config.markets).map(market=><div key={market} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-bold">{MARKET_LABELS[market]||market}</h3><select value={settings.pricing_config.markets[market].currency} onChange={e=>setSettings((s:any)=>({...s,pricing_config:{...s.pricing_config,markets:{...s.pricing_config.markets,[market]:{...s.pricing_config.markets[market],currency:e.target.value}}}}))} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs"><option value="XOF">XOF / FCFA</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="CAD">CAD</option></select></div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{DOC_TYPES.map(([type,label])=><label key={type} className="text-xs font-medium text-slate-500">{label}<input type="number" min="0" step="0.01" required value={settings.pricing_config.markets[market].rates[type]} onChange={e=>updateRate(market,type,e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm font-semibold text-[#172554]"/></label>)}</div></div>)}</div>
           </section>
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Quotas et limites</h2><p className="mt-1 text-sm text-slate-500">Ces paramètres sont vérifiés par le serveur. Les plafonds de sécurité restent actifs indépendamment de la valeur choisie.</p><div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {[["maxProblematicGenerations","Générations de problématique / projet",1,10],["maxPlanGenerations","Générations de plan / projet",1,10],["freePreviewWords","Mots de l’aperçu gratuit",0,5000],["maxPages","Pages maximales par projet",1,300]].map(([key,label,min,max]:any)=><label key={key} className="text-xs font-semibold text-slate-500">{label}<input type="number" min={min} max={max} required value={settings.quotas[key]} onChange={e=>updateQuota(key,e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#172554]"/></label>)}
+            {[["maxProblematicGenerations","Générations de problématique / projet",1,10],["maxPlanGenerations","Générations de plan / projet",1,10],["freePreviewWords","Mots de l’aperçu gratuit",0,2500],["maxPages","Pages maximales par projet",1,300]].map(([key,label,min,max]:any)=><label key={key} className="text-xs font-semibold text-slate-500">{label}<input type="number" min={min} max={max} required value={settings.quotas[key]} onChange={e=>updateQuota(key,e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#172554]"/></label>)}
           </div><p className="mt-3 text-xs leading-5 text-slate-500">Le nombre de mots par page académique reste fixé à 320 dans les règles actuelles du moteur.</p></section>
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Estimation des coûts OpenAI</h2><p className="mt-1 text-sm text-slate-500">Entrez les tarifs du modèle configuré, en USD par million de tokens. Laissez vide pour suivre les tokens sans estimer le coût.</p><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-xs font-semibold text-slate-500">Entrée (USD / 1 M tokens)<input type="number" min="0" step="0.0001" value={settings.usage_costs.inputUsdPerMillion??""} onChange={e=>updateCost("inputUsdPerMillion",e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#172554]"/></label><label className="text-xs font-semibold text-slate-500">Sortie (USD / 1 M tokens)<input type="number" min="0" step="0.0001" value={settings.usage_costs.outputUsdPerMillion??""} onChange={e=>updateCost("outputUsdPerMillion",e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#172554]"/></label></div></section>
           <div className="flex flex-wrap items-center gap-3"><Button type="submit" disabled={saving}>{saving?"Enregistrement…":"Enregistrer les tarifs et quotas"}</Button><span className="text-xs text-slate-500">Dernière mise à jour : {fmtDate(settings.updated_at)}</span></div>
