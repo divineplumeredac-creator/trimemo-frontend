@@ -182,7 +182,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
           </div>
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2"><CircleDollarSign className="text-[#D4A23A]" size={20}/><h2 className="text-lg font-bold">Revenus de la plateforme</h2></div>
-            <p className="mt-1 text-sm text-slate-500">Montants séparés par devise pour éviter d’additionner des monnaies différentes. Le revenu net affiché tient compte des remboursements enregistrés.</p>
+            <p className="mt-1 text-sm text-slate-500">Montants séparés par devise pour éviter d’additionner des monnaies différentes. Le revenu net affiché tient compte des remboursements enregistrés, avant déduction des commissions du prestataire de paiement.</p>
             {summary.revenue?.by_currency?.length?<div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{summary.revenue.by_currency.map((row:any)=><div key={row.currency} className="rounded-xl border border-slate-200 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{row.currency}</div><div className="mt-2 text-2xl font-bold">{fmtMoney(row.net,row.currency)}</div><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">Encaissements bruts</div><strong>{fmtMoney(row.gross,row.currency)}</strong></div><div><div className="text-slate-500">Remboursements</div><strong>{fmtMoney(row.refunds,row.currency)}</strong></div></div><div className="mt-3 text-xs text-slate-500">{row.paid_orders} commande(s) payée(s) • {row.refunded_orders} remboursée(s)</div></div>)}</div>:<Empty>Aucun revenu enregistré pour le moment.</Empty>}
           </section>
           <div className="grid gap-5 xl:grid-cols-2">
@@ -230,7 +230,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
           {filteredLogs.length?<TableWrap><thead><tr><Th>Date</Th><Th>Niveau</Th><Th>Catégorie / action</Th><Th>Message</Th><Th>Route</Th><Th>Code</Th><Th>Acteur</Th></tr></thead><tbody>{filteredLogs.map(row=><tr key={row.id}><Td>{fmtDate(row.created_at)}</Td><Td><Status tone={["critical","error"].includes(row.severity)?"red":row.severity==="warning"?"amber":"neutral"}>{row.severity}</Status></Td><Td><div className="font-semibold">{row.category}</div><div className="mt-1 text-xs text-slate-500">{row.action}</div></Td><Td className="max-w-[300px] break-words">{row.message}</Td><Td>{row.request_path||"—"}</Td><Td>{row.status_code||"—"}</Td><Td>{row.actor||"system"}</Td></tr>)}</tbody></TableWrap>:<Empty>{loading?"Chargement des journaux…":"Aucun journal ne correspond aux filtres."}</Empty>}
         </section>}
 
-        <footer className="flex flex-col gap-2 border-t border-slate-200 py-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between"><span>Trimémo • Console administrateur</span><span>Les revenus sont calculés à partir des commandes enregistrées. Les paiements en attente ne sont pas comptabilisés comme encaissés.</span></footer>
+        <footer className="flex flex-col gap-2 border-t border-slate-200 py-4 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between"><span>Trimémo • Console administrateur</span><span>Les revenus sont calculés à partir des commandes enregistrées, après remboursements connus et avant frais de paiement. Les paiements en attente ne sont pas comptabilisés comme encaissés.</span></footer>
       </main>
     </div>
   </div>;
