@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import AdminDashboard from "./AdminDashboard";
 import {
   ArrowRight,
   Check,
@@ -516,7 +517,10 @@ export default function App() {
   const [ownerRoute] = useState(() => typeof window !== "undefined" && window.location.pathname === "/owner");
   const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : "trimemo_state_v5_public";
   const [ownerSessionValid, setOwnerSessionValid] = useState(false);
-  const [ownerEmail, setOwnerEmail] = useState("");
+  const [ownerShowWriter, setOwnerShowWriter] = useState(false);
+  const [ownerEmail, setOwnerEmail] = useState(() => {
+    try { return window.sessionStorage.getItem("trimemo_owner_email") || ""; } catch { return ""; }
+  });
   const [ownerPassword, setOwnerPassword] = useState("");
   const [showOwnerPassword, setShowOwnerPassword] = useState(false);
   const [ownerLoginError, setOwnerLoginError] = useState("");
@@ -1143,8 +1147,10 @@ export default function App() {
       const data = await readApiResponse(response);
       if (!data.token) throw new Error("Session propriétaire non reçue.");
       window.sessionStorage.setItem("trimemo_owner_session", data.token);
+      window.sessionStorage.setItem("trimemo_owner_email", ownerEmail.trim());
       window.sessionStorage.setItem("trimemo_owner_last_activity", String(Date.now()));
       setOwnerSessionValid(true);
+      setOwnerShowWriter(false);
       setOwnerPassword("");
       setShowOwnerPassword(false);
       setView("project");
@@ -1162,8 +1168,10 @@ export default function App() {
 
   function handleOwnerLogout() {
     window.sessionStorage.removeItem("trimemo_owner_session");
+    window.sessionStorage.removeItem("trimemo_owner_email");
     window.sessionStorage.removeItem("trimemo_owner_last_activity");
     setOwnerSessionValid(false);
+    setOwnerShowWriter(false);
     setOwnerEmail("");
     setOwnerPassword("");
     setShowOwnerPassword(false);
@@ -2574,6 +2582,16 @@ export default function App() {
       );
     }
 
+    if (!ownerShowWriter) {
+      const ownerToken = window.sessionStorage.getItem("trimemo_owner_session") || "";
+      return <AdminDashboard
+        token={ownerToken}
+        email={ownerEmail || "Propriétaire Trimémo"}
+        onOpenWriter={() => { setOwnerShowWriter(true); setView("project"); }}
+        onLogout={() => { handleOwnerLogout(); window.location.href = "/"; }}
+      />;
+    }
+
     return (
       <div className="min-h-screen bg-[#EAF7EE] text-[#172554]">
         <div className="border-b border-[#172554]/10 bg-[#172554] text-white">
@@ -2604,6 +2622,13 @@ export default function App() {
                   Problématiques & plans
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => setOwnerShowWriter(false)}
+                className="rounded-full border border-[#D4A23A] px-4 py-2 font-inter text-xs font-semibold text-[#D4A23A]"
+              >
+                Tableau de bord
+              </button>
               <button
                 type="button"
                 onClick={() => {
