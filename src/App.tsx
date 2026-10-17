@@ -3522,7 +3522,7 @@ export default function App() {
             </button>
           </div>
         ) : (
-        <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8>
+        <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
           <button onClick={() => setView("home")} className="flex items-center gap-3" aria-label="Retour à l’accueil">
             <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain" />
             <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#78C850]">mo</span></span>
