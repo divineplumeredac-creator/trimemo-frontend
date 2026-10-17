@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Activity, AlertTriangle, BarChart3, CheckCircle2, CircleDollarSign, Cpu, CreditCard,
   FileText, FolderOpen, LayoutDashboard, LogOut, RefreshCcw, ShieldCheck, SlidersHorizontal,
