@@ -527,6 +527,12 @@ export default function App() {
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientProjects, setClientProjects] = useState<Array<{project_id:string;subject:string;payment_status:string;updated_at:string}>>([]);
+  const [revisionModalOpen, setRevisionModalOpen] = useState(false);
+  const [revisionInstructions, setRevisionInstructions] = useState("");
+  const [revisionFile, setRevisionFile] = useState<File | null>(null);
+  const [revisionSubmitting, setRevisionSubmitting] = useState(false);
+  const [revisionMessage, setRevisionMessage] = useState("");
+  const [revisionError, setRevisionError] = useState("");
   const [clientEmailDisplay, setClientEmailDisplay] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -1772,6 +1778,22 @@ export default function App() {
     } finally {
       setClientAuthBusy(false);
     }
+  }
+
+  async function submitHumanRevision(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setRevisionError(""); setRevisionMessage("");
+    if (!revisionFile) { setRevisionError("Joignez le document exporté à faire corriger."); return; }
+    if (revisionFile.size > 3 * 1024 * 1024) { setRevisionError("Le fichier doit faire moins de 3 Mo."); return; }
+    let session: {token:string;email?:string} | null = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token) { setRevisionError("Connectez-vous à votre compte pour envoyer une demande de révision."); return; }
+    setRevisionSubmitting(true);
+    try {
+      const base64 = await new Promise<string>((resolve,reject) => { const reader=new FileReader(); reader.onload=()=>resolve(String(reader.result||"").split(",")[1]||""); reader.onerror=()=>reject(new Error("Lecture du fichier impossible.")); reader.readAsDataURL(revisionFile); });
+      const response=await fetch(`${API_BASE_URL}/api/human-revisions`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"submit",token:session.token,projectId:project.projectId,documentTitle:project.sujet||"Document Trimémo",instructions:revisionInstructions,file:{name:revisionFile.name,type:revisionFile.type,base64}})});
+      const data=await readApiResponse(response); setRevisionMessage(data.message||"Demande envoyée."); setRevisionInstructions(""); setRevisionFile(null);
+    } catch(e) { setRevisionError(e instanceof Error?e.message:"Envoi de la demande impossible."); }
+    finally { setRevisionSubmitting(false); }
   }
 
   async function startPayment(method: "paypal" | "mobile-money") {
@@ -3216,10 +3238,8 @@ export default function App() {
                         Aperçu disponible à 2 500 mots ({totalDoneWords.toLocaleString("fr-FR")}/2 500)
                       </div>
                     )}
-                    {CONTACT_EMAIL && blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
-                      <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande de révision humaine - " + (project.sujet || "Document Trimémo"))}`} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
-                        Demander une révision humaine
-                      </a>
+                    {blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
+                      <button type="button" onClick={() => setRevisionModalOpen(true)} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554]">Demander une révision humaine</button>
                     )}
                   </div>
                   {CONTACT_EMAIL && blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
@@ -3228,7 +3248,19 @@ export default function App() {
                 </div>
 
                 <div className="space-y-8 pb-20">
-                  {blocks.map((block, index) => {
+{revisionModalOpen && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#172554]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title">
+                    <form onSubmit={submitHumanRevision} className="max-h-[90vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-8">
+                      <div className="flex items-start justify-between gap-4"><div><p className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">Assistance humaine</p><h2 id="revision-modal-title" className="mt-2 font-playfair text-2xl font-bold text-[#172554]">Demande de révision</h2><p className="mt-2 font-inter text-sm text-slate-600">Document : {project.sujet || "Document Trimémo"}</p></div><button type="button" onClick={() => setRevisionModalOpen(false)} className="rounded-full border px-3 py-1 text-slate-600" aria-label="Fermer">✕</button></div>
+                      <label className="block font-inter text-sm font-semibold text-[#172554]">Consignes de correction<textarea required minLength={10} value={revisionInstructions} onChange={e=>setRevisionInstructions(e.target.value)} rows={5} placeholder="Précisez les passages à corriger et les consignes à respecter…" className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:border-[#D4A23A]"/></label>
+                      <label className="block font-inter text-sm font-semibold text-[#172554]">Document exporté (PDF, Word, TXT ou RTF, 3 Mo max)<input required type="file" accept=".pdf,.doc,.docx,.txt,.rtf" onChange={e=>setRevisionFile(e.target.files?.[0]||null)} className="mt-2 block w-full rounded-xl border border-slate-200 p-3 text-sm font-normal"/></label>
+                      {revisionError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{revisionError}</p>}
+                      {revisionMessage && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{revisionMessage}</p>}
+                      <div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-5 py-3 text-sm">Annuler</button><button type="submit" disabled={revisionSubmitting} className="rounded-full bg-[#D4A23A] px-5 py-3 text-sm font-semibold text-[#172554] disabled:opacity-50">{revisionSubmitting?"Envoi en cours…":"Envoyer la demande"}</button></div>
+                    </form>
+                  </div>
+                )}
+                                  {blocks.map((block, index) => {
                     const isLast = index === blocks.length - 1;
                     const isGenerating = block.status === "generating";
                     return (
