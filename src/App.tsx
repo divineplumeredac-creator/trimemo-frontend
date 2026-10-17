@@ -2753,7 +2753,7 @@ export default function App() {
             </div>
           </div>
         )}
-          {view !== "dashboard" && (<>\n          <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#172554]/10 bg-white p-5 lg:block">
+          <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#172554]/10 bg-white p-5 lg:block">
             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigation</div>
             <nav className="mt-5 space-y-2">
               <button
