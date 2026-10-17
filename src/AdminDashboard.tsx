@@ -161,8 +161,8 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
         const base64=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||"").split(",")[1]||"");reader.onerror=()=>reject(new Error("Lecture du fichier impossible."));reader.readAsDataURL(selected);});
         file={name:selected.name,type:selected.type,base64};
       }
-      await api("revision-update",{id:row.id,status,adminNotes:revisionNotes[String(row.id)]||row.admin_notes||"",file});
-      setNotice(status==="completed"?"Document livré et demande clôturée.":"Statut de la demande mis à jour.");
+      const result=await api("revision-update",{id:row.id,status,adminNotes:revisionNotes[String(row.id)]||row.admin_notes||"",file});
+      setNotice(status==="completed"?(result.emailSent?"Document livré, demande clôturée et client notifié par e-mail.":result.emailConfigured?"Document livré, mais l’envoi de l’e-mail au client a échoué. Vérifiez le service e-mail.":"Document livré. L’e-mail au client n’est pas configuré sur le serveur."):"Statut de la demande mis à jour.");
       await refresh("revisions",true);
     } catch(e){setError(e instanceof Error?e.message:"Mise à jour impossible.");}
   }
