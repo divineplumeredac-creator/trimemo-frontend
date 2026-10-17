@@ -3410,7 +3410,7 @@ export default function App() {
               </button>
             </section>
           )}
-          </>)}\n          </main>
+          </main>
         </div>
 
         <div className="fixed bottom-4 right-4 z-[90] max-w-sm rounded-2xl bg-[#172554] px-4 py-3 font-inter text-[11px] text-white shadow-xl">
