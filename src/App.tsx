@@ -3819,7 +3819,7 @@ export default function App() {
         </>
       )}
 
-      {view !== "home" && (
+      {view !== "home" && view !== "dashboard" && (
         <main className={`min-h-[calc(100vh-72px)] bg-[#EAF7EE] px-6 py-8 lg:px-8 lg:py-10 ${view === "writing" ? "h-[calc(100vh-72px)] overflow-y-auto overscroll-contain" : ""}`}>
           <div className="mx-auto max-w-[1220px]">
             <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
