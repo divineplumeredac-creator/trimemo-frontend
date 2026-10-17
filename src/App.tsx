@@ -718,6 +718,16 @@ export default function App() {
     return () => { if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current); };
   }, [ownerRoute, ownerSessionValid, project, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount]);
 
+  // Évite d'afficher une page de rédaction vide lorsqu'aucun plan n'a été restauré.
+  // On attend la fin de l'hydratation distante avant de décider où renvoyer l'utilisateur.
+  useEffect(() => {
+    if (view !== "writing" || !cloudHydrated.current || !filesHydrated.current) return;
+    if (selectedPlan && selectedProblematic) return;
+    let hasClientSession = false;
+    try { hasClientSession = Boolean(JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null")?.token); } catch {}
+    setView(hasClientSession ? "dashboard" : "home");
+  }, [view, selectedPlan, selectedProblematic]);
+
   useEffect(() => {
     // L'espace de rédaction doit rester visible après validation du plan.
     // Le verrouillage commercial intervient au moment de poursuivre après l'aperçu,
@@ -3837,7 +3847,7 @@ export default function App() {
                 )}
                 <div>
                 <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Projet académique</div>
-                <h2 className="mt-2 font-playfair text-3xl">{view === "project" ? "Définissez votre demande" : view === "estimate" ? "Analyse du projet · Estimation du coût" : view === "preview" ? "Votre aperçu avant paiement" : view === "premium" ? "Vos options premium" : selectedPlan && selectedProblematic ? selectedPlan.title : "Reprise du projet"}</h2>
+                <h2 className="mt-2 font-playfair text-3xl">{view === "project" ? "Définissez votre demande" : view === "estimate" ? "Analyse du projet · Estimation du coût" : view === "preview" ? "Votre aperçu avant paiement" : view === "premium" ? "Vos options premium" : selectedPlan && selectedProblematic ? selectedPlan.title : ""}</h2>
               </div>
               <div className="font-inter text-xs text-[#172554]/75">1 page = {WORDS_PER_PAGE} mots</div>
             </div>
