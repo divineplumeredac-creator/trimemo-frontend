@@ -484,6 +484,7 @@ export default function App() {
   const [selectedProblematic, setSelectedProblematic] = useState<Problematic | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [clientProjectFlow, setClientProjectFlow] = useState(false);
   const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return params.get("account") === "signup" || params.get("reset-password") === "1" ? "account" : "home"; });
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
@@ -1006,6 +1007,8 @@ export default function App() {
   }
 
   function startNewClientProject() {
+    // Le formulaire s’ouvre dans le parcours client, sans retour à l’accueil.
+    setClientProjectFlow(true);
     // Nouveau projet = nouvel identifiant et nouveau droit de paiement.
     window.sessionStorage.removeItem("trimemo_premium_token");
     window.sessionStorage.removeItem("trimemo_premium_project_id");
@@ -3508,7 +3511,18 @@ export default function App() {
 
       {view !== "dashboard" && (<>
       <header className="sticky top-0 z-50 border-b border-white/15 bg-[#172554] backdrop-blur-xl">
-        <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
+        {clientProjectFlow ? (
+          <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
+            <div className="flex items-center gap-3">
+              <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain" />
+              <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#78C850]">mo</span></span>
+            </div>
+            <button type="button" onClick={() => { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-full border border-white/25 px-4 py-2 font-inter text-xs font-semibold text-white hover:bg-white/10">
+              Retour au tableau de bord
+            </button>
+          </div>
+        ) : (
+        <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8>
           <button onClick={() => setView("home")} className="flex items-center gap-3" aria-label="Retour à l’accueil">
             <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain" />
             <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#78C850]">mo</span></span>
@@ -3549,9 +3563,10 @@ export default function App() {
             </button>
           </div>
         </div>
+        )}
       </header>
 
-      {mobileMenuOpen && (
+      {!clientProjectFlow && mobileMenuOpen && (
         <div className="sticky top-[72px] z-40 border-b border-white/15 bg-[#172554] px-6 py-4 shadow-sm md:hidden">
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
             <button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
@@ -3635,7 +3650,7 @@ export default function App() {
             <div className="rounded-3xl bg-[#172554] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div><div className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-2 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientEmailDisplay || "Retrouvez vos documents et vos demandes."}</p></div>
-                <button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); setView("home"); }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
+                <button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientProjectFlow(false); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); setView("home"); }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -3827,7 +3842,7 @@ export default function App() {
               <div className="flex items-start gap-3">
                 {(
                   <button
-                    onClick={() => setView("home")}
+                    onClick={() => { if (clientProjectFlow) { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); } else { setView("home"); } }}
                     className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#172554]/10 bg-white"
                     aria-label="Retour à l'accueil"
                   >
