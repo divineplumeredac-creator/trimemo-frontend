@@ -68,6 +68,8 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   const [projects,setProjects]=useState<any[]>([]);
   const [orders,setOrders]=useState<any[]>([]);
   const [revisions,setRevisions]=useState<any[]>([]);
+  const knownRevisionIds = useRef<Set<string> | null>(null);
+  const [newRevisionIds,setNewRevisionIds] = useState<string[]>([]);
   const [revisionNotes,setRevisionNotes]=useState<Record<string,string>>({});
   const [revisionFiles,setRevisionFiles]=useState<Record<string,File|null>>({});
   const [revenue,setRevenue]=useState<any>({by_currency:[],by_month:[]});
@@ -92,7 +94,20 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       if(target==="clients") setClients((await api("clients")).clients||[]);
       if(target==="projects") setProjects((await api("projects")).projects||[]);
       if(target==="orders") { const data=await api("orders"); setOrders(data.orders||[]); setRevenue(data.revenue||{by_currency:[],by_month:[]}); }
-      if(target==="revisions") { const data=await api("revisions"); setRevisions(data.requests||[]); }
+      if(target==="revisions") {
+        const data=await api("revisions");
+        const rows=Array.isArray(data.requests)?data.requests:[];
+        const ids=new Set<string>(rows.map((row:any)=>String(row.id)));
+        if(knownRevisionIds.current){
+          const arriving=rows.filter((row:any)=>!knownRevisionIds.current!.has(String(row.id)) && row.status==="pending").map((row:any)=>String(row.id));
+          if(arriving.length){
+            setNewRevisionIds(current=>Array.from(new Set([...current,...arriving])));
+            setNotice(arriving.length===1?"Nouvelle demande de révision reçue. Consultez l’onglet Révisions humaines.":arriving.length+" nouvelles demandes de révision reçues.");
+          }
+        }
+        knownRevisionIds.current=ids;
+        setRevisions(rows);
+      }
       if(target==="pricing") setSettings((await api("pricing")).settings);
       if(target==="usage") setUsage(await api("usage"));
       if(target==="logs") setLogs((await api("logs")).logs||[]);
@@ -101,9 +116,14 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
     } finally { if(!quiet) setLoading(false); }
   },[api,tab]);
 
-  useEffect(()=>{void refresh("overview");},[api]);
+  useEffect(()=>{void refresh("overview"); void refresh("revisions",true);},[api]);
+  // Vérifie régulièrement les nouvelles demandes, même lorsque l’administrateur consulte un autre onglet.
+  useEffect(()=>{
+    const timer=window.setInterval(()=>{void refresh("revisions",true);},20000);
+    return ()=>window.clearInterval(timer);
+  },[refresh]);
 
-  function selectTab(next:Tab) { setTab(next); setSearch(""); setNotice(""); void refresh(next); }
+  function selectTab(next:Tab) { setTab(next); setSearch(""); setNotice(""); if(next==="revisions") setNewRevisionIds([]); void refresh(next); }
   async function updateClient(client:any) {
     const next=client.access==="suspended"?"active":"suspended";
     const question=next==="suspended"?"Suspendre ce compte client ?":"Rétablir l’accès de ce client ?";
@@ -185,7 +205,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-2 shadow-sm lg:sticky lg:top-[88px]">
         <div className="hidden px-3 pb-3 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:block">Administration</div>
         <nav className="flex gap-1 overflow-x-auto lg:flex-col">
-          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#172554] text-white shadow-sm":"text-slate-600 hover:bg-slate-50 hover:text-[#172554]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span></button>;})}
+          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#172554] text-white shadow-sm":"text-slate-600 hover:bg-slate-50 hover:text-[#172554]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span>{item.id==="revisions"&&<span className={"ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold "+(revisions.some((r:any)=>r.status==="pending")?"bg-amber-100 text-amber-800":"bg-slate-100 text-slate-500")}>{revisions.filter((r:any)=>r.status==="pending").length}</span>}{item.id==="revisions"&&newRevisionIds.length>0&&<span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">Nouveau</span></button>;})}
         </nav>
         <div className="mt-4 hidden rounded-xl bg-[#F6F8FC] p-3 text-xs leading-5 text-slate-500 lg:block">
           Les données clients, paiements et journaux sont chargés depuis le serveur sécurisé. Les secrets PayPal et OpenAI ne sont jamais transmis à l’interface.
