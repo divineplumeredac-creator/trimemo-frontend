@@ -84,14 +84,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
     return data;
   },[token]);
 
-  const revisionApi = useCallback(async (action:string, body:Record<string,unknown>={}) => {
-    const response=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({action,...body})});
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok||data?.ok===false) throw new Error(data?.error||"Opération de révision impossible.");
-    return data;
-  },[token]);
-
-  const refresh = useCallback(async (target:Tab=tab, quiet=false) => {
+    const refresh = useCallback(async (target:Tab=tab, quiet=false) => {
     if(!quiet) setLoading(true);
     setError("");
     try {
