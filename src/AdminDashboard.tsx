@@ -5,7 +5,7 @@ import {
   Users, Wallet,
 } from "lucide-react";
 
-type Tab = "overview" | "clients" | "projects" | "orders" | "pricing" | "usage" | "logs";
+type Tab = "overview" | "clients" | "projects" | "orders" | "revisions" | "pricing" | "usage" | "logs";
 type Props = { token: string; email: string; onLogout: () => void; onOpenWriter: () => void };
 
 const API = "/api/admin-console";
@@ -14,6 +14,7 @@ const tabs: Array<{id:Tab;label:string;icon:React.ComponentType<any>}> = [
   { id: "clients", label: "Comptes clients", icon: Users },
   { id: "projects", label: "Projets", icon: FolderOpen },
   { id: "orders", label: "Commandes et paiements", icon: CreditCard },
+  { id: "revisions", label: "Révisions humaines", icon: FileText },
   { id: "pricing", label: "Tarifs et quotas", icon: SlidersHorizontal },
   { id: "usage", label: "Consommation OpenAI", icon: Cpu },
   { id: "logs", label: "Erreurs et journaux", icon: Activity },
@@ -66,6 +67,9 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   const [clients,setClients]=useState<any[]>([]);
   const [projects,setProjects]=useState<any[]>([]);
   const [orders,setOrders]=useState<any[]>([]);
+  const [revisions,setRevisions]=useState<any[]>([]);
+  const [revisionNotes,setRevisionNotes]=useState<Record<string,string>>({});
+  const [revisionFiles,setRevisionFiles]=useState<Record<string,File|null>>({});
   const [revenue,setRevenue]=useState<any>({by_currency:[],by_month:[]});
   const [settings,setSettings]=useState<any>(null);
   const [usage,setUsage]=useState<any>(null);
@@ -80,6 +84,13 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
     return data;
   },[token]);
 
+  const revisionApi = useCallback(async (action:string, body:Record<string,unknown>={}) => {
+    const response=await fetch("/api/human-revisions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({action,...body})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||data?.ok===false) throw new Error(data?.error||"Opération de révision impossible.");
+    return data;
+  },[token]);
+
   const refresh = useCallback(async (target:Tab=tab, quiet=false) => {
     if(!quiet) setLoading(true);
     setError("");
@@ -88,13 +99,14 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       if(target==="clients") setClients((await api("clients")).clients||[]);
       if(target==="projects") setProjects((await api("projects")).projects||[]);
       if(target==="orders") { const data=await api("orders"); setOrders(data.orders||[]); setRevenue(data.revenue||{by_currency:[],by_month:[]}); }
+      if(target==="revisions") { const data=await revisionApi("list"); setRevisions(data.requests||[]); }
       if(target==="pricing") setSettings((await api("pricing")).settings);
       if(target==="usage") setUsage(await api("usage"));
       if(target==="logs") setLogs((await api("logs")).logs||[]);
     } catch(e) {
       setError(e instanceof Error ? e.message : "Chargement impossible.");
     } finally { if(!quiet) setLoading(false); }
-  },[api,tab]);
+  },[api,revisionApi,tab]);
 
   useEffect(()=>{void refresh("overview");},[api]);
 
@@ -118,6 +130,30 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       await Promise.all([refresh("orders",true),refresh("overview",true)]);
     } catch(e){setError(e instanceof Error?e.message:"Le remboursement a échoué.");}
   }
+  async function downloadRevisionFile(row:any, delivery=false) {
+    try {
+      const data=await revisionApi("file",{id:row.id,delivery});
+      const binary=atob(data.base64); const bytes=new Uint8Array(binary.length); for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+      const blob=new Blob([bytes],{type:data.type||"application/octet-stream"}); const url=URL.createObjectURL(blob);
+      const link=document.createElement("a");link.href=url;link.download=data.name||"document-revision";link.click();URL.revokeObjectURL(url);
+    } catch(e){setError(e instanceof Error?e.message:"Téléchargement impossible.");}
+  }
+  async function updateRevision(row:any,status:string) {
+    setError("");setNotice("");
+    try {
+      let file:any=undefined; const selected=revisionFiles[String(row.id)];
+      if(status==="completed"){
+        if(!selected){setError("Joignez le document corrigé avant de terminer la demande.");return;}
+        if(selected.size>3*1024*1024){setError("Le document livré doit faire moins de 3 Mo.");return;}
+        const base64=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||"").split(",")[1]||"");reader.onerror=()=>reject(new Error("Lecture du fichier impossible."));reader.readAsDataURL(selected);});
+        file={name:selected.name,type:selected.type,base64};
+      }
+      await revisionApi("update",{id:row.id,status,adminNotes:revisionNotes[String(row.id)]||row.admin_notes||"",file});
+      setNotice(status==="completed"?"Document livré et demande clôturée.":"Statut de la demande mis à jour.");
+      await refresh("revisions",true);
+    } catch(e){setError(e instanceof Error?e.message:"Mise à jour impossible.");}
+  }
+
   function updateRate(market:string,type:string,value:string) {
     setSettings((current:any)=>({...current,pricing_config:{...current.pricing_config,markets:{...current.pricing_config.markets,[market]:{...current.pricing_config.markets[market],rates:{...current.pricing_config.markets[market].rates,[type]:value}}}}}));
   }
@@ -224,6 +260,22 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
           <section className="rounded-2xl border border-slate-200 bg-white p-5"><h2 className="font-bold">Usage par fonctionnalité</h2>{usage.by_endpoint?.length?<TableWrap><thead><tr><Th>API</Th><Th>Appels</Th><Th>Entrée</Th><Th>Sortie</Th><Th>Total tokens</Th><Th>Erreurs</Th><Th>Coût USD</Th></tr></thead><tbody>{usage.by_endpoint.map((r:any)=><tr key={r.endpoint}><Td className="font-semibold">{r.endpoint}</Td><Td>{fmtNumber(r.calls)}</Td><Td>{fmtNumber(r.input_tokens)}</Td><Td>{fmtNumber(r.output_tokens)}</Td><Td>{fmtNumber(r.total_tokens)}</Td><Td>{r.errors}</Td><Td>{r.priced_calls?fmtMoney(r.estimated_cost_usd,"USD"):"—"}</Td></tr>)}</tbody></TableWrap>:<Empty>Aucune consommation OpenAI n’est encore journalisée.</Empty>}</section>
           <section className="rounded-2xl border border-slate-200 bg-white p-5"><h2 className="font-bold">Dernières requêtes</h2>{usage.records?.length?<TableWrap><thead><tr><Th>Date</Th><Th>API / modèle</Th><Th>Entrée</Th><Th>Sortie</Th><Th>Statut</Th><Th>Durée</Th><Th>Coût estimé</Th></tr></thead><tbody>{usage.records.map((r:any)=><tr key={r.id}><Td>{fmtDate(r.created_at)}</Td><Td><div className="font-semibold">{r.endpoint}</div><div className="mt-1 text-xs text-slate-500">{r.model}</div></Td><Td>{fmtNumber(r.input_tokens)}</Td><Td>{fmtNumber(r.output_tokens)}</Td><Td><Status tone={r.status==="error"?"red":r.status==="incomplete"?"amber":"green"}>{r.status}</Status>{r.error_code&&<div className="mt-1 text-xs text-slate-500">{r.error_code}</div>}</Td><Td>{fmtNumber(r.duration_ms)} ms</Td><Td>{r.estimated_cost_usd==null?"—":fmtMoney(r.estimated_cost_usd,"USD")}</Td></tr>)}</tbody></TableWrap>:<Empty>Aucune requête enregistrée.</Empty>}</section>
         </div>}
+
+        {tab==="revisions"&&<section className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Card title="En attente" value={revisions.filter(r=>r.status==="pending").length} icon={AlertTriangle} tone="gold"/>
+            <Card title="En cours" value={revisions.filter(r=>r.status==="in_progress").length} icon={Activity} tone="blue"/>
+            <Card title="Terminées" value={revisions.filter(r=>r.status==="completed").length} icon={CheckCircle2} tone="green"/>
+          </div>
+          {revisions.length?revisions.map(row=><article key={row.id} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-xs text-slate-500">Demande #{row.id} · {fmtDate(row.created_at)}</div><h2 className="mt-1 text-lg font-bold">{row.document_title}</h2><div className="mt-1 text-sm text-slate-500">{row.client_email} · Projet {shortId(row.project_id)}</div></div><Status tone={row.status==="completed"?"green":row.status==="in_progress"?"blue":"amber"}>{row.status==="completed"?"Terminée":row.status==="in_progress"?"En cours":"En attente"}</Status></div>
+            <div className="rounded-xl bg-slate-50 p-4"><div className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Consignes du client</div><p className="whitespace-pre-wrap text-sm leading-6">{row.instructions}</p></div>
+            <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={()=>void downloadRevisionFile(row,false)}><FileText size={15}/> Télécharger le document reçu</Button>{row.status==="completed"&&<Button variant="secondary" onClick={()=>void downloadRevisionFile(row,true)}>Télécharger le document livré</Button>}</div>
+            <label className="block text-sm font-semibold">Notes internes<textarea value={revisionNotes[String(row.id)]??row.admin_notes??""} onChange={e=>setRevisionNotes(cur=>({...cur,[String(row.id)]:e.target.value}))} rows={2} className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"/></label>
+            {row.status!=="completed"&&<label className="block text-sm font-semibold">Document corrigé à livrer (PDF, Word, TXT ou RTF, 3 Mo max)<input type="file" accept=".pdf,.doc,.docx,.txt,.rtf" onChange={e=>setRevisionFiles(cur=>({...cur,[String(row.id)]:e.target.files?.[0]||null}))} className="mt-2 block w-full rounded-xl border border-slate-200 p-3 font-normal"/></label>}
+            <div className="flex flex-wrap gap-2">{row.status!=="in_progress"&&row.status!=="completed"&&<Button onClick={()=>void updateRevision(row,"in_progress")}>Prendre en charge</Button>}{row.status==="in_progress"&&<Button onClick={()=>void updateRevision(row,"pending")} variant="secondary">Remettre en attente</Button>}{row.status!=="completed"&&<Button variant="gold" onClick={()=>void updateRevision(row,"completed")}>Livrer et terminer</Button>}</div>
+          </article>):<Empty>{loading?"Chargement des demandes…":"Aucune demande de révision humaine pour le moment."}</Empty>}
+        </section>}
 
         {tab==="logs"&&<section className="space-y-4">
           <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-bold">Journaux applicatifs centralisés</h2><p className="mt-1 text-xs text-slate-500">Erreurs, avertissements et opérations administrateur journalisés par le backend.</p></div><div className="flex gap-2"><select value={logSeverity} onChange={e=>setLogSeverity(e.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tous les niveaux</option><option value="critical">Critique</option><option value="error">Erreur</option><option value="warning">Avertissement</option><option value="info">Information</option><option value="debug">Debug</option></select><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher dans les journaux…" className="h-10 min-w-0 rounded-xl border border-slate-200 px-3 text-sm sm:w-64"/></div></div>
