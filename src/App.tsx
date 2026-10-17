@@ -1720,6 +1720,12 @@ export default function App() {
         body: JSON.stringify({ action: clientAuthMode, firstName: clientFirstName.trim(), lastName: clientLastName.trim(), email: clientEmail.trim(), password: clientPassword }),
       });
       const data = await readApiResponse(response);
+      if (clientAuthMode === "signup" && data.needsEmailConfirmation) {
+        setClientPassword("");
+        setClientAuthMode("login");
+        setClientAuthNotice(data.message || "Consultez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.");
+        return;
+      }
       if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
       const session = { token: String(data.token), email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id) };
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
