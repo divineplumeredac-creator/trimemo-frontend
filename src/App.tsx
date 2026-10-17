@@ -16,7 +16,8 @@ import {
   X,
 } from "lucide-react";
 
-const API_BASE_URL = (import.meta.env.PROD ? "" : String(import.meta.env.VITE_API_BASE_URL || "https://trimemo-api.vercel.app")).replace(/\/$/, "");
+// Preview deployments can target their matching API without touching production routing.
+const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "" : "https://trimemo-api.vercel.app")).replace(/\/+$/, "");
 const API_URL = `${API_BASE_URL}/api/academic`;
 const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
 const PLANS_API = `${API_BASE_URL}/api/generate-plans`;
@@ -245,6 +246,22 @@ function maxPagesForFormula(_formula: FormulaId) {
 function projectPayloadWithoutFiles(project: ProjectData, includePreviewSnapshot = false): ProjectData {
   const { paidPreviewSnapshot, ...cleanProject } = project;
   return { ...cleanProject, ...(includePreviewSnapshot && paidPreviewSnapshot ? { paidPreviewSnapshot } : {}), files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
+}
+
+function projectStateAuthHeaders(ownerRoute = false): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  if (ownerRoute) {
+    try {
+      const token = window.sessionStorage.getItem("trimemo_owner_session");
+      if (token) return { Authorization: "Bearer " + token };
+    } catch {}
+    return {};
+  }
+  try {
+    const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+    if (session?.token) return { Authorization: "Bearer " + String(session.token) };
+  } catch {}
+  return {};
 }
 
 // Le projet « en attente de paiement » est conservé SANS les fichiers (base64) : ils feraient dépasser le quota du navigateur.
@@ -511,6 +528,15 @@ export default function App() {
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientProjects, setClientProjects] = useState<Array<{project_id:string;subject:string;payment_status:string;updated_at:string}>>([]);
+  const [clientRevisions, setClientRevisions] = useState<any[]>([]);
+  const [revisionModalOpen, setRevisionModalOpen] = useState(false);
+  const [revisionInstructions, setRevisionInstructions] = useState("");
+  const [revisionFile, setRevisionFile] = useState<File | null>(null);
+  const [revisionSubmitting, setRevisionSubmitting] = useState(false);
+  const [revisionMessage, setRevisionMessage] = useState("");
+  const [revisionError, setRevisionError] = useState("");
+  const [revisionTargetProjectId, setRevisionTargetProjectId] = useState<string | null>(null);
+  const [revisionTargetTitle, setRevisionTargetTitle] = useState("");
   const [clientEmailDisplay, setClientEmailDisplay] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -634,7 +660,7 @@ export default function App() {
     cloudHydrated.current = false;
     (async () => {
       try {
-        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`);
+        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`, { headers: projectStateAuthHeaders(ownerRoute) });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Impossible de récupérer le projet distant.");
         if (data.found && data.state) {
@@ -679,7 +705,7 @@ export default function App() {
 
   // Synchronisation serveur de l'état complet du projet. Les fichiers sont gérés séparément.
   useEffect(() => {
-    if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid)) return;
+    if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid) || !projectStateAuthHeaders(ownerRoute).Authorization) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
@@ -695,7 +721,7 @@ export default function App() {
       try {
         const response = await fetch(PROJECT_STATE_API, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...projectStateAuthHeaders(ownerRoute) },
           body: JSON.stringify({ projectId: project.projectId, state }),
         });
         const data = await response.json().catch(() => ({}));
@@ -816,7 +842,11 @@ export default function App() {
         const response = await fetch(`${API_URL}?action=${action}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, project: loadPendingProject(stateStorageKey) }),
+          body: JSON.stringify({
+            id,
+            project: loadPendingProject(stateStorageKey),
+            clientToken: (() => { try { return JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null")?.token || ""; } catch { return ""; } })(),
+          }),
         });
         const data = await readApiResponse(response);
         if (data.status !== "PAID") {
@@ -1593,6 +1623,7 @@ export default function App() {
       const data = await readApiResponse(response);
       setClientProjects(Array.isArray(data.projects) ? data.projects : []);
       setClientEmailDisplay(String(data.user?.email || session.email || ""));
+      try { const rr=await fetch(`${API_BASE_URL}/api/admin-console`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"revision-client-list",token:session.token})}); const rd=await rr.json().catch(()=>({})); setClientRevisions(Array.isArray(rd.requests)?rd.requests:[]); } catch { setClientRevisions([]); }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de charger votre espace client.";
       pushToast("error", message);
@@ -1603,6 +1634,10 @@ export default function App() {
         setView("account");
       }
     }
+  }
+
+  async function downloadClientRevision(id:string) {
+    try { const session=JSON.parse(window.localStorage.getItem("trimemo_client_session")||"null"); if(!session?.token)throw new Error("Connectez-vous pour récupérer le document."); const response=await fetch(`${API_BASE_URL}/api/admin-console`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"revision-client-file",token:session.token,id})}); const data=await readApiResponse(response); const binary=atob(data.base64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);const url=URL.createObjectURL(new Blob([bytes],{type:data.type||"application/octet-stream"}));const link=document.createElement("a");link.href=url;link.download=data.name||"document-corrige";link.click();URL.revokeObjectURL(url); } catch(e){pushToast("error",e instanceof Error?e.message:"Téléchargement impossible.");}
   }
 
   async function openClientProject(projectId: string) {
@@ -1700,6 +1735,12 @@ export default function App() {
         body: JSON.stringify({ action: clientAuthMode, firstName: clientFirstName.trim(), lastName: clientLastName.trim(), email: clientEmail.trim(), password: clientPassword }),
       });
       const data = await readApiResponse(response);
+      if (clientAuthMode === "signup" && data.needsEmailConfirmation) {
+        setClientPassword("");
+        setClientAuthMode("login");
+        setClientAuthNotice(data.message || "Consultez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.");
+        return;
+      }
       if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
       const session = { token: String(data.token), email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id) };
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
@@ -1716,7 +1757,7 @@ export default function App() {
         };
         const saveResponse = await fetch(PROJECT_STATE_API, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...projectStateAuthHeaders() },
           body: JSON.stringify({ projectId: project.projectId, state }),
         });
         const saveData = await saveResponse.json().catch(() => ({}));
@@ -1746,6 +1787,22 @@ export default function App() {
     } finally {
       setClientAuthBusy(false);
     }
+  }
+
+  async function submitHumanRevision(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setRevisionError(""); setRevisionMessage("");
+    if (!revisionFile) { setRevisionError("Joignez le document exporté à faire corriger."); return; }
+    if (revisionFile.size > 3 * 1024 * 1024) { setRevisionError("Le fichier doit faire moins de 3 Mo."); return; }
+    let session: {token:string;email?:string} | null = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token) { setRevisionError("Connectez-vous à votre compte pour envoyer une demande de révision."); return; }
+    setRevisionSubmitting(true);
+    try {
+      const base64 = await new Promise<string>((resolve,reject) => { const reader=new FileReader(); reader.onload=()=>resolve(String(reader.result||"").split(",")[1]||""); reader.onerror=()=>reject(new Error("Lecture du fichier impossible.")); reader.readAsDataURL(revisionFile); });
+      const response=await fetch(`${API_BASE_URL}/api/admin-console`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"revision-submit",token:session.token,projectId:revisionTargetProjectId || project.projectId,documentTitle:revisionTargetTitle || project.sujet || "Document Trimémo",instructions:revisionInstructions,file:{name:revisionFile.name,type:revisionFile.type,base64}})});
+      const data=await readApiResponse(response); setRevisionMessage(data.message||"Demande envoyée."); setRevisionInstructions(""); setRevisionFile(null);
+    } catch(e) { setRevisionError(e instanceof Error?e.message:"Envoi de la demande impossible."); }
+    finally { setRevisionSubmitting(false); }
   }
 
   async function startPayment(method: "paypal" | "mobile-money") {
@@ -1791,7 +1848,7 @@ export default function App() {
       const response = await fetch(`${API_URL}?action=${method === "paypal" ? "create-paypal-order" : "create-mobile-money"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true) }),
+        body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true), clientToken: clientSession.token }),
       });
       const data = await readApiResponse(response);
       if (!data.url) throw new Error("Aucune URL de paiement n’a été retournée.");
@@ -3190,10 +3247,8 @@ export default function App() {
                         Aperçu disponible à 2 500 mots ({totalDoneWords.toLocaleString("fr-FR")}/2 500)
                       </div>
                     )}
-                    {CONTACT_EMAIL && blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
-                      <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Demande de révision humaine - " + (project.sujet || "Document Trimémo"))}`} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
-                        Demander une révision humaine
-                      </a>
+                    {blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
+                      <button type="button" onClick={() => { setRevisionTargetProjectId(project.projectId); setRevisionTargetTitle(project.sujet || "Document Trimémo"); setRevisionModalOpen(true); }} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554]">Demander une révision humaine</button>
                     )}
                   </div>
                   {CONTACT_EMAIL && blocks.length > 0 && blocks.every((item) => item.status === "done" && item.content.trim()) && (
@@ -3202,7 +3257,19 @@ export default function App() {
                 </div>
 
                 <div className="space-y-8 pb-20">
-                  {blocks.map((block, index) => {
+{revisionModalOpen && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#172554]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title">
+                    <form onSubmit={submitHumanRevision} className="max-h-[90vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-8">
+                      <div className="flex items-start justify-between gap-4"><div><p className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">Assistance humaine</p><h2 id="revision-modal-title" className="mt-2 font-playfair text-2xl font-bold text-[#172554]">Demande de révision</h2><p className="mt-2 font-inter text-sm text-slate-600">Document : {revisionTargetTitle || project.sujet || "Document Trimémo"}</p></div><button type="button" onClick={() => setRevisionModalOpen(false)} className="rounded-full border px-3 py-1 text-slate-600" aria-label="Fermer">✕</button></div>
+                      <label className="block font-inter text-sm font-semibold text-[#172554]">Consignes de correction<textarea required minLength={10} value={revisionInstructions} onChange={e=>setRevisionInstructions(e.target.value)} rows={5} placeholder="Précisez les passages à corriger et les consignes à respecter…" className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:border-[#D4A23A]"/></label>
+                      <label className="block font-inter text-sm font-semibold text-[#172554]">Document exporté (PDF, Word, TXT ou RTF, 3 Mo max)<input required type="file" accept=".pdf,.doc,.docx,.txt,.rtf" onChange={e=>setRevisionFile(e.target.files?.[0]||null)} className="mt-2 block w-full rounded-xl border border-slate-200 p-3 text-sm font-normal"/></label>
+                      {revisionError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{revisionError}</p>}
+                      {revisionMessage && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{revisionMessage}</p>}
+                      <div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-5 py-3 text-sm">Annuler</button><button type="submit" disabled={revisionSubmitting} className="rounded-full bg-[#D4A23A] px-5 py-3 text-sm font-semibold text-[#172554] disabled:opacity-50">{revisionSubmitting?"Envoi en cours…":"Envoyer la demande"}</button></div>
+                    </form>
+                  </div>
+                )}
+                                  {blocks.map((block, index) => {
                     const isLast = index === blocks.length - 1;
                     const isGenerating = block.status === "generating";
                     return (
@@ -3564,12 +3631,26 @@ export default function App() {
               <div><div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Espace personnel</div><h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">Mes projets</h1><p className="mt-2 font-inter text-sm text-[#172554]/65">{clientEmailDisplay || "Retrouvez vos projets et leur progression."}</p></div>
               <div className="flex gap-2"><button onClick={startNewClientProject} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-sm font-semibold text-[#172554]">Nouveau projet</button><button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setView("home"); }} className="rounded-full border border-[#172554]/20 px-5 py-3 font-inter text-sm">Déconnexion</button></div>
             </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-[#172554]/10 bg-white p-4 shadow-sm"><div className="font-inter text-xs text-slate-500">Mémoires et documents</div><div className="mt-2 font-playfair text-3xl font-bold text-[#172554]">{clientProjects.length}</div></div>
+              <div className="rounded-2xl border border-[#172554]/10 bg-white p-4 shadow-sm"><div className="font-inter text-xs text-slate-500">Révisions en attente</div><div className="mt-2 font-playfair text-3xl font-bold text-amber-600">{clientRevisions.filter((r:any)=>r.status==="pending").length}</div></div>
+              <div className="rounded-2xl border border-[#172554]/10 bg-white p-4 shadow-sm"><div className="font-inter text-xs text-slate-500">Révisions en cours</div><div className="mt-2 font-playfair text-3xl font-bold text-[#1D78C1]">{clientRevisions.filter((r:any)=>r.status==="in_progress").length}</div></div>
+              <div className="rounded-2xl border border-[#172554]/10 bg-white p-4 shadow-sm"><div className="font-inter text-xs text-slate-500">Révisions terminées</div><div className="mt-2 font-playfair text-3xl font-bold text-emerald-600">{clientRevisions.filter((r:any)=>r.status==="completed").length}</div></div>
+            </div>
+            <div className="mt-8 rounded-2xl border border-[#172554]/10 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-xl font-bold text-[#172554]">Mes demandes de révision</h2><p className="mt-1 font-inter text-xs text-[#172554]/60">Suivez les demandes en attente, en cours et terminées. Les documents corrigés sont téléchargeables ici.</p></div><button type="button" onClick={()=>void loadClientProjects()} className="rounded-full border border-[#172554]/15 px-4 py-2 font-inter text-xs">Actualiser</button></div>
+              <div className="mt-4 grid gap-3">{clientRevisions.length?clientRevisions.map((revision:any)=><div key={revision.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 p-4"><div><div className="font-inter text-sm font-semibold text-[#172554]">{revision.document_title}</div><div className="mt-1 font-inter text-xs text-slate-500">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</div>{revision.admin_notes&&<p className="mt-2 whitespace-pre-wrap font-inter text-xs text-slate-600">Note : {revision.admin_notes}</p>}</div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#D4A23A] px-4 py-2 font-inter text-xs font-semibold text-[#172554]">Télécharger le document corrigé</button>}</div>):<p className="py-3 font-inter text-sm text-slate-500">Aucune demande de révision pour le moment.</p>}</div>
+            </div>
             <div className="mt-8 grid gap-4">
               {clientProjects.length ? clientProjects.map((item) => (
-                <button key={item.project_id} onClick={() => { void openClientProject(item.project_id); }} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#172554]/10 bg-white p-5 text-left shadow-sm transition hover:border-[#D4A23A]">
-                  <span><span className="block font-playfair text-xl font-semibold text-[#172554]">{item.subject || "Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#172554]/60">Dernière mise à jour : {item.updated_at ? new Date(item.updated_at).toLocaleString("fr-FR") : "Non disponible"}</span></span>
-                  <span className="rounded-full bg-[#EAF7EE] px-3 py-2 font-inter text-xs font-semibold text-[#172554]">{item.payment_status === "paid" ? "Premium payé" : "Projet enregistré"}</span>
-                </button>
+                <article key={item.project_id} className="flex flex-col gap-4 rounded-2xl border border-[#172554]/10 bg-white p-5 shadow-sm transition hover:border-[#D4A23A] sm:flex-row sm:items-center sm:justify-between">
+                  <button type="button" onClick={() => { void openClientProject(item.project_id); }} className="min-w-0 flex-1 text-left">
+                    <span className="block font-playfair text-xl font-semibold text-[#172554]">{item.subject || "Projet académique"}</span>
+                    <span className="mt-2 block font-inter text-xs text-[#172554]/60">Dernière mise à jour : {item.updated_at ? new Date(item.updated_at).toLocaleString("fr-FR") : "Non disponible"}</span>
+                    <span className="mt-3 inline-block rounded-full bg-[#EAF7EE] px-3 py-2 font-inter text-xs font-semibold text-[#172554]">{item.payment_status === "paid" ? "Premium payé" : "Projet enregistré"} · Ouvrir le document</span>
+                  </button>
+                  <button type="button" onClick={async () => { setRevisionTargetProjectId(item.project_id); setRevisionTargetTitle(item.subject || "Document Trimémo"); await openClientProject(item.project_id); setRevisionInstructions(""); setRevisionFile(null); setRevisionError(""); setRevisionMessage(""); setRevisionModalOpen(true); }} className="shrink-0 rounded-full border border-[#172554]/15 bg-white px-4 py-3 font-inter text-xs font-semibold text-[#172554] hover:border-[#D4A23A] hover:bg-amber-50">Demander une révision</button>
+                </article>
               )) : <div className="rounded-2xl border border-dashed border-[#172554]/20 bg-white p-8 font-inter text-sm text-[#172554]/70">Aucun projet enregistré dans ce compte pour le moment.</div>}
             </div>
           </div>
