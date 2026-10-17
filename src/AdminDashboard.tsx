@@ -85,7 +85,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   },[token]);
 
   const revisionApi = useCallback(async (action:string, body:Record<string,unknown>={}) => {
-    const response=await fetch("/api/human-revisions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({action,...body})});
+    const response=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({action,...body})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok||data?.ok===false) throw new Error(data?.error||"Opération de révision impossible.");
     return data;
@@ -99,14 +99,14 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       if(target==="clients") setClients((await api("clients")).clients||[]);
       if(target==="projects") setProjects((await api("projects")).projects||[]);
       if(target==="orders") { const data=await api("orders"); setOrders(data.orders||[]); setRevenue(data.revenue||{by_currency:[],by_month:[]}); }
-      if(target==="revisions") { const data=await revisionApi("list"); setRevisions(data.requests||[]); }
+      if(target==="revisions") { const data=await api("revisions"); setRevisions(data.requests||[]); }
       if(target==="pricing") setSettings((await api("pricing")).settings);
       if(target==="usage") setUsage(await api("usage"));
       if(target==="logs") setLogs((await api("logs")).logs||[]);
     } catch(e) {
       setError(e instanceof Error ? e.message : "Chargement impossible.");
     } finally { if(!quiet) setLoading(false); }
-  },[api,revisionApi,tab]);
+  },[api,tab]);
 
   useEffect(()=>{void refresh("overview");},[api]);
 
@@ -132,7 +132,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   }
   async function downloadRevisionFile(row:any, delivery=false) {
     try {
-      const data=await revisionApi("file",{id:row.id,delivery});
+      const data=await api("revision-file",{id:row.id,delivery});
       const binary=atob(data.base64); const bytes=new Uint8Array(binary.length); for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
       const blob=new Blob([bytes],{type:data.type||"application/octet-stream"}); const url=URL.createObjectURL(blob);
       const link=document.createElement("a");link.href=url;link.download=data.name||"document-revision";link.click();URL.revokeObjectURL(url);
@@ -148,7 +148,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
         const base64=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||"").split(",")[1]||"");reader.onerror=()=>reject(new Error("Lecture du fichier impossible."));reader.readAsDataURL(selected);});
         file={name:selected.name,type:selected.type,base64};
       }
-      await revisionApi("update",{id:row.id,status,adminNotes:revisionNotes[String(row.id)]||row.admin_notes||"",file});
+      await api("revision-update",{id:row.id,status,adminNotes:revisionNotes[String(row.id)]||row.admin_notes||"",file});
       setNotice(status==="completed"?"Document livré et demande clôturée.":"Statut de la demande mis à jour.");
       await refresh("revisions",true);
     } catch(e){setError(e instanceof Error?e.message:"Mise à jour impossible.");}
