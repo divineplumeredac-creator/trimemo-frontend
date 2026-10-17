@@ -3626,7 +3626,9 @@ export default function App() {
         </section>
       )}
 
-            </>)}\n\n      {view === "dashboard" && (
+            </>)}
+
+      {view === "dashboard" && (
         <section className="min-h-[72vh] bg-[#F2F5FC] px-4 py-6 sm:px-6 sm:py-8">
           <div className="mx-auto max-w-7xl">
             <div className="rounded-3xl bg-[#172554] p-5 text-white shadow-lg sm:p-7">
