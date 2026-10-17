@@ -1585,7 +1585,7 @@ export default function App() {
   }
 
   async function loadClientProjects() {
-    let session: { token: string; email?: string } | null = null;
+    let session: { token: string; refreshToken?: string; expiresAt?: number | string | null; email?: string; userId?: string } | null = null;
     try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     if (!session?.token) {
       setClientAuthMode("login");
@@ -1593,21 +1593,38 @@ export default function App() {
       setView("account");
       return;
     }
+    const refreshSession = async () => {
+      if (!session?.refreshToken) return false;
+      const rr = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refreshToken: session.refreshToken }) });
+      const rd = await rr.json().catch(() => ({}));
+      if (!rr.ok || !rd.token) return false;
+      session = { ...session!, token: String(rd.token), refreshToken: String(rd.refresh_token || session!.refreshToken || ""), expiresAt: rd.expires_at || null, email: String(rd.user?.email || session!.email || ""), userId: String(rd.user?.id || session!.userId || "") };
+      window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
+      return true;
+    };
     try {
-      const response = await fetch(CLIENT_ACCOUNT_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "list", token: session.token }),
-      });
+      let response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "list", token: session.token }) });
+      if (response.status === 401 && await refreshSession()) {
+        response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "list", token: session!.token }) });
+      }
       const data = await readApiResponse(response);
       setClientProjects(Array.isArray(data.projects) ? data.projects : []);
       setClientEmailDisplay(String(data.user?.email || session.email || ""));
-      try { const rr=await fetch(`${API_BASE_URL}/api/admin-console`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"revision-client-list",token:session.token})}); const rd=await rr.json().catch(()=>({})); setClientRevisions(Array.isArray(rd.requests)?rd.requests:[]); } catch { setClientRevisions([]); }
+      try {
+        let rr = await fetch(`${API_BASE_URL}/api/admin-console`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "revision-client-list", token: session.token }) });
+        if (rr.status === 401 && await refreshSession()) {
+          rr = await fetch(`${API_BASE_URL}/api/admin-console`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "revision-client-list", token: session!.token }) });
+        }
+        const rd = await rr.json().catch(() => ({}));
+        if (rr.ok) setClientRevisions(Array.isArray(rd.requests) ? rd.requests : []);
+        else pushToast("error", String(rd.error || "Les demandes de révision n’ont pas pu être actualisées."));
+      } catch {
+        pushToast("error", "Connexion momentanément indisponible pour les demandes de révision. Réessayez sans vous déconnecter.");
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de charger votre espace client.";
       pushToast("error", message);
-      if (/session a expiré|connectez-vous/i.test(message)) {
-        window.localStorage.removeItem("trimemo_client_session");
+      if (/session a expiré|connectez-vous/i.test(message) && !session.refreshToken) {
         setClientAuthMode("login");
         setClientAuthError(message);
         setView("account");
@@ -1742,7 +1759,7 @@ export default function App() {
       });
       const data = await readApiResponse(response);
       if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
-      const session = { token: String(data.token), email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id) };
+      const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id) };
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
       setClientEmailDisplay(session.email);
       setClientPassword("");
@@ -3560,7 +3577,7 @@ export default function App() {
       )}
 
       {view === "account" && (
-        <section className="min-h-[72vh] bg-[#F8FAFC] px-5 py-12">
+        <section className="min-h-[72vh] bg-gradient-to-b from-[#EEF4FF] via-[#F8FAFC] to-[#EAF7EE] px-4 py-8 sm:px-6 sm:py-12">
           <div className="mx-auto max-w-xl rounded-3xl border border-[#172554]/10 bg-white p-6 shadow-sm sm:p-9">
             <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Compte client Trimémo</div>
             <h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
@@ -3607,7 +3624,7 @@ export default function App() {
             </div>
             <div className="mt-8 grid gap-4">
               {clientProjects.length ? clientProjects.map((item) => (
-                <article key={item.project_id} className="flex flex-col gap-3 rounded-2xl border border-[#172554]/10 bg-white p-5 shadow-sm transition hover:border-[#D4A23A] sm:flex-row sm:items-center sm:justify-between">
+                <article key={item.project_id} className="flex flex-col gap-3 rounded-2xl border border-white bg-white/95 p-5 shadow-sm transition hover:border-[#D4A23A] hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
                   <button type="button" onClick={() => { void openClientProject(item.project_id); }} className="min-w-0 flex-1 text-left">
                     <span className="block font-playfair text-xl font-semibold text-[#172554]">{item.subject || "Projet académique"}</span>
                     <span className="mt-2 block font-inter text-xs text-[#172554]/60">Dernière mise à jour : {item.updated_at ? new Date(item.updated_at).toLocaleString("fr-FR") : "Non disponible"}</span>
@@ -3617,8 +3634,8 @@ export default function App() {
                 </article>
               )) : <div className="rounded-2xl border border-dashed border-[#172554]/20 bg-white p-8 font-inter text-sm text-[#172554]/70">Aucun projet enregistré dans ce compte pour le moment.</div>}
             </div>
-            <div className="mt-8 rounded-2xl border border-[#172554]/10 bg-white p-5 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-xl font-bold text-[#172554]">Mes demandes de révision</h2><p className="mt-1 font-inter text-xs text-[#172554]/60">Suivez leur traitement et téléchargez les documents corrigés dès leur livraison.</p></div><button type="button" onClick={()=>void loadClientProjects()} className="rounded-full border border-[#172554]/15 px-4 py-2 font-inter text-xs">Actualiser</button></div>
+            <div className="mt-6 rounded-3xl border border-[#172554]/10 bg-white p-5 shadow-md sm:p-7">
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-xl font-bold text-[#172554]">Mes demandes de révision</h2><p className="mt-1 font-inter text-xs text-[#172554]/60">Suivez leur traitement et téléchargez les documents corrigés dès leur livraison.</p></div><button type="button" onClick={()=>void loadClientProjects()} className="rounded-full border border-[#172554]/15 bg-[#F7FAF8] px-4 py-2 font-inter text-xs font-semibold text-[#172554] hover:border-[#D4A23A]">Actualiser</button></div>
               <div className="mt-4 grid gap-3">{clientRevisions.length?clientRevisions.map((revision:any)=><div key={revision.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 p-4"><div><div className="font-inter text-sm font-semibold text-[#172554]">{revision.document_title}</div><div className="mt-1 font-inter text-xs text-slate-500">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</div>{revision.admin_notes&&<p className="mt-2 whitespace-pre-wrap font-inter text-xs text-slate-600">Note : {revision.admin_notes}</p>}</div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#D4A23A] px-4 py-2 font-inter text-xs font-semibold text-[#172554]">Télécharger le document corrigé</button>}</div>):<p className="py-3 font-inter text-sm text-slate-500">Aucune demande de révision pour le moment.</p>}</div>
             </div>
             {revisionModalOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#172554]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title">
@@ -3818,7 +3835,7 @@ export default function App() {
                 )}
                 <div>
                 <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Projet académique</div>
-                <h2 className="mt-2 font-playfair text-3xl">{view === "project" ? "Définissez votre demande" : view === "estimate" ? "Analyse du projet · Estimation du coût" : view === "preview" ? "Votre aperçu avant paiement" : view === "premium" ? "Vos options premium" : "Rédaction complète"}</h2>
+                <h2 className="mt-2 font-playfair text-3xl">{view === "project" ? "Définissez votre demande" : view === "estimate" ? "Analyse du projet · Estimation du coût" : view === "preview" ? "Votre aperçu avant paiement" : view === "premium" ? "Vos options premium" : selectedPlan && selectedProblematic ? selectedPlan.title : "Reprise du projet"}</h2>
               </div>
               <div className="font-inter text-xs text-[#172554]/75">1 page = {WORDS_PER_PAGE} mots</div>
             </div>
