@@ -59,6 +59,7 @@ function Progress({value}: {value:number}) { const percent=Math.max(0,Math.min(1
 
 export default function AdminDashboard({ token, email, onLogout, onOpenWriter }: Props) {
   const [tab,setTab]=useState<Tab>("overview");
+  const [revisionFilter,setRevisionFilter]=useState<"pending"|"in_progress"|"completed">("pending");
   const [loading,setLoading]=useState(false);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
@@ -276,18 +277,28 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
 
         {tab==="revisions"&&<section className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
-            <Card title="En attente" value={revisions.filter(r=>r.status==="pending").length} icon={AlertTriangle} tone="gold"/>
-            <Card title="En cours" value={revisions.filter(r=>r.status==="in_progress").length} icon={Activity} tone="blue"/>
-            <Card title="Terminées" value={revisions.filter(r=>r.status==="completed").length} icon={CheckCircle2} tone="green"/>
+            <button type="button" onClick={()=>setRevisionFilter("pending")} aria-pressed={revisionFilter==="pending"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#D4A23A] "+(revisionFilter==="pending"?"ring-2 ring-[#D4A23A]":"hover:-translate-y-0.5")}>
+              <Card title="En attente" value={revisions.filter(r=>r.status==="pending").length} icon={AlertTriangle} tone="gold"/>
+            </button>
+            <button type="button" onClick={()=>setRevisionFilter("in_progress")} aria-pressed={revisionFilter==="in_progress"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#1D78C1] "+(revisionFilter==="in_progress"?"ring-2 ring-[#1D78C1]":"hover:-translate-y-0.5")}>
+              <Card title="En cours" value={revisions.filter(r=>r.status==="in_progress").length} icon={Activity} tone="blue"/>
+            </button>
+            <button type="button" onClick={()=>setRevisionFilter("completed")} aria-pressed={revisionFilter==="completed"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-emerald-500 "+(revisionFilter==="completed"?"ring-2 ring-emerald-500":"hover:-translate-y-0.5")}>
+              <Card title="Terminées" value={revisions.filter(r=>r.status==="completed").length} icon={CheckCircle2} tone="green"/>
+            </button>
           </div>
-          {revisions.length?revisions.map(row=><article key={row.id} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-bold text-[#172554]">{revisionFilter==="pending"?"Demandes en attente":revisionFilter==="in_progress"?"Demandes en cours de traitement":"Demandes terminées et livrées"}</h2>
+            <span className="text-sm text-slate-500">{revisions.filter(r=>r.status===revisionFilter).length} demande(s)</span>
+          </div>
+          {revisions.filter(r=>r.status===revisionFilter).length?revisions.filter(r=>r.status===revisionFilter).map(row=><article key={row.id} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-xs text-slate-500">Demande #{row.id} · {fmtDate(row.created_at)}</div><h2 className="mt-1 text-lg font-bold">{row.document_title}</h2><div className="mt-1 text-sm text-slate-500">{row.client_email} · Projet {shortId(row.project_id)}</div></div><Status tone={row.status==="completed"?"green":row.status==="in_progress"?"blue":"amber"}>{row.status==="completed"?"Terminée":row.status==="in_progress"?"En cours":"En attente"}</Status></div>
             <div className="rounded-xl bg-slate-50 p-4"><div className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Consignes du client</div><p className="whitespace-pre-wrap text-sm leading-6">{row.instructions}</p></div>
             <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={()=>void downloadRevisionFile(row,false)}><FileText size={15}/> Télécharger le document reçu</Button>{row.status==="completed"&&<Button variant="secondary" onClick={()=>void downloadRevisionFile(row,true)}>Télécharger le document livré</Button>}</div>
             <label className="block text-sm font-semibold">Notes internes<textarea value={revisionNotes[String(row.id)]??row.admin_notes??""} onChange={e=>setRevisionNotes(cur=>({...cur,[String(row.id)]:e.target.value}))} rows={2} className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal"/></label>
             {row.status!=="completed"&&<label className="block text-sm font-semibold">Document corrigé à livrer (PDF, Word, TXT ou RTF, 3 Mo max)<input type="file" accept=".pdf,.doc,.docx,.txt,.rtf" onChange={e=>setRevisionFiles(cur=>({...cur,[String(row.id)]:e.target.files?.[0]||null}))} className="mt-2 block w-full rounded-xl border border-slate-200 p-3 font-normal"/></label>}
             <div className="flex flex-wrap gap-2">{row.status!=="in_progress"&&row.status!=="completed"&&<Button onClick={()=>void updateRevision(row,"in_progress")}>Prendre en charge</Button>}{row.status==="in_progress"&&<Button onClick={()=>void updateRevision(row,"pending")} variant="secondary">Remettre en attente</Button>}{row.status!=="completed"&&<Button variant="gold" onClick={()=>void updateRevision(row,"completed")}>Livrer et terminer</Button>}</div>
-          </article>):<Empty>{loading?"Chargement des demandes…":"Aucune demande de révision humaine pour le moment."}</Empty>}
+          </article>):<Empty>{loading?"Chargement des demandes…":revisionFilter==="pending"?"Aucune demande en attente.":revisionFilter==="in_progress"?"Aucune demande en cours de traitement.":"Aucune demande terminée pour le moment."}</Empty>}
         </section>}
 
         {tab==="logs"&&<section className="space-y-4">
