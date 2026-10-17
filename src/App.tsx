@@ -1620,7 +1620,7 @@ export default function App() {
       const data = await readApiResponse(response);
       setClientProjects(Array.isArray(data.projects) ? data.projects : []);
       setClientEmailDisplay(String(data.user?.email || session.email || ""));
-      try { const rr=await fetch(`${API_BASE_URL}/api/human-revisions`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"client-list",token:session.token})}); const rd=await rr.json().catch(()=>({})); setClientRevisions(Array.isArray(rd.requests)?rd.requests:[]); } catch { setClientRevisions([]); }
+      try { const rr=await fetch(`${API_BASE_URL}/api/human-revisions`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"revision-client-list",token:session.token})}); const rd=await rr.json().catch(()=>({})); setClientRevisions(Array.isArray(rd.requests)?rd.requests:[]); } catch { setClientRevisions([]); }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de charger votre espace client.";
       pushToast("error", message);
@@ -1634,7 +1634,7 @@ export default function App() {
   }
 
   async function downloadClientRevision(id:string) {
-    try { const session=JSON.parse(window.localStorage.getItem("trimemo_client_session")||"null"); if(!session?.token)throw new Error("Connectez-vous pour récupérer le document."); const response=await fetch(`${API_BASE_URL}/api/human-revisions`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"client-file",token:session.token,id})}); const data=await readApiResponse(response); const binary=atob(data.base64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);const url=URL.createObjectURL(new Blob([bytes],{type:data.type||"application/octet-stream"}));const link=document.createElement("a");link.href=url;link.download=data.name||"document-corrige";link.click();URL.revokeObjectURL(url); } catch(e){pushToast("error",e instanceof Error?e.message:"Téléchargement impossible.");}
+    try { const session=JSON.parse(window.localStorage.getItem("trimemo_client_session")||"null"); if(!session?.token)throw new Error("Connectez-vous pour récupérer le document."); const response=await fetch(`${API_BASE_URL}/api/human-revisions`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"revision-client-file",token:session.token,id})}); const data=await readApiResponse(response); const binary=atob(data.base64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);const url=URL.createObjectURL(new Blob([bytes],{type:data.type||"application/octet-stream"}));const link=document.createElement("a");link.href=url;link.download=data.name||"document-corrige";link.click();URL.revokeObjectURL(url); } catch(e){pushToast("error",e instanceof Error?e.message:"Téléchargement impossible.");}
   }
 
   async function openClientProject(projectId: string) {
@@ -1796,7 +1796,7 @@ export default function App() {
     setRevisionSubmitting(true);
     try {
       const base64 = await new Promise<string>((resolve,reject) => { const reader=new FileReader(); reader.onload=()=>resolve(String(reader.result||"").split(",")[1]||""); reader.onerror=()=>reject(new Error("Lecture du fichier impossible.")); reader.readAsDataURL(revisionFile); });
-      const response=await fetch(`${API_BASE_URL}/api/human-revisions`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"submit",token:session.token,projectId:project.projectId,documentTitle:project.sujet||"Document Trimémo",instructions:revisionInstructions,file:{name:revisionFile.name,type:revisionFile.type,base64}})});
+      const response=await fetch(`${API_BASE_URL}/api/human-revisions`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"revision-submit",token:session.token,projectId:project.projectId,documentTitle:project.sujet||"Document Trimémo",instructions:revisionInstructions,file:{name:revisionFile.name,type:revisionFile.type,base64}})});
       const data=await readApiResponse(response); setRevisionMessage(data.message||"Demande envoyée."); setRevisionInstructions(""); setRevisionFile(null);
     } catch(e) { setRevisionError(e instanceof Error?e.message:"Envoi de la demande impossible."); }
     finally { setRevisionSubmitting(false); }
