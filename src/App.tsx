@@ -518,7 +518,9 @@ export default function App() {
   const [revisionInstructions, setRevisionInstructions] = useState("");
   const [revisionTier, setRevisionTier] = useState<"essential" | "standard" | "deep">("standard");
   const [revisionBillingCountry, setRevisionBillingCountry] = useState("");
-  const [revisionPages, setRevisionPages] = useState(0);\n  const [revisionQuote, setRevisionQuote] = useState<{unitPrice:number;estimatedAmount:number;currency:string;deliveryLabel:string;detectedWordCount:number}|null>(null);\n  const [revisionQuoteLoading, setRevisionQuoteLoading] = useState(false);
+  const [revisionPages, setRevisionPages] = useState(0);
+  const [revisionQuote, setRevisionQuote] = useState<{unitPrice:number;estimatedAmount:number;currency:string;deliveryLabel:string;detectedWordCount:number}|null>(null);
+  const [revisionQuoteLoading, setRevisionQuoteLoading] = useState(false);
   const [revisionFile, setRevisionFile] = useState<File | null>(null);
   const [revisionSubmitting, setRevisionSubmitting] = useState(false);
   const [revisionMessage, setRevisionMessage] = useState("");
