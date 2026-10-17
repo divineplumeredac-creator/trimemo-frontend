@@ -3506,7 +3506,8 @@ export default function App() {
         </div>
       )}
 
-      {view !== "dashboard" && (<>\n      <header className="sticky top-0 z-50 border-b border-white/15 bg-[#172554] backdrop-blur-xl">
+      {view !== "dashboard" && (<>
+      <header className="sticky top-0 z-50 border-b border-white/15 bg-[#172554] backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
           <button onClick={() => setView("home")} className="flex items-center gap-3" aria-label="Retour à l’accueil">
             <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain" />
