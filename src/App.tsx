@@ -3616,13 +3616,15 @@ export default function App() {
       )}
 
       {view === "dashboard" && (
-        <section className="min-h-[72vh] bg-[#F8FAFC] px-5 py-12">
-          <div className="mx-auto max-w-5xl">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div><div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Espace personnel</div><h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">Mes projets</h1><p className="mt-2 font-inter text-sm text-[#172554]/65">{clientEmailDisplay || "Retrouvez vos projets et leur progression."}</p></div>
-              <div className="flex gap-2"><button onClick={startNewClientProject} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-sm font-semibold text-[#172554]">Nouveau projet</button><button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setView("home"); }} className="rounded-full border border-[#172554]/20 px-5 py-3 font-inter text-sm">Déconnexion</button></div>
+        <section className="min-h-[72vh] bg-gradient-to-b from-[#EEF4FF] via-[#F8FAFC] to-[#EAF7EE] px-4 py-8 sm:px-6 sm:py-12">
+          <div className="mx-auto max-w-6xl">
+            <div className="rounded-3xl bg-[#172554] p-6 text-white shadow-lg sm:p-8">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div><div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-3 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientEmailDisplay || "Retrouvez vos projets et leur progression."}</p></div>
+                <div className="flex flex-wrap gap-2"><button onClick={startNewClientProject} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-sm font-semibold text-[#172554]">Nouveau projet</button><button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); setView("home"); }} className="rounded-full border border-white/25 px-5 py-3 font-inter text-sm text-white hover:bg-white/10">Déconnexion</button></div>
+              </div>
             </div>
-            <div className="mt-8 grid gap-4">
+            <div className="mt-6 grid gap-4">
               {clientProjects.length ? clientProjects.map((item) => (
                 <article key={item.project_id} className="flex flex-col gap-3 rounded-2xl border border-white bg-white/95 p-5 shadow-sm transition hover:border-[#D4A23A] hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
                   <button type="button" onClick={() => { void openClientProject(item.project_id); }} className="min-w-0 flex-1 text-left">
