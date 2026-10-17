@@ -527,6 +527,7 @@ export default function App() {
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientProjects, setClientProjects] = useState<Array<{project_id:string;subject:string;payment_status:string;updated_at:string}>>([]);
+  const [clientRevisions, setClientRevisions] = useState<any[]>([]);
   const [revisionModalOpen, setRevisionModalOpen] = useState(false);
   const [revisionInstructions, setRevisionInstructions] = useState("");
   const [revisionFile, setRevisionFile] = useState<File | null>(null);
@@ -1619,6 +1620,7 @@ export default function App() {
       const data = await readApiResponse(response);
       setClientProjects(Array.isArray(data.projects) ? data.projects : []);
       setClientEmailDisplay(String(data.user?.email || session.email || ""));
+      try { const rr=await fetch(`${API_BASE_URL}/api/human-revisions`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"client-list",token:session.token})}); const rd=await rr.json().catch(()=>({})); setClientRevisions(Array.isArray(rd.requests)?rd.requests:[]); } catch { setClientRevisions([]); }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de charger votre espace client.";
       pushToast("error", message);
@@ -1629,6 +1631,10 @@ export default function App() {
         setView("account");
       }
     }
+  }
+
+  async function downloadClientRevision(id:string) {
+    try { const session=JSON.parse(window.localStorage.getItem("trimemo_client_session")||"null"); if(!session?.token)throw new Error("Connectez-vous pour récupérer le document."); const response=await fetch(`${API_BASE_URL}/api/human-revisions`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"client-file",token:session.token,id})}); const data=await readApiResponse(response); const binary=atob(data.base64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);const url=URL.createObjectURL(new Blob([bytes],{type:data.type||"application/octet-stream"}));const link=document.createElement("a");link.href=url;link.download=data.name||"document-corrige";link.click();URL.revokeObjectURL(url); } catch(e){pushToast("error",e instanceof Error?e.message:"Téléchargement impossible.");}
   }
 
   async function openClientProject(projectId: string) {
@@ -3621,6 +3627,10 @@ export default function App() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div><div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Espace personnel</div><h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">Mes projets</h1><p className="mt-2 font-inter text-sm text-[#172554]/65">{clientEmailDisplay || "Retrouvez vos projets et leur progression."}</p></div>
               <div className="flex gap-2"><button onClick={startNewClientProject} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-sm font-semibold text-[#172554]">Nouveau projet</button><button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setView("home"); }} className="rounded-full border border-[#172554]/20 px-5 py-3 font-inter text-sm">Déconnexion</button></div>
+            </div>
+            <div className="mt-8 rounded-2xl border border-[#172554]/10 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-xl font-bold text-[#172554]">Mes révisions humaines</h2><p className="mt-1 font-inter text-xs text-[#172554]/60">Suivez le traitement et récupérez vos documents corrigés ici.</p></div><button type="button" onClick={()=>void loadClientProjects()} className="rounded-full border border-[#172554]/15 px-4 py-2 font-inter text-xs">Actualiser</button></div>
+              <div className="mt-4 grid gap-3">{clientRevisions.length?clientRevisions.map((revision:any)=><div key={revision.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 p-4"><div><div className="font-inter text-sm font-semibold text-[#172554]">{revision.document_title}</div><div className="mt-1 font-inter text-xs text-slate-500">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</div>{revision.admin_notes&&<p className="mt-2 whitespace-pre-wrap font-inter text-xs text-slate-600">Note : {revision.admin_notes}</p>}</div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#D4A23A] px-4 py-2 font-inter text-xs font-semibold text-[#172554]">Télécharger le document corrigé</button>}</div>):<p className="py-3 font-inter text-sm text-slate-500">Aucune demande de révision pour le moment.</p>}</div>
             </div>
             <div className="mt-8 grid gap-4">
               {clientProjects.length ? clientProjects.map((item) => (
