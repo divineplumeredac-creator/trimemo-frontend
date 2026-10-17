@@ -2753,7 +2753,7 @@ export default function App() {
             </div>
           </div>
         )}
-          <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#172554]/10 bg-white p-5 lg:block">
+          {view !== "dashboard" && (<>\n          <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#172554]/10 bg-white p-5 lg:block">
             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigation</div>
             <nav className="mt-5 space-y-2">
               <button
@@ -3410,7 +3410,7 @@ export default function App() {
               </button>
             </section>
           )}
-          </main>
+          </>)}\n          </main>
         </div>
 
         <div className="fixed bottom-4 right-4 z-[90] max-w-sm rounded-2xl bg-[#172554] px-4 py-3 font-inter text-[11px] text-white shadow-xl">
