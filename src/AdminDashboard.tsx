@@ -196,7 +196,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
           <div className="min-w-0"><div className="truncate text-lg font-bold">Trimémo <span className="font-medium text-[#D4A23A]">Admin</span></div><div className="truncate text-xs text-white/60">Console de gestion sécurisée</div></div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="hidden max-w-[240px] truncate text-xs text-white/70 md:block">{email}</span>
+          <span className="hidden max-w-[240px] truncate text-xs text-white/70 md:block">Administrateur</span>
           <Button variant="secondary" onClick={onOpenWriter}><FileText size={16}/> Atelier de rédaction</Button>
           <button onClick={onLogout} title="Déconnexion" className="rounded-xl p-2.5 text-white/80 hover:bg-white/10 hover:text-white"><LogOut size={18}/></button>
         </div>
