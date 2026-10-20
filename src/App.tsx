@@ -528,6 +528,7 @@ export default function App() {
   const [revisionTargetProjectId, setRevisionTargetProjectId] = useState<string | null>(null);
   const [revisionTargetTitle, setRevisionTargetTitle] = useState("");
   const [clientEmailDisplay, setClientEmailDisplay] = useState("");
+  const [clientNameDisplay, setClientNameDisplay] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ownerRoute] = useState(() => typeof window !== "undefined" && window.location.pathname === "/owner");
@@ -1628,7 +1629,7 @@ export default function App() {
       }
       const data = await readApiResponse(response);
       setClientProjects(Array.isArray(data.projects) ? data.projects : []);
-      setClientEmailDisplay(String(data.user?.email || session.email || ""));
+      setClientEmailDisplay(String(data.user?.email || session.email || ""));\n      const profileName=[data.user?.firstName,data.user?.lastName].filter(Boolean).join(" ").trim();\n      setClientNameDisplay(profileName || String(session.fullName || "Mon compte"));
       try {
         let rr = await fetch(`${API_BASE_URL}/api/admin-console`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "revision-client-list", token: session.token }) });
         if (rr.status === 401 && await refreshSession()) {
@@ -1770,7 +1771,7 @@ export default function App() {
         window.sessionStorage.removeItem("trimemo_premium_token");
         window.sessionStorage.removeItem("trimemo_premium_project_id");
       }
-      setClientEmailDisplay(String(session.email || ""));
+      setClientEmailDisplay(String(session.email || ""));\n      setClientNameDisplay(String(session.fullName || "Mon compte"));
       setView("writing");
       setWritingTab("writing");
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -1817,9 +1818,9 @@ export default function App() {
       });
       const data = await readApiResponse(response);
       if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
-      const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id) };
+      const fullName=[data.user?.firstName||clientFirstName.trim(),data.user?.lastName||clientLastName.trim()].filter(Boolean).join(" ").trim();\n      const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id), fullName };
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
-      setClientEmailDisplay(session.email);
+      setClientEmailDisplay(session.email);\n      setClientNameDisplay(fullName || "Mon compte");
       setClientPassword("");
 
       // Ne créer une entrée de projet que si un vrai sujet est déjà renseigné.
@@ -3687,7 +3688,7 @@ export default function App() {
           <div className="mx-auto max-w-7xl">
             <div className="rounded-3xl bg-[#172554] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <div><div className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-2 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientEmailDisplay || "Retrouvez vos documents et vos demandes."}</p></div>
+                <div><div className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-2 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientNameDisplay || "Mon compte"}</p></div>
                 <button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientProjectFlow(false); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); setView("home"); }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
               </div>
             </div>
