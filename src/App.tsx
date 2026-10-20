@@ -1629,7 +1629,9 @@ export default function App() {
       }
       const data = await readApiResponse(response);
       setClientProjects(Array.isArray(data.projects) ? data.projects : []);
-      setClientEmailDisplay(String(data.user?.email || session.email || ""));\n      const profileName=[data.user?.firstName,data.user?.lastName].filter(Boolean).join(" ").trim();\n      setClientNameDisplay(profileName || String(session.fullName || "Mon compte"));
+      setClientEmailDisplay(String(data.user?.email || session.email || ""));
+      const profileName=[data.user?.firstName,data.user?.lastName].filter(Boolean).join(" ").trim();
+      setClientNameDisplay(profileName || String(session.fullName || "Mon compte"));
       try {
         let rr = await fetch(`${API_BASE_URL}/api/admin-console`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "revision-client-list", token: session.token }) });
         if (rr.status === 401 && await refreshSession()) {
@@ -1771,7 +1773,8 @@ export default function App() {
         window.sessionStorage.removeItem("trimemo_premium_token");
         window.sessionStorage.removeItem("trimemo_premium_project_id");
       }
-      setClientEmailDisplay(String(session.email || ""));\n      setClientNameDisplay(String(session.fullName || "Mon compte"));
+      setClientEmailDisplay(String(session.email || ""));
+      setClientNameDisplay(String(session.fullName || "Mon compte"));
       setView("writing");
       setWritingTab("writing");
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -1818,9 +1821,13 @@ export default function App() {
       });
       const data = await readApiResponse(response);
       if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
-      let firstName=String(data.user?.firstName||clientFirstName.trim()).trim(); let lastName=String(data.user?.lastName||clientLastName.trim()).trim();\n      if ((!firstName || !lastName) && clientAuthMode === "login") { const enteredFirst=window.prompt("Saisissez votre prénom pour compléter votre profil Trimémo :","")?.trim()||""; const enteredLast=window.prompt("Saisissez votre nom pour compléter votre profil Trimémo :","")?.trim()||""; if(enteredFirst&&enteredLast){const profileResponse=await fetch(CLIENT_ACCOUNT_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"update-profile",token:String(data.token),firstName:enteredFirst,lastName:enteredLast})}); if(profileResponse.ok){firstName=enteredFirst;lastName=enteredLast;}}}\n      const fullName=[firstName,lastName].filter(Boolean).join(" ").trim();\n      const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id), fullName };
+      let firstName=String(data.user?.firstName||clientFirstName.trim()).trim(); let lastName=String(data.user?.lastName||clientLastName.trim()).trim();
+      if ((!firstName || !lastName) && clientAuthMode === "login") { const enteredFirst=window.prompt("Saisissez votre prénom pour compléter votre profil Trimémo :","")?.trim()||""; const enteredLast=window.prompt("Saisissez votre nom pour compléter votre profil Trimémo :","")?.trim()||""; if(enteredFirst&&enteredLast){const profileResponse=await fetch(CLIENT_ACCOUNT_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"update-profile",token:String(data.token),firstName:enteredFirst,lastName:enteredLast})}); if(profileResponse.ok){firstName=enteredFirst;lastName=enteredLast;}}}
+      const fullName=[firstName,lastName].filter(Boolean).join(" ").trim();
+      const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id), fullName };
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
-      setClientEmailDisplay(session.email);\n      setClientNameDisplay(fullName || "Mon compte");
+      setClientEmailDisplay(session.email);
+      setClientNameDisplay(fullName || "Mon compte");
       setClientPassword("");
 
       // Ne créer une entrée de projet que si un vrai sujet est déjà renseigné.
@@ -2376,29 +2383,56 @@ export default function App() {
       return { heading: prefix[0] + title, subtitle: remainder };
     };
     // Normalise les titres académiques même lorsqu'ils sont collés au début d'un paragraphe.
-    let source = String(raw || "").replace(/\r\n?/gu, "\n");
+    let source = String(raw || "").replace(/\r
+?/gu, "
+");
     // Chaque bloc de chapitre reçoit les libellés de partie et de chapitre du plan validé
     // lorsqu'ils sont absents du texte généré. On ne modifie pas le corps scientifique.
     if (!previewMode && (blockKind === "chapter" || blockKind === "chapter_intro")) {
       const structuralHeadings = blockStructure.filter((item) => /^(?:PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+)\s*[:.\-–]?/iu.test(String(item || "").trim()));
-      const existingLines = source.split("\n").map((line) => line.trim().replace(/^#{1,6}\s*/, "").toLocaleLowerCase("fr"));
+      const existingLines = source.split("
+").map((line) => line.trim().replace(/^#{1,6}\s*/, "").toLocaleLowerCase("fr"));
       const missingHeadings = structuralHeadings.filter((item) => !existingLines.includes(String(item).trim().toLocaleLowerCase("fr")));
-      if (missingHeadings.length) source = missingHeadings.map((item) => "## " + item).join("\n\n") + "\n\n" + source;
+      if (missingHeadings.length) source = missingHeadings.map((item) => "## " + item).join("
+
+") + "
+
+" + source;
     }
     source = source
-      .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
+      .replace(/[ \t]*(#{1,6}\s+)/gu, "
+
+$1")
       // Les titres numérotés internes doivent devenir des blocs distincts, même s'ils arrivent au milieu d'une phrase aplatie.
-      .replace(/[ \t]+(?=(?:\d+\.){2,5}\d+\s*[:.)\-–]?\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "\n\n")
-      .replace(/[ \t]*(\*\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "\n\n$1")
-      .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "\n\n")
-      .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
+      .replace(/[ \t]+(?=(?:\d+\.){2,5}\d+\s*[:.)\-–]?\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "
+
+")
+      .replace(/[ \t]*(\*\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "
+
+$1")
+      .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "
+
+")
+      .replace(/
+[ \t]*
+(?:[ \t]*
+)+/gu, "
+
+")
       .trim();
-    const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
-      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+    const rawBlocks = source.split(/
+\s*
+/gu).flatMap((block) => {
+      const lines = block.split("
+").map((line) => line.trim()).filter(Boolean);
       if (lines.length > 1) return lines;
       const line = lines[0] || "";
       // Sépare une phrase de prose lorsqu'un titre identifié est suivi sur la même ligne.
-      const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
+      const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?
+]{0,180}|CHAPITRE\s+\d+\b[^.!?
+]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?
+]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?
+]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
       if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
       if (!line) return [];
       // Si le moteur a renvoyé tout un bloc sur une seule ligne, rétablit des paragraphes lisibles sans réécrire le texte.
@@ -2471,7 +2505,9 @@ export default function App() {
   async function exportDocument() {
     if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
       const done = blocks.filter((block) => block.status === "done" && block.content.trim());
-      const combined = done.map((block) => block.content).join("\n\n");
+      const combined = done.map((block) => block.content).join("
+
+");
       if (countWords(combined) < 1) {
         pushToast("info", "Rédigez l’introduction et le premier chapitre pour consulter l’aperçu avant paiement.");
         return;
@@ -2492,8 +2528,12 @@ export default function App() {
           const title = String(block.title || "").trim();
           // Le titre de bloc est ajouté uniquement s'il n'est pas déjà présent au début du contenu.
           const startsWithTitle = title && content.slice(0, Math.max(title.length + 80, 160)).toLocaleLowerCase("fr").includes(title.toLocaleLowerCase("fr"));
-          return startsWithTitle ? content : [title, content].filter(Boolean).join("\n\n");
-        }).join("\n\n"), wordCount: others.reduce((sum, block) => sum + block.words, 0), partTitle: "", chapterNumber: 1, sectionTitles: others.flatMap((block) => block.structure) },
+          return startsWithTitle ? content : [title, content].filter(Boolean).join("
+
+");
+        }).join("
+
+"), wordCount: others.reduce((sum, block) => sum + block.words, 0), partTitle: "", chapterNumber: 1, sectionTitles: others.flatMap((block) => block.structure) },
       };
       setPreview(previewSnapshot);
       try {
