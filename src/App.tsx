@@ -1605,7 +1605,7 @@ export default function App() {
   }
 
   async function loadClientProjects() {
-    let session: { token: string; refreshToken?: string; expiresAt?: number | string | null; email?: string; userId?: string } | null = null;
+    let session: { token: string; refreshToken?: string; expiresAt?: number | string | null; email?: string; userId?: string; fullName?: string } | null = null;
     try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     if (!session?.token) {
       setClientAuthMode("login");
@@ -1725,7 +1725,7 @@ export default function App() {
   }
 
   async function openClientProject(projectId: string) {
-    let session: { token: string; email?: string } | null = null;
+    let session: { token: string; email?: string; fullName?: string } | null = null;
     try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     if (!session?.token) {
       setClientAuthMode("login");
