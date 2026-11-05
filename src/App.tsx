@@ -2383,56 +2383,29 @@ export default function App() {
       return { heading: prefix[0] + title, subtitle: remainder };
     };
     // Normalise les titres académiques même lorsqu'ils sont collés au début d'un paragraphe.
-    let source = String(raw || "").replace(/\r
-?/gu, "
-");
+    let source = String(raw || "").replace(/\r\n?/gu, "\n");
     // Chaque bloc de chapitre reçoit les libellés de partie et de chapitre du plan validé
     // lorsqu'ils sont absents du texte généré. On ne modifie pas le corps scientifique.
     if (!previewMode && (blockKind === "chapter" || blockKind === "chapter_intro")) {
       const structuralHeadings = blockStructure.filter((item) => /^(?:PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+)\s*[:.\-–]?/iu.test(String(item || "").trim()));
-      const existingLines = source.split("
-").map((line) => line.trim().replace(/^#{1,6}\s*/, "").toLocaleLowerCase("fr"));
+      const existingLines = source.split("\n").map((line) => line.trim().replace(/^#{1,6}\s*/, "").toLocaleLowerCase("fr"));
       const missingHeadings = structuralHeadings.filter((item) => !existingLines.includes(String(item).trim().toLocaleLowerCase("fr")));
-      if (missingHeadings.length) source = missingHeadings.map((item) => "## " + item).join("
-
-") + "
-
-" + source;
+      if (missingHeadings.length) source = missingHeadings.map((item) => "## " + item).join("\n\n") + "\n\n" + source;
     }
     source = source
-      .replace(/[ \t]*(#{1,6}\s+)/gu, "
-
-$1")
+      .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
       // Les titres numérotés internes doivent devenir des blocs distincts, même s'ils arrivent au milieu d'une phrase aplatie.
-      .replace(/[ \t]+(?=(?:\d+\.){2,5}\d+\s*[:.)\-–]?\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "
-
-")
-      .replace(/[ \t]*(\*\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "
-
-$1")
-      .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "
-
-")
-      .replace(/
-[ \t]*
-(?:[ \t]*
-)+/gu, "
-
-")
+      .replace(/[ \t]+(?=(?:\d+\.){2,5}\d+\s*[:.)\-–]?\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "\n\n")
+      .replace(/[ \t]*(\*\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "\n\n$1")
+      .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "\n\n")
+      .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
       .trim();
-    const rawBlocks = source.split(/
-\s*
-/gu).flatMap((block) => {
-      const lines = block.split("
-").map((line) => line.trim()).filter(Boolean);
+    const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
+      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
       if (lines.length > 1) return lines;
       const line = lines[0] || "";
       // Sépare une phrase de prose lorsqu'un titre identifié est suivi sur la même ligne.
-      const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?
-]{0,180}|CHAPITRE\s+\d+\b[^.!?
-]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?
-]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?
-]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
+      const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
       if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
       if (!line) return [];
       // Si le moteur a renvoyé tout un bloc sur une seule ligne, rétablit des paragraphes lisibles sans réécrire le texte.
@@ -2505,9 +2478,7 @@ $1")
   async function exportDocument() {
     if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
       const done = blocks.filter((block) => block.status === "done" && block.content.trim());
-      const combined = done.map((block) => block.content).join("
-
-");
+      const combined = done.map((block) => block.content).join("\n\n");
       if (countWords(combined) < 1) {
         pushToast("info", "Rédigez l’introduction et le premier chapitre pour consulter l’aperçu avant paiement.");
         return;
@@ -2528,12 +2499,8 @@ $1")
           const title = String(block.title || "").trim();
           // Le titre de bloc est ajouté uniquement s'il n'est pas déjà présent au début du contenu.
           const startsWithTitle = title && content.slice(0, Math.max(title.length + 80, 160)).toLocaleLowerCase("fr").includes(title.toLocaleLowerCase("fr"));
-          return startsWithTitle ? content : [title, content].filter(Boolean).join("
-
-");
-        }).join("
-
-"), wordCount: others.reduce((sum, block) => sum + block.words, 0), partTitle: "", chapterNumber: 1, sectionTitles: others.flatMap((block) => block.structure) },
+          return startsWithTitle ? content : [title, content].filter(Boolean).join("\n\n");
+        }).join("\n\n"), wordCount: others.reduce((sum, block) => sum + block.words, 0), partTitle: "", chapterNumber: 1, sectionTitles: others.flatMap((block) => block.structure) },
       };
       setPreview(previewSnapshot);
       try {
