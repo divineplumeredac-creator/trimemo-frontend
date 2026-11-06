@@ -2509,7 +2509,7 @@ export default function App() {
         .replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1")
         .replace(/^#{1,6}\s*/u, "")
         .trim();
-      return <p key={index} className={previewMode ? "mb-4 text-justify font-normal" : "mb-4 text-justify font-normal"} style={{ textIndent: "1.25cm", lineHeight: 1.5, marginBottom: "0.72em", whiteSpace: "normal", overflowWrap: "break-word", fontWeight: 400 }}>{paragraph}</p>;
+      return <p key={index} className="mb-4 text-justify font-normal text-[#111111]" style={{ color: "#111111", fontFamily: '"Times New Roman", Times, serif', fontSize: "12pt", textIndent: "1.25cm", lineHeight: 1.5, marginBottom: "0.72em", whiteSpace: "normal", overflowWrap: "break-word", fontWeight: 400, fontStyle: "normal" }}>{paragraph}</p>;
     }).filter(Boolean);
   }
 
