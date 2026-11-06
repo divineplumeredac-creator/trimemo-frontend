@@ -2459,19 +2459,8 @@ export default function App() {
       const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
       if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
       if (!line) return [];
-      // Si le moteur a renvoyé tout un bloc sur une seule ligne, rétablit des paragraphes lisibles sans réécrire le texte.
-      const sentences = line.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/u).filter(Boolean);
-      // Ne pas fabriquer des paragraphes d'une ou deux phrases : regrouper le texte aplati par unités de 4 à 6 phrases.
-      if (sentences.length >= 4) {
-        const paragraphs: string[] = [];
-        // Rétablir des paragraphes académiques lisibles lorsque le moteur a aplati l'introduction.
-        // Trois phrases au maximum par paragraphe évitent un unique bloc massif sans créer une phrase par ligne.
-        const groupSize = sentences.length >= 10 ? 3 : 2;
-        for (let i = 0; i < sentences.length; i += groupSize) {
-          paragraphs.push(sentences.slice(i, i + groupSize).join(" ").trim());
-        }
-        return paragraphs;
-      }
+      // Ne jamais inventer des limites de paragraphes à partir d'un quota de phrases.
+      // Si le moteur n'a pas fourni de séparation sémantique, préserver le texte intact.
       return [line];
     });
     // Rattacher les fragments orphelins aux titres connus du plan validé.
