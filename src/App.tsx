@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-const API_BASE_URL = (import.meta.env.PROD ? "" : String(import.meta.env.VITE_API_BASE_URL || "https://trimemo-api.vercel.app")).replace(/\/$/, "");
+const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "" : "https://trimemo-api.vercel.app")).replace(/\/$/, "");
 const API_URL = `${API_BASE_URL}/api/academic`;
 const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
 const PLANS_API = `${API_BASE_URL}/api/generate-plans`;
@@ -220,6 +220,20 @@ type Toast = {
 
 function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
+}
+
+// Limite un aperçu sans aplatir les paragraphes ni les titres Markdown.
+function truncateWordsPreservingLayout(value: string, limit: number) {
+  let count = 0;
+  let ended = false;
+  return String(value || "").replace(/\S+/g, (token) => {
+    if (ended || count >= limit) {
+      ended = true;
+      return "";
+    }
+    count += 1;
+    return token;
+  }).replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function wordsToPages(words: number) {
@@ -532,7 +546,12 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ownerRoute] = useState(() => typeof window !== "undefined" && window.location.pathname === "/owner");
-  const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : "trimemo_state_v5_public";
+  const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : (() => {
+    try {
+      const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      return session?.userId ? "trimemo_state_v5_user_" + String(session.userId) : "trimemo_state_v5_guest";
+    } catch { return "trimemo_state_v5_guest"; }
+  })();
   const [ownerSessionValid, setOwnerSessionValid] = useState(false);
   const [ownerShowWriter, setOwnerShowWriter] = useState(false);
   const [ownerEmail, setOwnerEmail] = useState(() => {
@@ -651,7 +670,11 @@ export default function App() {
     cloudHydrated.current = false;
     (async () => {
       try {
-        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`);
+        const clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (!clientSession?.token) throw new Error("Connectez-vous pour restaurer ce projet.");
+        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`, {
+          headers: { Authorization: "Bearer " + clientSession.token },
+        });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Impossible de récupérer le projet distant.");
         if (data.found && data.state) {
@@ -665,7 +688,7 @@ export default function App() {
           if (saved.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
           if (saved.selectedPlan) setSelectedPlan(saved.selectedPlan);
           if (Array.isArray(saved.blocks)) setBlocks(saved.blocks);
-          // Un projet ouvert depuis le tableau de bord reprend toujours dans la rédaction.
+          // Un projet ouvert depuis le tableau de bord continue toujours dans l’espace de rédaction.
           setView("writing");
           setWritingTab("writing");
           if (saved.previewTab) setPreviewTab(saved.previewTab);
@@ -694,9 +717,12 @@ export default function App() {
     storeProjectFiles(project);
   }, [project.files, project.projectId]);
 
-  // Synchronisation serveur de l'état complet du projet. Les fichiers sont gérés séparément.
+  // Synchronisation serveur réservée aux projets authentifiés.
   useEffect(() => {
     if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid)) return;
+    let clientSession: any = null;
+    try { clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!clientSession?.token || !clientSession?.userId) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
@@ -713,7 +739,7 @@ export default function App() {
         const response = await fetch(PROJECT_STATE_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId: project.projectId, state }),
+          body: JSON.stringify({ projectId: project.projectId, token: clientSession.token, state }),
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Échec de la sauvegarde serveur.");
@@ -826,7 +852,7 @@ export default function App() {
     if (!payment || payment === "paypal_cancelled") {
       if (payment === "paypal_cancelled") {
         window.sessionStorage.removeItem("trimemo_pending_paypal_order");
-        pushToast("info", "Paiement annulé. Votre projet est conservé ; vous pouvez reprendre le paiement.");
+        pushToast("info", "Paiement annulé. Votre projet et son contenu sont conservés ; vous pourrez continuer le paiement.");
         window.history.replaceState({}, document.title, window.location.pathname);
       }
       return;
@@ -840,27 +866,28 @@ export default function App() {
       try {
         setLoading(true);
         const action = payment === "paypal" ? "verify-paypal" : "verify-mobile-money";
+        const payingSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (!payingSession?.token || !payingSession?.userId) throw new Error("Reconnectez-vous au compte ayant initié le paiement PayPal.");
         const response = await fetch(`${API_URL}?action=${action}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, project: loadPendingProject(stateStorageKey) }),
+          body: JSON.stringify({ id, clientToken: payingSession.token, project: loadPendingProject(stateStorageKey) }),
         });
         const data = await readApiResponse(response);
         if (data.status !== "PAID") {
           throw new Error(data.error || "Le paiement n’a pas été confirmé.");
         }
+        if (data.owner_id !== payingSession.userId) throw new Error("Cette commande appartient à un autre compte. Aucun autre projet ne sera chargé.");
         if (!data.premium_token) {
           throw new Error("Paiement confirmé, mais le déblocage premium sécurisé n’a pas été délivré.");
         }
         window.sessionStorage.setItem("trimemo_premium_token", String(data.premium_token));
-        const saved = data.project || loadPendingProject(stateStorageKey) || null;
+        const saved = data.project || null;
         if (saved?.projectId) window.sessionStorage.setItem("trimemo_premium_project_id", String(saved.projectId));
         if (!saved) throw new Error("Le paiement est confirmé, mais les données du projet n'ont pas pu être restaurées. Contactez le support avec la référence de commande.");
         if (saved) {
           setProject(saved);
-          let storedPreview: Preview | null = data.preview || null;
-          if (!storedPreview) { try { storedPreview = JSON.parse(window.sessionStorage.getItem("trimemo_preview_pending") || window.localStorage.getItem("trimemo_preview_pending") || "null"); } catch {} }
-          if (!storedPreview && saved.paidPreviewSnapshot) storedPreview = saved.paidPreviewSnapshot;
+          const storedPreview: Preview | null = data.preview || saved.paidPreviewSnapshot || null;
 
           if (storedPreview?.problematic?.question && storedPreview?.plan?.parts?.length && storedPreview?.chapterOne?.content) {
             const problematic = normalizeProblematic(storedPreview.problematic, 0);
@@ -896,26 +923,15 @@ export default function App() {
             const remainingBlocks = prepared.filter((block) =>
               block.kind !== "introduction" && (!firstChapterPrefix || !block.id.startsWith(firstChapterPrefix))
             );
-            const nextBlocks = introductionBlock ? [introductionBlock, seededChapter, ...remainingBlocks] : [seededChapter, ...remainingBlocks];
-            // Si le client revient du paiement, restaurer les blocs et leur contenu depuis la session
-            // au lieu de remplacer sa progression par des blocs vierges.
-            let savedBlocks: Block[] = [];
-            let savedSelectedBlockId = "";
-            try {
-              const rawBlocks = window.sessionStorage.getItem("trimemo_blocks_pending");
-              const parsedBlocks = rawBlocks ? JSON.parse(rawBlocks) : null;
-              if (Array.isArray(parsedBlocks) && parsedBlocks.length && parsedBlocks.every((item) => item && typeof item.id === "string" && typeof item.content === "string")) savedBlocks = parsedBlocks;
-              savedSelectedBlockId = window.sessionStorage.getItem("trimemo_selected_block_pending") || "";
-            } catch {}
-            // La liste des blocs sauvegardée avant le paiement est la source de vérité :
-            // elle contient les blocs déjà rédigés et le prochain bloc qui attend la rédaction.
-            // Ne pas remplacer le chapitre partiellement rédigé par un bloc synthétique d'aperçu.
-            const restoredBlocks = savedBlocks.length
-              ? prepared.map((block) => {
-                  const savedBlock = savedBlocks.find((item) => item.id === block.id);
-                  return savedBlock ? { ...block, ...savedBlock, id: block.id } : block;
-                })
-              : nextBlocks;
+            // Au retour PayPal, le snapshot vérifié côté serveur est l'unique source du contenu payé.
+            const restoredIntroduction = introductionBlock && storedPreview.introduction?.content
+              ? { ...introductionBlock, content: storedPreview.introduction.content, wordCount: countWords(storedPreview.introduction.content), status: "done" as const }
+              : introductionBlock;
+            const restoredBlocks = [
+              ...(restoredIntroduction ? [restoredIntroduction] : []),
+              seededChapter,
+              ...remainingBlocks,
+            ];
             setBlocks(restoredBlocks);
             const nextPendingBlock = restoredBlocks.find((block) => block.status !== "done" || !block.content.trim());
             const selectedBlock = nextPendingBlock?.id
@@ -928,7 +944,7 @@ export default function App() {
             window.sessionStorage.removeItem("trimemo_selected_block_pending");
             window.localStorage.removeItem("trimemo_preview_pending");
             window.sessionStorage.removeItem("trimemo_preview_pending");
-            pushToast("success", "Paiement confirmé. La rédaction reprend au prochain bloc non rédigé, en conservant le contenu déjà produit.");
+            pushToast("success", "Paiement confirmé. La rédaction continue au prochain bloc non terminé. Les 2 500 mots de l’aperçu restent intégrés au document et au volume facturé.");
           } else {
             const personalQuestion = String(saved.problematiquePersonnelle || saved.problematique || "").trim();
 
@@ -983,11 +999,24 @@ export default function App() {
         try {
           const clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
           if (clientSession?.token && saved?.projectId) {
-            await fetch(CLIENT_ACCOUNT_API, {
+            const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ action: "link", token: clientSession.token, projectId: saved.projectId, subject: saved.sujet || "Projet académique", paid: true }),
             });
+            const linkData = await readApiResponse(linkResponse);
+            if (!linkData.success) throw new Error("Le projet payé n'a pas pu être rattaché à votre compte client.");
+            // Enregistrer l'état restauré sous le propriétaire authentifié, jamais sous une clé globale.
+            let restoredState: any = null;
+            try { restoredState = JSON.parse(window.localStorage.getItem(stateStorageKey) || "null"); } catch {}
+            if (restoredState?.project?.projectId === saved.projectId) {
+              const saveResponse = await fetch(PROJECT_STATE_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ projectId: saved.projectId, token: clientSession.token, state: restoredState }),
+              });
+              if (!saveResponse.ok) throw new Error("Le paiement est confirmé, mais la sauvegarde sécurisée du projet doit être réessayée.");
+            }
           }
         } catch (accountLinkError) {
           console.error("[Trimémo] association du projet payé au compte client impossible", accountLinkError);
@@ -1755,7 +1784,7 @@ export default function App() {
       setPreviewTab(saved.previewTab || "problematic");
       setPremiumNav(saved.premiumNav || "writing");
       setPremiumSection(saved.premiumSection || "writing");
-      // Toujours reprendre au premier bloc incomplet. Un ancien identifiant sélectionné ne doit jamais ramener à l'introduction déjà rédigée.
+      // Toujours continuer au premier bloc incomplet. Un ancien identifiant sélectionné ne doit jamais ramener à l'introduction déjà rédigée.
       setSelectedWritingBlockId(
         saved.blocks?.find((block: Block) => block.status !== "done" || !String(block.content || "").trim())?.id
         || saved.blocks?.find((block: Block) => block.id === saved.selectedWritingBlockId)?.id
@@ -1838,21 +1867,21 @@ export default function App() {
           view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
           problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
         };
-        const saveResponse = await fetch(PROJECT_STATE_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId: project.projectId, state }),
-        });
-        const saveData = await saveResponse.json().catch(() => ({}));
-        if (!saveResponse.ok) throw new Error(saveData.error || "Le projet n'a pas pu être sauvegardé avant l'association au compte.");
-
         const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet, paid: false }),
         });
         const linkData = await readApiResponse(linkResponse);
-        if (!linkData.success) throw new Error("Le projet n'a pas pu être associé au compte client.");
+        if (!linkData.success) throw new Error("Association du projet au compte impossible.");
+
+        const saveResponse = await fetch(PROJECT_STATE_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId: project.projectId, token: session.token, state }),
+        });
+        const saveData = await saveResponse.json().catch(() => ({}));
+        if (!saveResponse.ok) throw new Error(saveData.error || "Sauvegarde du projet dans votre compte impossible.");
       }
 
       pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : String(project.sujet || "").trim() ? "Connexion réussie. Votre projet est associé à votre compte." : "Connexion réussie. Chargement de votre espace client.");
@@ -1915,7 +1944,7 @@ export default function App() {
       const response = await fetch(`${API_URL}?action=${method === "paypal" ? "create-paypal-order" : "create-mobile-money"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true) }),
+        body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true), clientToken: clientSession.token }),
       });
       const data = await readApiResponse(response);
       if (!data.url) throw new Error("Aucune URL de paiement n’a été retournée.");
@@ -2190,8 +2219,9 @@ export default function App() {
 
     if (block.status === "generating") return;
     if (!ownerRoute && !(window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) {
-      const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
-      const completedWords = completedBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
+      const blockIndex = blocks.findIndex((item) => item.id === blockId);
+      const precedingBlocks = blocks.slice(0, Math.max(0, blockIndex)).filter((item) => item.status === "done" && item.content.trim());
+      const completedWords = precedingBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
       if (completedWords >= 2500) {
         // Une fois les 2 500 mots atteints, tout nouveau bloc ouvre l’aperçu verrouillé.
         setSelectedWritingBlockId(blockId);
@@ -2208,10 +2238,10 @@ export default function App() {
       setActiveBlockId(blockId);
       setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "generating", error: undefined } : item));
       try {
-        const preceding = completedBlocks.map((item, index) => ({
+        const preceding = precedingBlocks.map((item) => ({
           title: item.title,
-          // Conserver tout l'historique des titres ; texte complet pour les trois derniers blocs.
-          content: index >= completedBlocks.length - 3 ? item.content : String(item.content || "").slice(0, 1200),
+          content: item.content,
+          structure: item.structure || [],
           sources: item.sources || [],
         }));
         const response = await fetchWithTimeout(BLOCK_API, {
@@ -2227,7 +2257,7 @@ export default function App() {
             kind: block.kind,
             targetWords: Math.min(block.expectedWords || 900, 1000, 2500 - completedWords),
             preceding,
-            previewBlocks: completedBlocks.map((item) => ({ id: item.id, title: item.title, content: item.content })),
+            previewBlocks: precedingBlocks.map((item) => ({ id: item.id, title: item.title, content: item.content })),
             previewMode: true,
             ownerMode: false,
           }),
@@ -2236,7 +2266,7 @@ export default function App() {
         const content = String(data.content || data.block?.content || data.text || "").trim();
         if (!content) throw new Error("Le serveur n’a retourné aucun contenu pour ce bloc.");
         const remainingWords = Math.max(0, 2500 - completedWords);
-        const limitedContent = content.split(/\s+/u).filter(Boolean).slice(0, Math.min(1000, remainingWords)).join(" ");
+        const limitedContent = truncateWordsPreservingLayout(content, Math.min(1000, remainingWords));
         const finalCount = countWords(limitedContent);
         setBlocks((current) => current.map((item) => item.id === blockId ? {
           ...item, ...data, id: item.id, title: item.title, kind: item.kind, structure: item.structure,
@@ -2265,11 +2295,12 @@ export default function App() {
     ));
 
     try {
-      const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
-      const preceding = completedBlocks.map((item, index) => ({
+      const blockIndex = blocks.findIndex((item) => item.id === blockId);
+      const precedingBlocks = blocks.slice(0, Math.max(0, blockIndex)).filter((item) => item.status === "done" && item.content.trim());
+      const preceding = precedingBlocks.map((item) => ({
         title: item.title,
-        // L'historique complet des titres évite de répéter les unités déjà traitées.
-        content: index >= completedBlocks.length - 3 ? item.content : String(item.content || "").slice(0, 1200),
+        content: item.content,
+        structure: item.structure || [],
         sources: item.sources || [],
       }));
 
@@ -2351,6 +2382,11 @@ export default function App() {
 
   function renderAcademicText(raw: string, previewMode = false, blockStructure: string[] = [], blockKind = "") {
     const cleanLine = (value: string) => value
+      // Décoder d'abord les entités : une balise encodée ne doit jamais réapparaître après nettoyage.
+      .replace(/&(?:lt|gt|amp|quot|apos);/giu, (entity) => ({ "&lt;": "<", "&gt;": ">", "&amp;": "&", "&quot;": '"', "&apos;": "'" }[entity.toLowerCase()] || entity))
+      // Retirer les enveloppes et marqueurs techniques sans supprimer le texte qu'ils entourent.
+      .replace(/<\/?(?:cite|citation|source|span|strong|em|b|i|p|div|br|sup|sub|ref|footnote)\b[^>]*>/giu, "")
+      .replace(/\[(?:cite|citation|source|ref)[^\]]*\]/giu, "")
       .replace(/\[\s*(?:https?:\/\/)?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*\]\(https?:\/\/[^)]+\)/giu, "")
       .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/giu, "$1")
       .replace(/https?:\/\/\S+/giu, "")
@@ -2400,29 +2436,70 @@ export default function App() {
       .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "\n\n")
       .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
       .trim();
-    const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
+    let rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
       const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-      if (lines.length > 1) return lines;
+      if (lines.length > 1) {
+        const headingLines = lines.filter((line) => /^(?:#{1,6}\s+|(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*)\b)/iu.test(line));
+        if (headingLines.length) {
+          const output: string[] = [];
+          let paragraphLines: string[] = [];
+          const flushParagraph = () => {
+            if (paragraphLines.length) output.push(paragraphLines.join(" ").replace(/\s+/gu, " ").trim());
+            paragraphLines = [];
+          };
+          for (const currentLine of lines) {
+            if (/^(?:#{1,6}\s+|(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*)\b)/iu.test(currentLine)) {
+              flushParagraph();
+              output.push(currentLine);
+            } else {
+              paragraphLines.push(currentLine);
+            }
+          }
+          flushParagraph();
+          return output;
+        }
+        return [lines.join(" ").replace(/\s+/gu, " ").trim()];
+      }
       const line = lines[0] || "";
       // Sépare une phrase de prose lorsqu'un titre identifié est suivi sur la même ligne.
       const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
       if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
       if (!line) return [];
-      // Si le moteur a renvoyé tout un bloc sur une seule ligne, rétablit des paragraphes lisibles sans réécrire le texte.
-      const sentences = line.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-ÞÀ-ÿ«“])/u).filter(Boolean);
-      // Ne pas fabriquer des paragraphes d'une ou deux phrases : regrouper le texte aplati par unités de 4 à 6 phrases.
-      if (sentences.length >= 4) {
-        const paragraphs: string[] = [];
-        // Rétablir des paragraphes académiques lisibles lorsque le moteur a aplati l'introduction.
-        // Trois phrases au maximum par paragraphe évitent un unique bloc massif sans créer une phrase par ligne.
-        const groupSize = sentences.length >= 10 ? 3 : 2;
-        for (let i = 0; i < sentences.length; i += groupSize) {
-          paragraphs.push(sentences.slice(i, i + groupSize).join(" ").trim());
-        }
-        return paragraphs;
-      }
+      // Ne jamais inventer des limites de paragraphes à partir d'un quota de phrases.
+      // Si le moteur n'a pas fourni de séparation sémantique, préserver le texte intact.
       return [line];
     });
+    // Rattacher les fragments orphelins aux titres connus du plan validé.
+    // Exemples : « INTRODUCTION » + « générale » ; titre de partie + dernier mot coupé.
+    const repairedBlocks: string[] = [];
+    for (let i = 0; i < rawBlocks.length; i++) {
+      const current = String(rawBlocks[i] || "").trim();
+      const next = String(rawBlocks[i + 1] || "").trim();
+      if (!current || !next) { repairedBlocks.push(current); continue; }
+      const structural = current.match(/^(INTRODUCTION|CONCLUSION|PARTIE\s+[IVXLCDM0-9]+\s*[:.)-]?|CHAPITRE\s+\d+\s*[:.)-]?|SECTION\s+\d+(?:\.\d+)*\s*[:.)-]?)\s*(.*)$/iu);
+      if (structural) {
+        const prefix = structural[1];
+        const titlePart = String(structural[2] || "").trim();
+        const candidates = planTitleValues.filter((title) => {
+          const normalized = title.toLocaleLowerCase("fr");
+          const combined = (titlePart + " " + next).replace(/\s+/gu, " ").trim().toLocaleLowerCase("fr");
+          return normalized.startsWith(combined) || combined.startsWith(normalized);
+        });
+        const introContinuation = /^(INTRODUCTION|CONCLUSION)$/iu.test(structural[1]) && /^(générale)$/iu.test(next);
+        if (introContinuation) {
+          repairedBlocks.push(structural[1].toLocaleUpperCase("fr") + " GÉNÉRALE");
+          i++;
+          continue;
+        }
+        if (candidates.length) {
+          repairedBlocks.push(prefix + " " + candidates.sort((a,b)=>b.length-a.length)[0]);
+          i++;
+          continue;
+        }
+      }
+      repairedBlocks.push(current);
+    }
+    rawBlocks = repairedBlocks;
     return rawBlocks.map((rawBlock, index) => {
       const line = cleanLine(rawBlock.replace(/^\s*[-*]\s+/u, ""));
       if (!line) return null;
@@ -2439,7 +2516,7 @@ export default function App() {
         const numberDepth = (headingText.match(/\./gu) || []).length;
         const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\b/iu.test(headingText) ? 1 : /^CHAPITRE\b/iu.test(headingText) ? 2 : numberedHeading ? Math.min(5, numberDepth + 2) : 3;
         const className = level <= 1
-          ? "mb-5 mt-9 text-center text-lg font-bold uppercase tracking-wide text-[#172554]"
+          ? "mb-5 mt-9 text-left text-lg font-bold uppercase tracking-wide text-[#172554]"
           : level === 2
             ? "mb-4 mt-8 text-base font-bold uppercase text-[#172554]"
             : numberedHeading
@@ -2448,7 +2525,7 @@ export default function App() {
         return (
           <React.Fragment key={index}>
             <h4 className={className}>{displayHeading}</h4>
-            {splitHeading?.subtitle && <h5 className="mb-4 mt-2 text-sm font-semibold leading-6 text-[#444]">{splitHeading.subtitle}</h5>}
+            {splitHeading?.subtitle && <p className="mb-6 mt-3 text-left font-normal leading-[1.7] text-[#171717]" style={{ textIndent: "1.1cm" }}>{splitHeading.subtitle}</p>}
           </React.Fragment>
         );
       }
@@ -3327,9 +3404,9 @@ export default function App() {
                       <article
                         key={block.id}
                         id={`writing-block-${block.id}`}
-                        className="mx-auto max-w-[900px] overflow-hidden border border-[#D9D9D9] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+                        className="mx-auto max-w-[900px] overflow-hidden border-0 bg-transparent shadow-none"
                       >
-                        <div className="border-b border-[#E5E5E5] px-10 py-6 md:px-16">
+                        <div className="border-b border-[#D8D8D8] bg-white px-8 py-5 md:px-16">
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#777]">
                               Bloc {index + 1}
@@ -3361,7 +3438,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="min-h-[720px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
+                        <div className="mx-auto min-h-[1123px] w-full max-w-[794px] border border-[#E2E2E2] bg-white px-8 py-12 font-['Times_New_Roman'] text-[16px] leading-[1.7] text-[#111] shadow-[0_3px_14px_rgba(0,0,0,0.06)] sm:px-12 sm:py-16 md:px-[88px]">
                           {block.error && (
                             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
                               <strong>Erreur de rédaction :</strong> {block.error}
@@ -3696,7 +3773,23 @@ export default function App() {
             <div className="rounded-3xl bg-[#172554] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div><div className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-2 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientNameDisplay || "Mon compte"}</p></div>
-                <button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientProjectFlow(false); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); setView("home"); }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
+                <button onClick={() => {
+                  window.localStorage.removeItem("trimemo_client_session");
+                  setClientProjectFlow(false);
+                  setClientEmailDisplay("");
+                  setClientProjects([]);
+                  setClientRevisions([]);
+                  setProject((current) => ({ ...current, projectId: createProjectId(), sujet: "", files: [] }));
+                  setFormula(null);
+                  setPreview(null);
+                  setEstimate(null);
+                  setPremium(null);
+                  setSelectedProblematic(null);
+                  setSelectedPlan(null);
+                  setBlocks([]);
+                  setSelectedWritingBlockId(null);
+                  setView("home");
+                }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -4108,7 +4201,7 @@ export default function App() {
                     </div>
                   </article>
                 ))}
-                <div className="mt-10 border-t pt-4 text-center text-xs italic text-[#555]">Fin de l’aperçu. Le paiement permet de poursuivre la rédaction au point d’arrêt.</div>
+                <div className="mt-10 border-t pt-4 text-center text-xs italic text-[#555]">Fin de l’aperçu. Après paiement, la rédaction continue dans ce même document à partir du dernier bloc enregistré.</div>
               </div>
             </section>
           )}
@@ -4117,7 +4210,7 @@ export default function App() {
                 <div className="text-center">
                   <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Poursuivre le document</div>
                   <h3 className="mt-2 font-playfair text-2xl sm:text-3xl">Votre aperçu est terminé</h3>
-                  <p className="mx-auto mt-3 max-w-[650px] font-inter text-sm leading-6 text-white/75">Le paiement débloque la suite de la rédaction au point d’arrêt, en conservant la problématique et le plan choisis.</p>
+                  <p className="mx-auto mt-3 max-w-[650px] font-inter text-sm leading-6 text-white/75">Le paiement permet de continuer le même document à partir du dernier bloc enregistré. Les 2 500 mots de l’aperçu sont conservés et comptabilisés dans le volume total du document.</p>
                   {estimate && (
                     <div className="mx-auto mt-5 max-w-[560px] rounded-2xl border border-white/15 bg-white/5 p-4 text-left">
                       <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#D4A23A]">Récapitulatif de l’analyse initiale</div>
