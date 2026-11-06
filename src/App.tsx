@@ -222,6 +222,20 @@ function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
 }
 
+// Limite un aperçu sans aplatir les paragraphes ni les titres Markdown.
+function truncateWordsPreservingLayout(value: string, limit: number) {
+  let count = 0;
+  let ended = false;
+  return String(value || "").replace(/\S+/g, (token) => {
+    if (ended || count >= limit) {
+      ended = true;
+      return "";
+    }
+    count += 1;
+    return token;
+  }).replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 function wordsToPages(words: number) {
   return words / WORDS_PER_PAGE;
 }
@@ -2236,7 +2250,7 @@ export default function App() {
         const content = String(data.content || data.block?.content || data.text || "").trim();
         if (!content) throw new Error("Le serveur n’a retourné aucun contenu pour ce bloc.");
         const remainingWords = Math.max(0, 2500 - completedWords);
-        const limitedContent = content.split(/\s+/u).filter(Boolean).slice(0, Math.min(1000, remainingWords)).join(" ");
+        const limitedContent = truncateWordsPreservingLayout(content, Math.min(1000, remainingWords));
         const finalCount = countWords(limitedContent);
         setBlocks((current) => current.map((item) => item.id === blockId ? {
           ...item, ...data, id: item.id, title: item.title, kind: item.kind, structure: item.structure,
