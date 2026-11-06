@@ -2376,10 +2376,11 @@ export default function App() {
 
   function renderAcademicText(raw: string, previewMode = false, blockStructure: string[] = [], blockKind = "") {
     const cleanLine = (value: string) => value
-      // Retirer les enveloppes HTML/XML et marqueurs techniques sans supprimer le texte qu'ils entourent.
+      // Décoder d'abord les entités : une balise encodée ne doit jamais réapparaître après nettoyage.
+      .replace(/&(?:lt|gt|amp|quot|apos);/giu, (entity) => ({ "&lt;": "<", "&gt;": ">", "&amp;": "&", "&quot;": '"', "&apos;": "'" }[entity.toLowerCase()] || entity))
+      // Retirer les enveloppes et marqueurs techniques sans supprimer le texte qu'ils entourent.
       .replace(/<\/?(?:cite|citation|source|span|strong|em|b|i|p|div|br|sup|sub|ref|footnote)\b[^>]*>/giu, "")
       .replace(/\[(?:cite|citation|source|ref)[^\]]*\]/giu, "")
-      .replace(/&(?:lt|gt|amp|quot|apos);/giu, (entity) => ({ "&lt;": "<", "&gt;": ">", "&amp;": "&", "&quot;": '"', "&apos;": "'" }[entity.toLowerCase()] || entity))
       .replace(/\[\s*(?:https?:\/\/)?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*\]\(https?:\/\/[^)]+\)/giu, "")
       .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/giu, "$1")
       .replace(/https?:\/\/\S+/giu, "")
@@ -2429,7 +2430,7 @@ export default function App() {
       .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "\n\n")
       .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
       .trim();
-    const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
+    let rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
       const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
       if (lines.length > 1) {
         const headingLines = lines.filter((line) => /^(?:#{1,6}\s+|(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*)\b)/iu.test(line));
@@ -2473,6 +2474,37 @@ export default function App() {
       }
       return [line];
     });
+    // Rattacher les fragments orphelins aux titres connus du plan validé.
+    // Exemples : « INTRODUCTION » + « générale » ; titre de partie + dernier mot coupé.
+    const repairedBlocks: string[] = [];
+    for (let i = 0; i < rawBlocks.length; i++) {
+      const current = String(rawBlocks[i] || "").trim();
+      const next = String(rawBlocks[i + 1] || "").trim();
+      if (!current || !next) { repairedBlocks.push(current); continue; }
+      const structural = current.match(/^(INTRODUCTION|CONCLUSION|PARTIE\s+[IVXLCDM0-9]+\s*[:.)-]?|CHAPITRE\s+\d+\s*[:.)-]?|SECTION\s+\d+(?:\.\d+)*\s*[:.)-]?)\s*(.*)$/iu);
+      if (structural) {
+        const prefix = structural[1] + (structural[2] || "");
+        const titlePart = String(structural[3] || "").trim();
+        const candidates = planTitleValues.filter((title) => {
+          const normalized = title.toLocaleLowerCase("fr");
+          const combined = (titlePart + " " + next).replace(/\s+/gu, " ").trim().toLocaleLowerCase("fr");
+          return normalized.startsWith(combined) || combined.startsWith(normalized);
+        });
+        const introContinuation = /^(INTRODUCTION|CONCLUSION)$/iu.test(structural[1]) && /^(générale)$/iu.test(next);
+        if (introContinuation) {
+          repairedBlocks.push(structural[1].toLocaleUpperCase("fr") + " GÉNÉRALE");
+          i++;
+          continue;
+        }
+        if (candidates.length) {
+          repairedBlocks.push(prefix + " " + candidates.sort((a,b)=>b.length-a.length)[0]);
+          i++;
+          continue;
+        }
+      }
+      repairedBlocks.push(current);
+    }
+    rawBlocks = repairedBlocks;
     return rawBlocks.map((rawBlock, index) => {
       const line = cleanLine(rawBlock.replace(/^\s*[-*]\s+/u, ""));
       if (!line) return null;
