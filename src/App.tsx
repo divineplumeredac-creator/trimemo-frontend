@@ -879,14 +879,12 @@ export default function App() {
           throw new Error("Paiement confirmé, mais le déblocage premium sécurisé n’a pas été délivré.");
         }
         window.sessionStorage.setItem("trimemo_premium_token", String(data.premium_token));
-        const saved = data.project || loadPendingProject(stateStorageKey) || null;
+        const saved = data.project || null;
         if (saved?.projectId) window.sessionStorage.setItem("trimemo_premium_project_id", String(saved.projectId));
         if (!saved) throw new Error("Le paiement est confirmé, mais les données du projet n'ont pas pu être restaurées. Contactez le support avec la référence de commande.");
         if (saved) {
           setProject(saved);
-          let storedPreview: Preview | null = data.preview || null;
-          if (!storedPreview) { try { storedPreview = JSON.parse(window.sessionStorage.getItem("trimemo_preview_pending") || window.localStorage.getItem("trimemo_preview_pending") || "null"); } catch {} }
-          if (!storedPreview && saved.paidPreviewSnapshot) storedPreview = saved.paidPreviewSnapshot;
+          const storedPreview: Preview | null = data.preview || saved.paidPreviewSnapshot || null;
 
           if (storedPreview?.problematic?.question && storedPreview?.plan?.parts?.length && storedPreview?.chapterOne?.content) {
             const problematic = normalizeProblematic(storedPreview.problematic, 0);
@@ -922,35 +920,15 @@ export default function App() {
             const remainingBlocks = prepared.filter((block) =>
               block.kind !== "introduction" && (!firstChapterPrefix || !block.id.startsWith(firstChapterPrefix))
             );
-            const nextBlocks = introductionBlock ? [introductionBlock, seededChapter, ...remainingBlocks] : [seededChapter, ...remainingBlocks];
-            // Si le client revient du paiement, restaurer les blocs et leur contenu depuis la session
-            // au lieu de remplacer sa progression par des blocs vierges.
-            let savedBlocks: Block[] = [];
-            let savedSelectedBlockId = "";
-            try {
-              const rawBlocks = window.sessionStorage.getItem("trimemo_blocks_pending")
-                || (() => {
-                  try {
-                    const savedState = JSON.parse(window.localStorage.getItem(stateStorageKey) || "null");
-                    return Array.isArray(savedState?.blocks) ? JSON.stringify(savedState.blocks) : null;
-                  } catch { return null; }
-                })();
-              const parsedBlocks = rawBlocks ? JSON.parse(rawBlocks) : null;
-              if (Array.isArray(parsedBlocks) && parsedBlocks.length && parsedBlocks.every((item) => item && typeof item.id === "string" && typeof item.content === "string")) savedBlocks = parsedBlocks;
-              savedSelectedBlockId = window.sessionStorage.getItem("trimemo_selected_block_pending") || "";
-            } catch {}
-            // Restaurer d'abord chaque bloc déjà enregistré, dans son ordre initial.
-            // Compléter ensuite avec les blocs du plan qui n'existaient pas encore avant paiement.
-            // Le contenu de l'aperçu n'est jamais régénéré ni remplacé par un bloc vierge.
-            const restoredBlocks = savedBlocks.length
-              ? [
-                  ...savedBlocks.map((savedBlock) => {
-                    const plannedBlock = prepared.find((block) => block.id === savedBlock.id);
-                    return plannedBlock ? { ...plannedBlock, ...savedBlock, id: savedBlock.id } : savedBlock;
-                  }),
-                  ...prepared.filter((block) => !savedBlocks.some((savedBlock) => savedBlock.id === block.id)),
-                ]
-              : nextBlocks;
+            // Au retour PayPal, le snapshot vérifié côté serveur est l'unique source du contenu payé.
+            const restoredIntroduction = introductionBlock && storedPreview.introduction?.content
+              ? { ...introductionBlock, content: storedPreview.introduction.content, wordCount: countWords(storedPreview.introduction.content), status: "done" as const }
+              : introductionBlock;
+            const restoredBlocks = [
+              ...(restoredIntroduction ? [restoredIntroduction] : []),
+              seededChapter,
+              ...remainingBlocks,
+            ];
             setBlocks(restoredBlocks);
             const nextPendingBlock = restoredBlocks.find((block) => block.status !== "done" || !block.content.trim());
             const selectedBlock = nextPendingBlock?.id
