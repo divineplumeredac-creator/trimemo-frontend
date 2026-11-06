@@ -4426,7 +4426,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="min-h-[720px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
+                        <div className="min-h-[720px] bg-white px-10 py-14 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#111] md:px-[2.5cm] md:py-[2.5cm]">
                           {block.error && (
                             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
                               <strong>Erreur de rédaction :</strong> {block.error}
@@ -4434,7 +4434,7 @@ export default function App() {
                           )}
 
                           {block.content ? (
-                            <div>{renderAcademicText(block.content)}</div>
+                            <div>{renderAcademicText(block.content, false, block.structure, block.kind)}</div>
                           ) : (
                             <div className="flex min-h-[420px] items-center justify-center text-center">
                               <div>
