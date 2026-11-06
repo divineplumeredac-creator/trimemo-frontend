@@ -996,11 +996,24 @@ export default function App() {
         try {
           const clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
           if (clientSession?.token && saved?.projectId) {
-            await fetch(CLIENT_ACCOUNT_API, {
+            const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ action: "link", token: clientSession.token, projectId: saved.projectId, subject: saved.sujet || "Projet académique", paid: true }),
             });
+            const linkData = await readApiResponse(linkResponse);
+            if (!linkData.success) throw new Error("Le projet payé n'a pas pu être rattaché à votre compte client.");
+            // Enregistrer l'état restauré sous le propriétaire authentifié, jamais sous une clé globale.
+            let restoredState: any = null;
+            try { restoredState = JSON.parse(window.localStorage.getItem(stateStorageKey) || "null"); } catch {}
+            if (restoredState?.project?.projectId === saved.projectId) {
+              const saveResponse = await fetch(PROJECT_STATE_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ projectId: saved.projectId, token: clientSession.token, state: restoredState }),
+              });
+              if (!saveResponse.ok) throw new Error("Le paiement est confirmé, mais la sauvegarde sécurisée du projet doit être réessayée.");
+            }
           }
         } catch (accountLinkError) {
           console.error("[Trimémo] association du projet payé au compte client impossible", accountLinkError);
