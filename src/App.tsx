@@ -2204,8 +2204,9 @@ export default function App() {
 
     if (block.status === "generating") return;
     if (!ownerRoute && !(window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) {
-      const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
-      const completedWords = completedBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
+      const blockIndex = blocks.findIndex((item) => item.id === blockId);
+      const precedingBlocks = blocks.slice(0, Math.max(0, blockIndex)).filter((item) => item.status === "done" && item.content.trim());
+      const completedWords = precedingBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
       if (completedWords >= 2500) {
         // Une fois les 2 500 mots atteints, tout nouveau bloc ouvre l’aperçu verrouillé.
         setSelectedWritingBlockId(blockId);
@@ -2222,8 +2223,6 @@ export default function App() {
       setActiveBlockId(blockId);
       setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "generating", error: undefined } : item));
       try {
-        const blockIndex = blocks.findIndex((item) => item.id === blockId);
-        const precedingBlocks = blocks.slice(0, Math.max(0, blockIndex)).filter((item) => item.status === "done" && item.content.trim());
         const preceding = precedingBlocks.map((item) => ({
           title: item.title,
           content: item.content,
@@ -2243,7 +2242,7 @@ export default function App() {
             kind: block.kind,
             targetWords: Math.min(block.expectedWords || 900, 1000, 2500 - completedWords),
             preceding,
-            previewBlocks: completedBlocks.map((item) => ({ id: item.id, title: item.title, content: item.content })),
+            previewBlocks: precedingBlocks.map((item) => ({ id: item.id, title: item.title, content: item.content })),
             previewMode: true,
             ownerMode: false,
           }),
