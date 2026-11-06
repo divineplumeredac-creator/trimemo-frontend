@@ -2395,12 +2395,12 @@ export default function App() {
           ...(section.subsections || []).flatMap((sub) => [sub.title, ...(sub.internalTitles || []).map((item) => item.title)])
         ])
       ])
-    ]).map((title) => String(title || "").trim().replace(/^[#*\\s]+/u, "")).filter(Boolean);
+    ]).map((title) => String(title || "").trim().replace(/^[#*\s]+/u, "")).filter(Boolean);
     // Le plan du bloc contient parfois des sous-sections absentes du plan global.
-    const structureTitleValues = blockStructure.map((item) => String(item || "").trim().replace(/^[#*\\s]+/u, "")).filter(Boolean);
+    const structureTitleValues = blockStructure.map((item) => String(item || "").trim().replace(/^[#*\s]+/u, "")).filter(Boolean);
     const headingTitleValues = [...new Set([...structureTitleValues, ...planTitleValues])].sort((a, b) => b.length - a.length);
     const withoutHeadingNumber = (value: string) =>
-      value.replace(/^\\s*(?:(?:PARTIE|CHAPITRE|SECTION|SOUS-SECTION)\\s+[IVXLCDM0-9.]+|(?:\\d+\\.){1,5}\\d+)\\s*[:.)\\-–]?\\s*/iu, "").trim();
+      value.replace(/^\s*(?:(?:PARTIE|CHAPITRE|SECTION|SOUS-SECTION)\s+[IVXLCDM0-9.]+|(?:\\d+\\.){1,5}\\d+)\s*[:.)\\-–]?\s*/iu, "").trim();
     const planTitles = [...planTitleValues, ...structureTitleValues].map((title) => title.toLocaleLowerCase("fr"));
     const splitDuplicatedHeading = (value: string) => {
       const line = value.replace(/^#{1,6}\s*/u, "").replace(/[*_\x60]/gu, "").trim();
@@ -2457,9 +2457,10 @@ export default function App() {
           return title.length >= 8 && rest.toLocaleLowerCase("fr").startsWith(title.toLocaleLowerCase("fr"));
         });
         if (matchingTitle) {
-          const afterTitle = rest.slice(matchingTitle.length).trim().replace(/^[*_:.;\-–]+\s*/u, "");
-          if (afterTitle.length >= 12) return [numberedPrefix[1] + ". " + matchingTitle, afterTitle];
-          return [numberedPrefix[1] + ". " + matchingTitle];
+          const cleanTitle = withoutHeadingNumber(matchingTitle);
+          const afterTitle = rest.slice(cleanTitle.length).trim().replace(/^[*_:.;\-–]+\s*/u, "");
+          if (afterTitle.length >= 12) return [numberedPrefix[1] + ". " + cleanTitle, afterTitle];
+          return [numberedPrefix[1] + ". " + cleanTitle];
         }
       }
 
@@ -2477,7 +2478,13 @@ export default function App() {
       const normalizedHeading = headingText.toLocaleLowerCase("fr");
       const splitHeading = splitDuplicatedHeading(headingText);
       const displayHeading = splitHeading?.heading || headingText;
-      const numberedHeading = /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(headingText);
+      // Un numéro seul ne suffit pas à classer tout un paragraphe comme titre.
+      const numberedHeading = /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(headingText)
+        && headingTitleValues.some((candidate) => {
+          const title = withoutHeadingNumber(candidate).toLocaleLowerCase("fr");
+          const current = headingText.replace(/^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s*/u, "").toLocaleLowerCase("fr");
+          return current === title;
+        });
       const isAcademicHeading = /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)/iu.test(headingText);
       const plainHeading = planTitles.includes(normalizedHeading) || planTitles.some((title) => title && normalizedHeading === title.replace(/^\d+(?:\.\d+)*\s*/u, ""));
       if (markdownHeading || isAcademicHeading || numberedHeading || plainHeading) {
