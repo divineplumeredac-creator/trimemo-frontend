@@ -2400,7 +2400,7 @@ export default function App() {
     const structureTitleValues = blockStructure.map((item) => String(item || "").trim().replace(/^[#*\s]+/u, "")).filter(Boolean);
     const headingTitleValues = [...new Set([...structureTitleValues, ...planTitleValues])].sort((a, b) => b.length - a.length);
     const withoutHeadingNumber = (value: string) =>
-      value.replace(/^\s*(?:(?:PARTIE|CHAPITRE|SECTION|SOUS-SECTION)\s+[IVXLCDM0-9.]+|(?:\d+\\.){1,5}\d+)\s*[:.)\-–]?\s*/iu, "").trim();
+      value.replace(/^\s*(?:(?:PARTIE|CHAPITRE|SECTION|SOUS-SECTION)\s+[IVXLCDM0-9.]+|(?:\d+\.){1,5}\d+)\s*[:.)\-–]?\s*/iu, "").trim();
     const planTitles = [...planTitleValues, ...structureTitleValues].map((title) => title.toLocaleLowerCase("fr"));
     const splitDuplicatedHeading = (value: string) => {
       const line = value.replace(/^#{1,6}\s*/u, "").replace(/[*_\x60]/gu, "").trim();
