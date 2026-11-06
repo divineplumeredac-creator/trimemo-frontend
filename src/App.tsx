@@ -651,7 +651,18 @@ export default function App() {
     cloudHydrated.current = false;
     (async () => {
       try {
-        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`);
+        let cloudSession: any = null;
+        try { cloudSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+        if (!cloudSession?.token) {
+          pushToast("error", "Connectez-vous pour restaurer ce projet.");
+          cloudHydrated.current = true;
+          filesHydrated.current = true;
+          setView("account");
+          return;
+        }
+        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`, {
+          headers: { Authorization: "Bearer " + String(cloudSession.token) },
+        });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Impossible de récupérer le projet distant.");
         if (data.found && data.state) {
@@ -696,7 +707,11 @@ export default function App() {
 
   // Synchronisation serveur de l'état complet du projet. Les fichiers sont gérés séparément.
   useEffect(() => {
-    if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid)) return;
+    let cloudSession: any = null;
+    try { cloudSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    // Les invités conservent leur travail localement. La sauvegarde cloud exige un compte lié.
+    // L'espace propriétaire conserve sa persistance locale et ne passe pas par l'API client.
+    if (!cloudHydrated.current || !filesHydrated.current || ownerRoute || !cloudSession?.token) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
@@ -712,7 +727,7 @@ export default function App() {
       try {
         const response = await fetch(PROJECT_STATE_API, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + String(cloudSession.token) },
           body: JSON.stringify({ projectId: project.projectId, state }),
         });
         const data = await response.json().catch(() => ({}));
@@ -986,7 +1001,7 @@ export default function App() {
             await fetch(CLIENT_ACCOUNT_API, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "link", token: clientSession.token, projectId: saved.projectId, subject: saved.sujet || "Projet académique", paid: true }),
+              body: JSON.stringify({ action: "link", token: clientSession.token, projectId: saved.projectId, subject: saved.sujet || "Projet académique", orderId: id }),
             });
           }
         } catch (accountLinkError) {
@@ -1838,21 +1853,23 @@ export default function App() {
           view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
           problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
         };
-        const saveResponse = await fetch(PROJECT_STATE_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId: project.projectId, state }),
-        });
-        const saveData = await saveResponse.json().catch(() => ({}));
-        if (!saveResponse.ok) throw new Error(saveData.error || "Le projet n'a pas pu être sauvegardé avant l'association au compte.");
-
+        // Associer d'abord le projet au compte authentifié. L'API cloud exige ensuite
+        // une appartenance vérifiée pour autoriser la sauvegarde de son contenu.
         const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet, paid: false }),
+          body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet }),
         });
         const linkData = await readApiResponse(linkResponse);
         if (!linkData.success) throw new Error("Le projet n'a pas pu être associé au compte client.");
+
+        const saveResponse = await fetch(PROJECT_STATE_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.token },
+          body: JSON.stringify({ projectId: project.projectId, state }),
+        });
+        const saveData = await readApiResponse(saveResponse);
+        if (!saveData.success) throw new Error("Le projet n'a pas pu être sauvegardé dans votre compte.");
       }
 
       pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : String(project.sujet || "").trim() ? "Connexion réussie. Votre projet est associé à votre compte." : "Connexion réussie. Chargement de votre espace client.");
