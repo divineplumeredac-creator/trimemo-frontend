@@ -2222,10 +2222,12 @@ export default function App() {
       setActiveBlockId(blockId);
       setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "generating", error: undefined } : item));
       try {
-        const preceding = completedBlocks.map((item, index) => ({
+        const blockIndex = blocks.findIndex((item) => item.id === blockId);
+        const precedingBlocks = blocks.slice(0, Math.max(0, blockIndex)).filter((item) => item.status === "done" && item.content.trim());
+        const preceding = precedingBlocks.map((item) => ({
           title: item.title,
-          // Conserver tout l'historique des titres ; texte complet pour les trois derniers blocs.
-          content: index >= completedBlocks.length - 3 ? item.content : String(item.content || "").slice(0, 1200),
+          content: item.content,
+          structure: item.structure || [],
           sources: item.sources || [],
         }));
         const response = await fetchWithTimeout(BLOCK_API, {
@@ -2279,11 +2281,12 @@ export default function App() {
     ));
 
     try {
-      const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
-      const preceding = completedBlocks.map((item, index) => ({
+      const blockIndex = blocks.findIndex((item) => item.id === blockId);
+      const precedingBlocks = blocks.slice(0, Math.max(0, blockIndex)).filter((item) => item.status === "done" && item.content.trim());
+      const preceding = precedingBlocks.map((item) => ({
         title: item.title,
-        // L'historique complet des titres évite de répéter les unités déjà traitées.
-        content: index >= completedBlocks.length - 3 ? item.content : String(item.content || "").slice(0, 1200),
+        content: item.content,
+        structure: item.structure || [],
         sources: item.sources || [],
       }));
 
