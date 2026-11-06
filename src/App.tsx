@@ -2369,8 +2369,8 @@ export default function App() {
   function renderAcademicText(raw: string, previewMode = false, blockStructure: string[] = [], blockKind = "") {
     const cleanLine = (value: string) => value
       // Unwrap HTML links and preserve their readable label, never expose raw markup.
-      .replace(/<a\\b[^>]*>([\\s\\S]*?)<\\/a>/giu, "$1")
-      .replace(/<\\/?(?:p|div|span|strong|em|b|i|u|br|section|article|ul|ol|li|h[1-6])\\b[^>]*>/giu, " ")
+      .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/giu, "$1")
+      .replace(/<\/?(?:p|div|span|strong|em|b|i|u|br|section|article|ul|ol|li|h[1-6])\b[^>]*>/giu, " ")
       .replace(/<[^>]*>/gu, "")
       .replace(/&nbsp;/giu, " ")
       .replace(/&amp;/giu, "&")
@@ -2378,13 +2378,13 @@ export default function App() {
       .replace(/&gt;/giu, ">")
       .replace(/&quot;/giu, '"')
       .replace(/&#39;|&apos;/giu, "'")
-      .replace(/\\[\\s*(?:https?:\\/\\/)?(?:www\\.)?[a-z0-9.-]+\\.[a-z]{2,}\\s*\\]\\(https?:\\/\\/[^)]+\\)/giu, "")
-      .replace(/\\[([^\\]]+)\\]\\(https?:\\/\\/[^)]+\\)/giu, "$1")
-      .replace(/https?:\\/\\/\\S+/giu, "")
-      .replace(/\\bwww\\.[a-z0-9.-]+\\.[a-z]{2,}\\S*/giu, "")
-      .replace(/\\s*\\(\\s*\\)\\s*/gu, " ")
-      .replace(/[ \\t]{2,}/gu, " ")
-      .replace(/\\s+([,.;:!?])/gu, "$1")
+      .replace(/\[\s*(?:https?:\/\/)?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*\]\(https?:\/\/[^)]+\)/giu, "")
+      .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/giu, "$1")
+      .replace(/https?:\/\/\S+/giu, "")
+      .replace(/\bwww\.[a-z0-9.-]+\.[a-z]{2,}\S*/giu, "")
+      .replace(/\s*\(\s*\)\s*/gu, " ")
+      .replace(/[ \t]{2,}/gu, " ")
+      .replace(/\s+([,.;:!?])/gu, "$1")
       .trim();
     const planTitleValues = (selectedPlan?.parts || []).flatMap((part) => [
       part.title,
@@ -2395,72 +2395,72 @@ export default function App() {
           ...(section.subsections || []).flatMap((sub) => [sub.title, ...(sub.internalTitles || []).map((item) => item.title)])
         ])
       ])
-    ]).map((title) => String(title || "").trim().replace(/^[#*\\s]+/u, "")).filter(Boolean);
+    ]).map((title) => String(title || "").trim().replace(/^[#*\s]+/u, "")).filter(Boolean);
     const planTitles = planTitleValues.map((title) => title.toLocaleLowerCase("fr"));
     const splitDuplicatedHeading = (value: string) => {
-      const line = value.replace(/^#{1,6}\\s*/u, "").replace(/[*_\\x60]/gu, "").trim();
-      const prefix = line.match(/^(CHAPITRE\\s+\\d+\\s*[:.\\-–]?\\s*|SECTION\\s+\\d+(?:\\.\\d+)*\\s*[:.\\-–]?\\s*|SOUS-SECTION\\s+\\d+(?:\\.\\d+)*\\s*[:.\\-–]?\\s*)/iu);
+      const line = value.replace(/^#{1,6}\s*/u, "").replace(/[*_\x60]/gu, "").trim();
+      const prefix = line.match(/^(CHAPITRE\s+\d+\s*[:.\-–]?\s*|SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*|SOUS-SECTION\s+\d+(?:\.\d+)*\s*[:.\-–]?\s*)/iu);
       if (!prefix) return null;
       const rest = line.slice(prefix[0].length).trim();
       const candidates = [...planTitleValues].sort((a, b) => b.length - a.length);
       const title = candidates.find((candidate) => rest.toLocaleLowerCase("fr").startsWith(candidate.toLocaleLowerCase("fr")));
       if (!title) return null;
-      const remainder = rest.slice(title.length).trim().replace(/^[:.\\-–+\\s]+/u, "");
+      const remainder = rest.slice(title.length).trim().replace(/^[:.\-–+\s]+/u, "");
       if (!remainder || remainder.length < 8) return null;
       return { heading: prefix[0] + title, subtitle: remainder };
     };
 
-    let source = String(raw || "").replace(/\\r\\n?/gu, "\\n");
+    let source = String(raw || "").replace(/\r\n?/gu, "\n");
     // Preserve paragraph boundaries while converting HTML paragraph boundaries to blank lines.
     source = source
-      .replace(/<\\/(?:p|div|section|article)>\\s*/giu, "\\n\\n")
-      .replace(/<br\\s*\\/?>/giu, "\\n")
-      .replace(/<a\\b[^>]*>([\\s\\S]*?)<\\/a>/giu, "$1")
+      .replace(/<\/(?:p|div|section|article)>\s*/giu, "\n\n")
+      .replace(/<br\s*\/?>/giu, "\n")
+      .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/giu, "$1")
       .replace(/<[^>]*>/gu, "")
       .replace(/&nbsp;/giu, " ")
-      .replace(/[ \\t]*\\n[ \\t]*/gu, "\\n");
+      .replace(/[ \t]*\n[ \t]*/gu, "\n");
 
     if (!previewMode && (blockKind === "chapter" || blockKind === "chapter_intro")) {
-      const structuralHeadings = blockStructure.filter((item) => /^(?:PARTIE\\s+[IVXLCDM0-9]+|CHAPITRE\\s+\\d+)\\s*[:.\\-–]?/iu.test(String(item || "").trim()));
-      const existingLines = source.split("\\n").map((line) => line.trim().replace(/^#{1,6}\\s*/, "").toLocaleLowerCase("fr"));
+      const structuralHeadings = blockStructure.filter((item) => /^(?:PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+)\s*[:.\-–]?/iu.test(String(item || "").trim()));
+      const existingLines = source.split("\n").map((line) => line.trim().replace(/^#{1,6}\s*/, "").toLocaleLowerCase("fr"));
       const missingHeadings = structuralHeadings.filter((item) => !existingLines.includes(String(item).trim().toLocaleLowerCase("fr")));
-      if (missingHeadings.length) source = missingHeadings.map((item) => "## " + item).join("\\n\\n") + "\\n\\n" + source;
+      if (missingHeadings.length) source = missingHeadings.map((item) => "## " + item).join("\n\n") + "\n\n" + source;
     }
 
     source = source
-      .replace(/[ \\t]*(#{1,6}\\s+)/gu, "\\n\\n$1")
-      .replace(/[ \\t]+(?=(?:\\d+\\.){2,5}\\d+\\s*[:.)\\-–]?\\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "\\n\\n")
-      .replace(/[ \\t]*(\\*\\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\\s+[IVXLCDM0-9]+|CHAPITRE\\s+\\d+|SECTION\\s+\\d+(?:\\.\\d+)*|SOUS-SECTION\\s+\\d+(?:\\.\\d+)*))/giu, "\\n\\n$1")
-      .replace(/\\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\\s+[IVXLCDM0-9]+\\b|CHAPITRE\\s+\\d+\\b|SECTION\\s+\\d+(?:\\.\\d+)*\\b|SOUS-SECTION\\s+\\d+(?:\\.\\d+)*\\b)\\s*[:.\\-–]?\\s)/giu, "\\n\\n")
-      .replace(/\\n[ \\t]*\\n(?:[ \\t]*\\n)+/gu, "\\n\\n")
+      .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
+      .replace(/[ \t]+(?=(?:\d+\.){2,5}\d+\s*[:.)\-–]?\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "\n\n")
+      .replace(/[ \t]*(\*\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "\n\n$1")
+      .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "\n\n")
+      .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
       .trim();
 
     // A single newline is a soft line break, not a paragraph boundary.
     // Only blank lines create new paragraphs. Never split prose by sentence count.
-    const rawBlocks = source.split(/\\n[ \\t]*\\n/gu).flatMap((block) => {
-      const lines = block.split("\\n").map((line) => line.trim()).filter(Boolean);
+    const rawBlocks = source.split(/\n[ \t]*\n/gu).flatMap((block) => {
+      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
       if (!lines.length) return [];
-      const joined = lines.join(" ").replace(/[ \\t]{2,}/gu, " ").trim();
-      const match = joined.match(/^(#{1,6}\\s*)?((?:\\*\\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\\s+[IVXLCDM0-9]+\\b[^.!?\\n]{0,180}|CHAPITRE\\s+\\d+\\b[^.!?\\n]{0,180}|SECTION\\s+\\d+(?:\\.\\d+)*\\b[^.!?\\n]{0,180}|SOUS-SECTION\\s+\\d+(?:\\.\\d+)*\\b[^.!?\\n]{0,180})(?:\\*\\*)?)(?:\\s*[:.\\-–]?\\s+)([A-ZÀ-ÖØ-Þ][\\s\\S]+)$/iu);
+      const joined = lines.join(" ").replace(/[ \t]{2,}/gu, " ").trim();
+      const match = joined.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
       if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
       return [joined];
     });
 
     return rawBlocks.map((rawBlock, index) => {
-      const line = cleanLine(rawBlock.replace(/^\\s*[-*]\\s+/u, ""));
+      const line = cleanLine(rawBlock.replace(/^\s*[-*]\s+/u, ""));
       if (!line) return null;
-      const markdownHeading = line.match(/^(#{1,6})\\s+(.+)$/u);
+      const markdownHeading = line.match(/^(#{1,6})\s+(.+)$/u);
       const headingText = (markdownHeading ? markdownHeading[2] : line)
-        .replace(/[*_\\x60]/gu, "").replace(/\\s+/gu, " ").trim();
+        .replace(/[*_\x60]/gu, "").replace(/\s+/gu, " ").trim();
       const normalizedHeading = headingText.toLocaleLowerCase("fr");
       const splitHeading = splitDuplicatedHeading(headingText);
       const displayHeading = splitHeading?.heading || headingText;
-      const numberedHeading = /^(?:\\d+\\.){1,5}\\d+\\s*[:.)\\-–]?\\s+\\S.+$/u.test(headingText);
-      const isAcademicHeading = /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\\s+[IVXLCDM0-9]+\\b|CHAPITRE\\s+\\d+\\b|SECTION\\s+\\d+(?:\\.\\d+)*\\b|SOUS-SECTION\\s+\\d+(?:\\.\\d+)*\\b)/iu.test(headingText);
-      const plainHeading = planTitles.includes(normalizedHeading) || planTitles.some((title) => title && normalizedHeading === title.replace(/^\\d+(?:\\.\\d+)*\\s*/u, ""));
+      const numberedHeading = /^(?:\d+\.){1,5}\d+\s*[:.)\-–]?\s+\S.+$/u.test(headingText);
+      const isAcademicHeading = /^(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)/iu.test(headingText);
+      const plainHeading = planTitles.includes(normalizedHeading) || planTitles.some((title) => title && normalizedHeading === title.replace(/^\d+(?:\.\d+)*\s*/u, ""));
       if (markdownHeading || isAcademicHeading || numberedHeading || plainHeading) {
-        const numberDepth = (headingText.match(/\\./gu) || []).length;
-        const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\\b/iu.test(headingText) ? 1 : /^CHAPITRE\\b/iu.test(headingText) ? 2 : numberedHeading ? Math.min(5, numberDepth + 2) : 3;
+        const numberDepth = (headingText.match(/\./gu) || []).length;
+        const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\b/iu.test(headingText) ? 1 : /^CHAPITRE\b/iu.test(headingText) ? 2 : numberedHeading ? Math.min(5, numberDepth + 2) : 3;
         const className = level <= 1
           ? "mb-5 mt-9 text-center text-lg font-bold uppercase tracking-wide text-[#172554]"
           : level === 2
@@ -2476,9 +2476,9 @@ export default function App() {
         );
       }
       const paragraph = line
-        .replace(/\\*\\*(.*?)\\*\\*/gu, "$1")
-        .replace(/(?<!\\*)\\*([^*]+)\\*(?!\\*)/gu, "$1")
-        .replace(/^#{1,6}\\s*/u, "")
+        .replace(/\*\*(.*?)\*\*/gu, "$1")
+        .replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1")
+        .replace(/^#{1,6}\s*/u, "")
         .trim();
       return <p key={index} className={previewMode ? "mb-4 text-justify font-normal" : "mb-4 text-justify font-normal"} style={{ textIndent: "1.1cm", lineHeight: 1.65, whiteSpace: "normal", overflowWrap: "anywhere" }}>{paragraph}</p>;
     }).filter(Boolean);
