@@ -2418,7 +2418,28 @@ export default function App() {
       .trim();
     const rawBlocks = source.split(/\n\s*\n/gu).flatMap((block) => {
       const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-      if (lines.length > 1) return lines;
+      if (lines.length > 1) {
+        const headingLines = lines.filter((line) => /^(?:#{1,6}\s+|(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*)\b)/iu.test(line));
+        if (headingLines.length) {
+          const output: string[] = [];
+          let paragraphLines: string[] = [];
+          const flushParagraph = () => {
+            if (paragraphLines.length) output.push(paragraphLines.join(" ").replace(/\s+/gu, " ").trim());
+            paragraphLines = [];
+          };
+          for (const currentLine of lines) {
+            if (/^(?:#{1,6}\s+|(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*)\b)/iu.test(currentLine)) {
+              flushParagraph();
+              output.push(currentLine);
+            } else {
+              paragraphLines.push(currentLine);
+            }
+          }
+          flushParagraph();
+          return output;
+        }
+        return [lines.join(" ").replace(/\s+/gu, " ").trim()];
+      }
       const line = lines[0] || "";
       // Sépare une phrase de prose lorsqu'un titre identifié est suivi sur la même ligne.
       const match = line.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
@@ -2455,7 +2476,7 @@ export default function App() {
         const numberDepth = (headingText.match(/\./gu) || []).length;
         const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\b/iu.test(headingText) ? 1 : /^CHAPITRE\b/iu.test(headingText) ? 2 : numberedHeading ? Math.min(5, numberDepth + 2) : 3;
         const className = level <= 1
-          ? "mb-5 mt-9 text-center text-lg font-bold uppercase tracking-wide text-[#172554]"
+          ? "mb-5 mt-9 text-left text-lg font-bold uppercase tracking-wide text-[#172554]"
           : level === 2
             ? "mb-4 mt-8 text-base font-bold uppercase text-[#172554]"
             : numberedHeading
@@ -2464,7 +2485,7 @@ export default function App() {
         return (
           <React.Fragment key={index}>
             <h4 className={className}>{displayHeading}</h4>
-            {splitHeading?.subtitle && <h5 className="mb-4 mt-2 text-sm font-semibold leading-6 text-[#444]">{splitHeading.subtitle}</h5>}
+            {splitHeading?.subtitle && <p className="mb-6 mt-3 text-left font-normal leading-[1.7] text-[#171717]" style={{ textIndent: "1.1cm" }}>{splitHeading.subtitle}</p>}
           </React.Fragment>
         );
       }
@@ -3377,7 +3398,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="min-h-[720px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
+                        <div className="mx-auto min-h-[1123px] w-full max-w-[794px] bg-white px-8 py-12 font-['Times_New_Roman'] text-[15px] leading-[1.7] text-[#111] sm:px-12 sm:py-16 md:px-[88px]">
                           {block.error && (
                             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
                               <strong>Erreur de rédaction :</strong> {block.error}
