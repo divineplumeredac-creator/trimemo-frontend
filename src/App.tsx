@@ -2483,8 +2483,8 @@ export default function App() {
       if (!current || !next) { repairedBlocks.push(current); continue; }
       const structural = current.match(/^(INTRODUCTION|CONCLUSION|PARTIE\s+[IVXLCDM0-9]+\s*[:.)-]?|CHAPITRE\s+\d+\s*[:.)-]?|SECTION\s+\d+(?:\.\d+)*\s*[:.)-]?)\s*(.*)$/iu);
       if (structural) {
-        const prefix = structural[1] + (structural[2] || "");
-        const titlePart = String(structural[3] || "").trim();
+        const prefix = structural[1];
+        const titlePart = String(structural[2] || "").trim();
         const candidates = planTitleValues.filter((title) => {
           const normalized = title.toLocaleLowerCase("fr");
           const combined = (titlePart + " " + next).replace(/\s+/gu, " ").trim().toLocaleLowerCase("fr");
