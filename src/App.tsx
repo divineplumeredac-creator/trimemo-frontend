@@ -679,7 +679,7 @@ export default function App() {
           if (saved.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
           if (saved.selectedPlan) setSelectedPlan(saved.selectedPlan);
           if (Array.isArray(saved.blocks)) setBlocks(saved.blocks);
-          // Un projet ouvert depuis le tableau de bord reprend toujours dans la rédaction.
+          // Un projet ouvert depuis le tableau de bord continue toujours dans l’espace de rédaction.
           setView("writing");
           setWritingTab("writing");
           if (saved.previewTab) setPreviewTab(saved.previewTab);
@@ -840,7 +840,7 @@ export default function App() {
     if (!payment || payment === "paypal_cancelled") {
       if (payment === "paypal_cancelled") {
         window.sessionStorage.removeItem("trimemo_pending_paypal_order");
-        pushToast("info", "Paiement annulé. Votre projet est conservé ; vous pouvez reprendre le paiement.");
+        pushToast("info", "Paiement annulé. Votre projet et son contenu sont conservés ; vous pourrez continuer le paiement.");
         window.history.replaceState({}, document.title, window.location.pathname);
       }
       return;
@@ -916,19 +916,28 @@ export default function App() {
             let savedBlocks: Block[] = [];
             let savedSelectedBlockId = "";
             try {
-              const rawBlocks = window.sessionStorage.getItem("trimemo_blocks_pending");
+              const rawBlocks = window.sessionStorage.getItem("trimemo_blocks_pending")
+                || (() => {
+                  try {
+                    const savedState = JSON.parse(window.localStorage.getItem(stateStorageKey) || "null");
+                    return Array.isArray(savedState?.blocks) ? JSON.stringify(savedState.blocks) : null;
+                  } catch { return null; }
+                })();
               const parsedBlocks = rawBlocks ? JSON.parse(rawBlocks) : null;
               if (Array.isArray(parsedBlocks) && parsedBlocks.length && parsedBlocks.every((item) => item && typeof item.id === "string" && typeof item.content === "string")) savedBlocks = parsedBlocks;
               savedSelectedBlockId = window.sessionStorage.getItem("trimemo_selected_block_pending") || "";
             } catch {}
-            // La liste des blocs sauvegardée avant le paiement est la source de vérité :
-            // elle contient les blocs déjà rédigés et le prochain bloc qui attend la rédaction.
-            // Ne pas remplacer le chapitre partiellement rédigé par un bloc synthétique d'aperçu.
+            // Restaurer d'abord chaque bloc déjà enregistré, dans son ordre initial.
+            // Compléter ensuite avec les blocs du plan qui n'existaient pas encore avant paiement.
+            // Le contenu de l'aperçu n'est jamais régénéré ni remplacé par un bloc vierge.
             const restoredBlocks = savedBlocks.length
-              ? prepared.map((block) => {
-                  const savedBlock = savedBlocks.find((item) => item.id === block.id);
-                  return savedBlock ? { ...block, ...savedBlock, id: block.id } : block;
-                })
+              ? [
+                  ...savedBlocks.map((savedBlock) => {
+                    const plannedBlock = prepared.find((block) => block.id === savedBlock.id);
+                    return plannedBlock ? { ...plannedBlock, ...savedBlock, id: savedBlock.id } : savedBlock;
+                  }),
+                  ...prepared.filter((block) => !savedBlocks.some((savedBlock) => savedBlock.id === block.id)),
+                ]
               : nextBlocks;
             setBlocks(restoredBlocks);
             const nextPendingBlock = restoredBlocks.find((block) => block.status !== "done" || !block.content.trim());
@@ -1769,7 +1778,7 @@ export default function App() {
       setPreviewTab(saved.previewTab || "problematic");
       setPremiumNav(saved.premiumNav || "writing");
       setPremiumSection(saved.premiumSection || "writing");
-      // Toujours reprendre au premier bloc incomplet. Un ancien identifiant sélectionné ne doit jamais ramener à l'introduction déjà rédigée.
+      // Toujours continuer au premier bloc incomplet. Un ancien identifiant sélectionné ne doit jamais ramener à l'introduction déjà rédigée.
       setSelectedWritingBlockId(
         saved.blocks?.find((block: Block) => block.status !== "done" || !String(block.content || "").trim())?.id
         || saved.blocks?.find((block: Block) => block.id === saved.selectedWritingBlockId)?.id
@@ -4149,7 +4158,7 @@ export default function App() {
                     </div>
                   </article>
                 ))}
-                <div className="mt-10 border-t pt-4 text-center text-xs italic text-[#555]">Fin de l’aperçu. Le paiement permet de poursuivre la rédaction au point d’arrêt.</div>
+                <div className="mt-10 border-t pt-4 text-center text-xs italic text-[#555]">Fin de l’aperçu. Après paiement, la rédaction continue dans ce même document à partir du dernier bloc enregistré.</div>
               </div>
             </section>
           )}
