@@ -222,6 +222,16 @@ function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
 }
 
+function trimToWordsPreservingLayout(value: string, limit: number) {
+  const source = String(value || "");
+  if (limit <= 0) return "";
+  const words = [...source.matchAll(/\S+/gu)];
+  if (words.length <= limit) return source;
+  const lastWord = words[limit - 1];
+  const end = (lastWord.index || 0) + lastWord[0].length;
+  return source.slice(0, end).trimEnd();
+}
+
 function wordsToPages(words: number) {
   return words / WORDS_PER_PAGE;
 }
@@ -233,9 +243,20 @@ function dataUrlBytes(value: string) {
 }
 
 function createProjectId() {
-  try { return crypto.randomUUID(); } catch {
-    return `trm-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  } catch {}
+  const bytes = new Uint8Array(16);
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") crypto.getRandomValues(bytes);
+    else for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  } catch {
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
   }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 function maxPagesForFormula(_formula: FormulaId) {
@@ -551,6 +572,8 @@ export default function App() {
   const cloudHydrated = useRef(false);
   const cloudLoadStarted = useRef(false);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cloudSaveQueue = useRef<Promise<void>>(Promise.resolve());
+  const [cloudSaveStatus, setCloudSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const totalDoneWords = useMemo(
     () => blocks.filter((b) => b.status === "done").reduce((sum, b) => sum + b.wordCount, 0),
@@ -711,11 +734,12 @@ export default function App() {
     try { cloudSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     // Les invités conservent leur travail localement. La sauvegarde cloud exige un compte lié.
     // L'espace propriétaire conserve sa persistance locale et ne passe pas par l'API client.
-    if (!cloudHydrated.current || !filesHydrated.current || ownerRoute || !cloudSession?.token) return;
+    if (!cloudHydrated.current || !filesHydrated.current || ownerRoute || !cloudSession?.token || !String(project.sujet || "").trim()) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
       const state = {
+        schemaVersion: 2,
         project: { ...persistedProject, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) },
         formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
         // Ne jamais sauvegarder l'écran du tableau de bord comme écran de reprise du mémoire.
@@ -724,19 +748,51 @@ export default function App() {
         premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments,
         planImprovementComments, problematicGenerationCount, planGenerationCount,
       };
-      try {
-        const response = await fetch(PROJECT_STATE_API, {
+      cloudSaveQueue.current = cloudSaveQueue.current.catch(() => {}).then(async () => {
+        setCloudSaveStatus("saving");
+        const linkWithToken = async (token: string) => fetch(CLIENT_ACCOUNT_API, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: "Bearer " + String(cloudSession.token) },
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "link", token, projectId: project.projectId, subject: project.sujet }),
+        });
+        const saveWithToken = async (token: string) => fetch(PROJECT_STATE_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
           body: JSON.stringify({ projectId: project.projectId, state }),
         });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data?.error || "Échec de la sauvegarde serveur.");
-        window.dispatchEvent(new CustomEvent("trimemo-cloud-save", { detail: { ok: true, savedAt: data.savedAt } }));
-      } catch (error) {
-        console.error("TRIMEMO_CLOUD_PROJECT_SAVE_FAILED", String(error));
-        window.dispatchEvent(new CustomEvent("trimemo-cloud-save", { detail: { ok: false } }));
-      }
+        try {
+          let currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+          let token = String(currentSession?.token || cloudSession.token);
+          const refreshToken = async () => {
+            if (!currentSession?.refreshToken) return false;
+            const refreshResponse = await fetch(CLIENT_ACCOUNT_API, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "refresh", refreshToken: currentSession.refreshToken }),
+            });
+            const refreshed = await refreshResponse.json().catch(() => ({}));
+            if (!refreshResponse.ok || !refreshed.token) return false;
+            currentSession = { ...currentSession, token: String(refreshed.token), refreshToken: String(refreshed.refresh_token || currentSession.refreshToken), expiresAt: refreshed.expires_at || null };
+            token = currentSession.token;
+            window.localStorage.setItem("trimemo_client_session", JSON.stringify(currentSession));
+            return true;
+          };
+          let linkResponse = await linkWithToken(token);
+          if (linkResponse.status === 401 && await refreshToken()) linkResponse = await linkWithToken(token);
+          const linkData = await linkResponse.json().catch(() => ({}));
+          if (!linkResponse.ok || !linkData.success) throw new Error(linkData?.error || "Le projet n’a pas pu être associé à votre compte.");
+
+          let response = await saveWithToken(token);
+          if (response.status === 401 && await refreshToken()) response = await saveWithToken(token);
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data?.error || "Échec de la sauvegarde serveur.");
+          setCloudSaveStatus("saved");
+          window.dispatchEvent(new CustomEvent("trimemo-cloud-save", { detail: { ok: true, savedAt: data.savedAt } }));
+        } catch (error) {
+          console.error("TRIMEMO_CLOUD_PROJECT_SAVE_FAILED", String(error));
+          setCloudSaveStatus("error");
+          window.dispatchEvent(new CustomEvent("trimemo-cloud-save", { detail: { ok: false } }));
+        }
+      });
     }, 900);
     return () => { if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current); };
   }, [ownerRoute, ownerSessionValid, project, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount]);
@@ -995,18 +1051,29 @@ export default function App() {
           }
         }
         // Rattacher le projet payé au compte client afin qu'il apparaisse dans le tableau de bord.
-        try {
-          const clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
-          if (clientSession?.token && saved?.projectId) {
-            await fetch(CLIENT_ACCOUNT_API, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "link", token: clientSession.token, projectId: saved.projectId, subject: saved.sujet || "Projet académique", orderId: id }),
-            });
-          }
-        } catch (accountLinkError) {
-          console.error("[Trimémo] association du projet payé au compte client impossible", accountLinkError);
+        let clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (!clientSession?.token || !saved?.projectId) {
+          throw new Error("Paiement confirmé. Connectez-vous à votre compte pour rattacher le mémoire et reprendre la rédaction.");
         }
+        const linkPaidProject = (token: string) => fetch(CLIENT_ACCOUNT_API, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "link", token, projectId: saved.projectId, subject: saved.sujet || "Projet académique", orderId: id }),
+        });
+        let linkResponse = await linkPaidProject(clientSession.token);
+        if (linkResponse.status === 401 && clientSession.refreshToken) {
+          const refreshResponse = await fetch(CLIENT_ACCOUNT_API, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "refresh", refreshToken: clientSession.refreshToken }),
+          });
+          const refreshed = await refreshResponse.json().catch(() => ({}));
+          if (refreshResponse.ok && refreshed.token) {
+            clientSession = { ...clientSession, token: String(refreshed.token), refreshToken: String(refreshed.refresh_token || clientSession.refreshToken), expiresAt: refreshed.expires_at || null };
+            window.localStorage.setItem("trimemo_client_session", JSON.stringify(clientSession));
+            linkResponse = await linkPaidProject(clientSession.token);
+          }
+        }
+        const linkData = await readApiResponse(linkResponse);
+        if (!linkData.success) throw new Error("Paiement confirmé, mais le mémoire n’a pas encore été rattaché. Vos données sont conservées; reconnectez-vous pour reprendre.");
         window.sessionStorage.removeItem("trimemo_pending_paypal_order");
         window.localStorage.removeItem("trimemo_project_pending");
         window.localStorage.removeItem("trimemo_preview_pending");
@@ -1682,18 +1749,33 @@ export default function App() {
 
   async function openHumanRevisionForProject(item: { project_id: string; subject: string; payment_status: string }) {
     setRevisionError(""); setRevisionMessage("");
+    if (item.payment_status !== "paid") {
+      pushToast("info", "La révision humaine est disponible après le paiement et la rédaction complète du mémoire.");
+      return;
+    }
+    let session: { token: string } | null = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token) { pushToast("error", "Reconnectez-vous pour vérifier si ce mémoire peut être révisé."); return; }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin-console`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revision-eligibility", token: session.token, projectId: item.project_id }),
+      });
+      const eligibility = await readApiResponse(response);
+      if (!eligibility.eligible) {
+        pushToast("info", eligibility.reason === "payment_required" ? "Le paiement de ce mémoire est nécessaire avant toute demande de révision." : "Terminez tous les blocs de rédaction avant de demander une révision humaine.");
+        return;
+      }
+    } catch (error) {
+      pushToast("error", error instanceof Error ? error.message : "Impossible de vérifier l’éligibilité à la révision.");
+      return;
+    }
     setRevisionTargetProjectId(item.project_id);
     setRevisionTargetTitle(item.subject || "Document Trimémo");
     setRevisionInstructions("");
     setRevisionFile(null);
     setRevisionTier("standard");
     setRevisionPages(0);
-    if (item.payment_status !== "paid") {
-      setRevisionError("La révision humaine est disponible après paiement et export du document Word final.");
-      setRevisionModalOpen(true);
-      return;
-    }
-    // Le client exporte d'abord son document depuis Trimémo, puis le joint ici.
     setRevisionModalOpen(true);
   }
 
@@ -1849,6 +1931,7 @@ export default function App() {
       if (String(project.sujet || "").trim()) {
         const persistedProject = { ...project, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
         const state = {
+          schemaVersion: 2,
           project: persistedProject, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
           view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
           problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
@@ -1942,6 +2025,7 @@ export default function App() {
       // Forcer une sauvegarde locale immédiatement avant de quitter la plateforme.
       try {
         const state = {
+          schemaVersion: 2,
           project: (() => { const { paidPreviewSnapshot, ...savedProject } = paymentProject; return { ...savedProject, files: [] }; })(),
           formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
           view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
@@ -2253,7 +2337,7 @@ export default function App() {
         const content = String(data.content || data.block?.content || data.text || "").trim();
         if (!content) throw new Error("Le serveur n’a retourné aucun contenu pour ce bloc.");
         const remainingWords = Math.max(0, 2500 - completedWords);
-        const limitedContent = content.split(/\s+/u).filter(Boolean).slice(0, Math.min(1000, remainingWords)).join(" ");
+        const limitedContent = trimToWordsPreservingLayout(content, Math.min(1000, remainingWords));
         const finalCount = countWords(limitedContent);
         setBlocks((current) => current.map((item) => item.id === blockId ? {
           ...item, ...data, id: item.id, title: item.title, kind: item.kind, structure: item.structure,
@@ -2435,8 +2519,6 @@ export default function App() {
     source = source
       .replace(/[ \t]*(#{1,6}\s+)/gu, "\n\n$1")
       .replace(/[ \t]+(?=(?:\d+\.){2,5}\d+\s*[:.)\-–]?\s+[A-ZÀ-ÖØ-ÞÀ-ÿ])/gu, "\n\n")
-      .replace(/[ \t]*(\*\*?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+|CHAPITRE\s+\d+|SECTION\s+\d+(?:\.\d+)*|SOUS-SECTION\s+\d+(?:\.\d+)*))/giu, "\n\n$1")
-      .replace(/\s+(?=(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b|CHAPITRE\s+\d+\b|SECTION\s+\d+(?:\.\d+)*\b|SOUS-SECTION\s+\d+(?:\.\d+)*\b)\s*[:.\-–]?\s)/giu, "\n\n")
       .replace(/\n[ \t]*\n(?:[ \t]*\n)+/gu, "\n\n")
       .trim();
 
@@ -2509,7 +2591,7 @@ export default function App() {
         .replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1")
         .replace(/^#{1,6}\s*/u, "")
         .trim();
-      return <p key={index} className="mb-4 text-justify font-normal text-[#111111]" style={{ color: "#111111", fontFamily: '"Times New Roman", Times, serif', fontSize: "12pt", textIndent: "1.25cm", lineHeight: 1.5, marginBottom: "0.72em", whiteSpace: "normal", overflowWrap: "break-word", fontWeight: 400, fontStyle: "normal" }}>{paragraph}</p>;
+      return <p key={index} className="mb-4 text-justify font-normal text-[#111111]" style={{ color: "#111111", fontFamily: '"Times New Roman", Times, serif', fontSize: "12pt", textIndent: "1.25cm", lineHeight: 1.5, marginBottom: "0.72em", whiteSpace: "normal", overflowWrap: "break-word", fontWeight: 400, fontStyle: "normal", orphans: 3, widows: 3 }}>{paragraph}</p>;
     }).filter(Boolean);
   }
 
@@ -2612,10 +2694,13 @@ export default function App() {
           formatting: {
             fontFamily: "Times New Roman",
             bodySize: 12,
-            partSize: 14,
-            chapterSize: 13,
+            partSize: 16,
+            chapterSize: 14,
             sectionSize: 12,
             lineSpacing: 1.5,
+            marginInches: 1,
+            firstLineIndentInches: 0.5,
+            paragraphAfterPoints: 6,
           },
         }),
       });
@@ -3351,6 +3436,9 @@ export default function App() {
                     <p className="mt-2 font-inter text-sm text-[#172554]/60">
                       Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
                     </p>
+                    {cloudSaveStatus !== "idle" && <p role="status" aria-live="polite" className={`mt-2 font-inter text-xs ${cloudSaveStatus === "error" ? "text-red-700" : "text-[#64748B]"}`}>
+                      {cloudSaveStatus === "saving" ? "Enregistrement de votre document…" : cloudSaveStatus === "saved" ? "Document enregistré dans votre compte." : "Enregistrement interrompu. Gardez cette page ouverte et réessayez."}
+                    </p>}
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     {(ownerRoute || (window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) ? (
