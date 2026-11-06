@@ -2441,6 +2441,21 @@ export default function App() {
       const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
       if (!lines.length) return [];
       const joined = lines.join(" ").replace(/[ \t]{2,}/gu, " ").trim();
+      const headingBody = joined.replace(/^#{1,6}\s*/u, "").replace(/^\*\*/u, "").replace(/\*\*$/u, "").trim();
+
+      // Isoler les sous-sections numérotées même si leur développement suit sur la même ligne.
+      const numberedPrefix = headingBody.match(/^(\d+(?:\.\d+){1,5})\s*[:.)\-–]?\s*/u);
+      if (numberedPrefix) {
+        const rest = headingBody.slice(numberedPrefix[0].length).trim();
+        const candidates = [...planTitleValues].sort((a, b) => b.length - a.length);
+        const matchingTitle = candidates.find((title) => rest.toLocaleLowerCase("fr").startsWith(title.toLocaleLowerCase("fr")));
+        if (matchingTitle) {
+          const afterTitle = rest.slice(matchingTitle.length).trim().replace(/^[*_:.;\-–]+\s*/u, "");
+          if (afterTitle.length >= 12) return [numberedPrefix[1] + ". " + matchingTitle, afterTitle];
+          return [numberedPrefix[1] + ". " + matchingTitle];
+        }
+      }
+
       const match = joined.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
       if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
       return [joined];
@@ -2480,7 +2495,7 @@ export default function App() {
         .replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1")
         .replace(/^#{1,6}\s*/u, "")
         .trim();
-      return <p key={index} className={previewMode ? "mb-4 text-justify font-normal" : "mb-4 text-justify font-normal"} style={{ textIndent: "1.1cm", lineHeight: 1.65, whiteSpace: "normal", overflowWrap: "anywhere" }}>{paragraph}</p>;
+      return <p key={index} className={previewMode ? "mb-4 text-justify font-normal" : "mb-4 text-justify font-normal"} style={{ textIndent: "1.25cm", lineHeight: 1.5, marginBottom: "0.72em", whiteSpace: "normal", overflowWrap: "break-word", fontWeight: 400 }}>{paragraph}</p>;
     }).filter(Boolean);
   }
 
@@ -3384,7 +3399,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="min-h-[720px] px-10 py-14 font-['Times_New_Roman'] text-[15px] leading-[1.85] text-[#111] md:px-[88px]">
+                        <div className="min-h-[720px] bg-white px-10 py-14 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#111] md:px-[2.5cm] md:py-[2.5cm]">
                           {block.error && (
                             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
                               <strong>Erreur de rédaction :</strong> {block.error}
