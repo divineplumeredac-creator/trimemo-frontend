@@ -3770,7 +3770,23 @@ export default function App() {
             <div className="rounded-3xl bg-[#172554] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div><div className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-2 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientNameDisplay || "Mon compte"}</p></div>
-                <button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientProjectFlow(false); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); setView("home"); }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
+                <button onClick={() => {
+                  window.localStorage.removeItem("trimemo_client_session");
+                  setClientProjectFlow(false);
+                  setClientEmailDisplay("");
+                  setClientProjects([]);
+                  setClientRevisions([]);
+                  setProject((current) => ({ ...current, projectId: createProjectId(), sujet: "", files: [] }));
+                  setFormula(null);
+                  setPreview(null);
+                  setEstimate(null);
+                  setPremium(null);
+                  setSelectedProblematic(null);
+                  setSelectedPlan(null);
+                  setBlocks([]);
+                  setSelectedWritingBlockId(null);
+                  setView("home");
+                }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
