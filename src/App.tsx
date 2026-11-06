@@ -1873,21 +1873,21 @@ export default function App() {
           view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
           problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
         };
-        const saveResponse = await fetch(PROJECT_STATE_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId: project.projectId, state }),
-        });
-        const saveData = await saveResponse.json().catch(() => ({}));
-        if (!saveResponse.ok) throw new Error(saveData.error || "Le projet n'a pas pu être sauvegardé avant l'association au compte.");
-
         const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet, paid: false }),
         });
         const linkData = await readApiResponse(linkResponse);
-        if (!linkData.success) throw new Error("Le projet n'a pas pu être associé au compte client.");
+        if (!linkData.success) throw new Error("Association du projet au compte impossible.");
+
+        const saveResponse = await fetch(PROJECT_STATE_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId: project.projectId, token: session.token, state }),
+        });
+        const saveData = await saveResponse.json().catch(() => ({}));
+        if (!saveResponse.ok) throw new Error(saveData.error || "Sauvegarde du projet dans votre compte impossible.");
       }
 
       pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : String(project.sujet || "").trim() ? "Connexion réussie. Votre projet est associé à votre compte." : "Connexion réussie. Chargement de votre espace client.");
