@@ -942,7 +942,7 @@ export default function App() {
             window.sessionStorage.removeItem("trimemo_selected_block_pending");
             window.localStorage.removeItem("trimemo_preview_pending");
             window.sessionStorage.removeItem("trimemo_preview_pending");
-            pushToast("success", "Paiement confirmé. La rédaction reprend au prochain bloc non rédigé, en conservant le contenu déjà produit.");
+            pushToast("success", "Paiement confirmé. La rédaction continue au prochain bloc non terminé. Les 2 500 mots de l’aperçu restent intégrés au document et au volume facturé.");
           } else {
             const personalQuestion = String(saved.problematiquePersonnelle || saved.problematique || "").trim();
 
@@ -2367,6 +2367,10 @@ export default function App() {
 
   function renderAcademicText(raw: string, previewMode = false, blockStructure: string[] = [], blockKind = "") {
     const cleanLine = (value: string) => value
+      // Retirer les enveloppes HTML/XML et marqueurs techniques sans supprimer le texte qu'ils entourent.
+      .replace(/<\/?(?:cite|citation|source|span|strong|em|b|i|p|div|br|sup|sub|ref|footnote)\b[^>]*>/giu, "")
+      .replace(/\[(?:cite|citation|source|ref)[^\]]*\]/giu, "")
+      .replace(/&(?:lt|gt|amp|quot|apos);/giu, (entity) => ({ "&lt;": "<", "&gt;": ">", "&amp;": "&", "&quot;": '"', "&apos;": "'" }[entity.toLowerCase()] || entity))
       .replace(/\[\s*(?:https?:\/\/)?(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*\]\(https?:\/\/[^)]+\)/giu, "")
       .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/giu, "$1")
       .replace(/https?:\/\/\S+/giu, "")
@@ -3364,9 +3368,9 @@ export default function App() {
                       <article
                         key={block.id}
                         id={`writing-block-${block.id}`}
-                        className="mx-auto max-w-[900px] overflow-hidden border border-[#D9D9D9] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+                        className="mx-auto max-w-[900px] overflow-hidden border-0 bg-transparent shadow-none"
                       >
-                        <div className="border-b border-[#E5E5E5] px-10 py-6 md:px-16">
+                        <div className="border-b border-[#D8D8D8] bg-white px-8 py-5 md:px-16">
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#777]">
                               Bloc {index + 1}
@@ -3398,7 +3402,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="mx-auto min-h-[1123px] w-full max-w-[794px] bg-white px-8 py-12 font-['Times_New_Roman'] text-[15px] leading-[1.7] text-[#111] sm:px-12 sm:py-16 md:px-[88px]">
+                        <div className="mx-auto min-h-[1123px] w-full max-w-[794px] border border-[#E2E2E2] bg-white px-8 py-12 font-['Times_New_Roman'] text-[16px] leading-[1.7] text-[#111] shadow-[0_3px_14px_rgba(0,0,0,0.06)] sm:px-12 sm:py-16 md:px-[88px]">
                           {block.error && (
                             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
                               <strong>Erreur de rédaction :</strong> {block.error}
@@ -4154,7 +4158,7 @@ export default function App() {
                 <div className="text-center">
                   <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Poursuivre le document</div>
                   <h3 className="mt-2 font-playfair text-2xl sm:text-3xl">Votre aperçu est terminé</h3>
-                  <p className="mx-auto mt-3 max-w-[650px] font-inter text-sm leading-6 text-white/75">Le paiement débloque la suite de la rédaction au point d’arrêt, en conservant la problématique et le plan choisis.</p>
+                  <p className="mx-auto mt-3 max-w-[650px] font-inter text-sm leading-6 text-white/75">Le paiement permet de continuer le même document à partir du dernier bloc enregistré. Les 2 500 mots de l’aperçu sont conservés et comptabilisés dans le volume total du document.</p>
                   {estimate && (
                     <div className="mx-auto mt-5 max-w-[560px] rounded-2xl border border-white/15 bg-white/5 p-4 text-left">
                       <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#D4A23A]">Récapitulatif de l’analyse initiale</div>
