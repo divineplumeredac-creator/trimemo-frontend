@@ -866,15 +866,18 @@ export default function App() {
       try {
         setLoading(true);
         const action = payment === "paypal" ? "verify-paypal" : "verify-mobile-money";
+        const payingSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (!payingSession?.token || !payingSession?.userId) throw new Error("Reconnectez-vous au compte ayant initié le paiement PayPal.");
         const response = await fetch(`${API_URL}?action=${action}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, project: loadPendingProject(stateStorageKey) }),
+          body: JSON.stringify({ id, clientToken: payingSession.token, project: loadPendingProject(stateStorageKey) }),
         });
         const data = await readApiResponse(response);
         if (data.status !== "PAID") {
           throw new Error(data.error || "Le paiement n’a pas été confirmé.");
         }
+        if (data.owner_id !== payingSession.userId) throw new Error("Cette commande appartient à un autre compte. Aucun autre projet ne sera chargé.");
         if (!data.premium_token) {
           throw new Error("Paiement confirmé, mais le déblocage premium sécurisé n’a pas été délivré.");
         }
@@ -1941,7 +1944,7 @@ export default function App() {
       const response = await fetch(`${API_URL}?action=${method === "paypal" ? "create-paypal-order" : "create-mobile-money"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true) }),
+        body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true), clientToken: clientSession.token }),
       });
       const data = await readApiResponse(response);
       if (!data.url) throw new Error("Aucune URL de paiement n’a été retournée.");
