@@ -546,7 +546,12 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ownerRoute] = useState(() => typeof window !== "undefined" && window.location.pathname === "/owner");
-  const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : "trimemo_state_v5_public";
+  const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : (() => {
+    try {
+      const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      return session?.userId ? "trimemo_state_v5_user_" + String(session.userId) : "trimemo_state_v5_guest";
+    } catch { return "trimemo_state_v5_guest"; }
+  })();
   const [ownerSessionValid, setOwnerSessionValid] = useState(false);
   const [ownerShowWriter, setOwnerShowWriter] = useState(false);
   const [ownerEmail, setOwnerEmail] = useState(() => {
@@ -665,7 +670,11 @@ export default function App() {
     cloudHydrated.current = false;
     (async () => {
       try {
-        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`);
+        const clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (!clientSession?.token) throw new Error("Connectez-vous pour restaurer ce projet.");
+        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(sharedProjectId)}`, {
+          headers: { Authorization: "Bearer " + clientSession.token },
+        });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Impossible de récupérer le projet distant.");
         if (data.found && data.state) {
@@ -708,9 +717,12 @@ export default function App() {
     storeProjectFiles(project);
   }, [project.files, project.projectId]);
 
-  // Synchronisation serveur de l'état complet du projet. Les fichiers sont gérés séparément.
+  // Synchronisation serveur réservée aux projets authentifiés.
   useEffect(() => {
     if (!cloudHydrated.current || !filesHydrated.current || (ownerRoute && !ownerSessionValid)) return;
+    let clientSession: any = null;
+    try { clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!clientSession?.token || !clientSession?.userId) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
@@ -727,7 +739,7 @@ export default function App() {
         const response = await fetch(PROJECT_STATE_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId: project.projectId, state }),
+          body: JSON.stringify({ projectId: project.projectId, token: clientSession.token, state }),
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Échec de la sauvegarde serveur.");
