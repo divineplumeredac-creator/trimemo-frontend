@@ -2730,7 +2730,7 @@ export default function App() {
           project: projectPayloadWithoutFiles(project),
           problematic: selectedProblematic,
           plan: selectedPlan,
-          blocks: doneBlocks,
+          blocks,
           papers,
           formatting: {
             fontFamily: "Times New Roman",
@@ -2765,7 +2765,10 @@ export default function App() {
       if (missingLinks > 0) {
         pushToast("info", `${missingLinks} référence(s) n’ont ni DOI ni lien : vérifiez-les manuellement avant de remettre le document.`);
       } else {
-        pushToast("success", "Document Word académique généré avec bibliographie et mise en forme.");
+        const exportAttempt = Number(response.headers.get("X-Trimemo-Export-Attempt") || 0);
+        const attemptsRemaining = Number(response.headers.get("X-Trimemo-Export-Attempts-Remaining") || 0);
+        const exportNotice = exportAttempt ? ` Tentative ${exportAttempt}/3 ; ${attemptsRemaining} restante(s).` : "";
+        pushToast("success", "Document Word académique généré avec bibliographie et mise en forme." + exportNotice);
       }
       // Le projet et le jeton premium sont conservés après l'export pour permettre
       // une nouvelle tentative si le navigateur n'enregistre pas le téléchargement.
