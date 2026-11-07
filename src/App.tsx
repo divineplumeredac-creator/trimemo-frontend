@@ -1941,7 +1941,7 @@ export default function App() {
         const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet }),
+          body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet, state }),
         });
         const linkData = await readApiResponse(linkResponse);
         if (!linkData.success) throw new Error("Le projet n'a pas pu être associé au compte client.");
