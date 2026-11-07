@@ -2774,12 +2774,17 @@ export default function App() {
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1500);
       const missingLinks = Number(response.headers.get("X-Trimemo-Bibliography-Missing-Links") || 0);
-      if (missingLinks > 0) {
-        pushToast("info", `${missingLinks} référence(s) n’ont ni DOI ni lien : vérifiez-les manuellement avant de remettre le document.`);
+      const citationIssues = Number(response.headers.get("X-Trimemo-Citation-Issue-Count") || 0);
+      const exportAttempt = Number(response.headers.get("X-Trimemo-Export-Attempt") || 0);
+      const attemptsRemaining = Number(response.headers.get("X-Trimemo-Export-Attempts-Remaining") || 0);
+      const exportNotice = exportAttempt ? ` Tentative ${exportAttempt}/3 ; ${attemptsRemaining} restante(s).` : "";
+      const exportWarnings = [
+        missingLinks > 0 ? `${missingLinks} référence(s) n’ont ni DOI ni lien.` : "",
+        citationIssues > 0 ? `${citationIssues} citation(s) ne correspondent pas clairement aux références ou leur année diffère. Vérifiez-les avant remise.` : "",
+      ].filter(Boolean);
+      if (exportWarnings.length) {
+        pushToast("info", "Document exporté. " + exportWarnings.join(" ") + exportNotice);
       } else {
-        const exportAttempt = Number(response.headers.get("X-Trimemo-Export-Attempt") || 0);
-        const attemptsRemaining = Number(response.headers.get("X-Trimemo-Export-Attempts-Remaining") || 0);
-        const exportNotice = exportAttempt ? ` Tentative ${exportAttempt}/3 ; ${attemptsRemaining} restante(s).` : "";
         pushToast("success", "Document Word académique généré avec bibliographie et mise en forme." + exportNotice);
       }
       // Le projet et le jeton premium sont conservés après l'export pour permettre
