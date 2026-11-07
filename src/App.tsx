@@ -2551,7 +2551,40 @@ export default function App() {
       return [joined];
     });
 
-    return rawBlocks.map((rawBlock, index) => {
+    // Repair headings already stored in a project when a model split the
+    // final word(s) into the next paragraph. Only join when the expected
+    // title in the saved plan proves the exact missing suffix.
+    const titleKey = (value: string) => String(value || "")
+      .replace(/^#{1,6}\s*/u, "")
+      .replace(/[*_\x60]/gu, "")
+      .replace(/[’']/gu, "'")
+      .replace(/[.:;,-–—]/gu, " ")
+      .replace(/\s+/gu, " ")
+      .trim()
+      .toLocaleLowerCase("fr");
+    const expectedHeadings = [...headingTitleValues, "Introduction générale", "Conclusion générale"]
+      .map((title) => ({ title, key: titleKey(title) }))
+      .filter((item) => item.key)
+      .sort((a, b) => b.key.length - a.key.length);
+    const repairedBlocks: string[] = [];
+    for (let blockIndex = 0; blockIndex < rawBlocks.length; blockIndex += 1) {
+      const rawBlock = rawBlocks[blockIndex];
+      const currentKey = titleKey(rawBlock);
+      const expected = expectedHeadings.find((item) => item.key.startsWith(currentKey + " "));
+      if (expected) {
+        const suffix = expected.key.slice(currentKey.length).trim();
+        const nextBlock = rawBlocks[blockIndex + 1] || "";
+        if (suffix && titleKey(nextBlock) === suffix) {
+          const markdownPrefix = String(rawBlock).match(/^\s*#{1,6}\s*/u)?.[0] || "";
+          repairedBlocks.push(markdownPrefix + expected.title);
+          blockIndex += 1;
+          continue;
+        }
+      }
+      repairedBlocks.push(rawBlock);
+    }
+
+    return repairedBlocks.map((rawBlock, index) => {
       const line = cleanLine(rawBlock.replace(/^\s*[-*]\s+/u, ""));
       if (!line) return null;
       const markdownHeading = line.match(/^(#{1,6})\s+(.+)$/u);
