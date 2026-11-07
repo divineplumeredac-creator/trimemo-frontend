@@ -653,7 +653,15 @@ export default function App() {
         setView("account");
         const method = params.get("method");
         if (method === "paypal" || method === "mobile-money") setPendingPaymentMethod(method);
-        setClientAuthMode("signup");
+        let hasCreatedClientSession = false;
+        try {
+          const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+          hasCreatedClientSession = Boolean(session?.token);
+        } catch {}
+        // Signup may have created the auth account before project linking failed.
+        // On refresh, route that recoverable session to login so the same project
+        // can be linked without attempting to create the account a second time.
+        setClientAuthMode(hasCreatedClientSession ? "login" : "signup");
       }
     } catch {
       window.localStorage.removeItem(stateStorageKey);
