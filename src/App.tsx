@@ -664,7 +664,7 @@ export default function App() {
         setClientAuthMode(hasCreatedClientSession ? "login" : "signup");
       }
     } catch {
-      window.localStorage.removeItem(stateStorageKey);
+      pushToast("error", "La sauvegarde locale ne peut pas être lue. Contactez le support pour tenter de récupérer votre projet.");
     } finally {
       filesHydrated.current = true;
     }
@@ -1595,9 +1595,11 @@ export default function App() {
     setEstimate(null);
     setLoading(true);
     try {
+      let analysisSession: { token?: string } | null = null;
+      try { analysisSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
       const response = await fetchWithTimeout(ESTIMATE_API, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...(analysisSession?.token ? { Authorization: "Bearer " + analysisSession.token } : {}) },
         body: JSON.stringify({ project }),
       }, 90000);
       const data = await readApiResponse(response);
