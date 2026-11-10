@@ -2568,8 +2568,8 @@ export default function App() {
         }
       }
 
-      const match = joined.match(/^(#{1,6}\s*)?((?:\*\*)?(?:INTRODUCTION(?: GÉNÉRALE)?|CONCLUSION(?: GÉNÉRALE)?|PARTIE\s+[IVXLCDM0-9]+\b[^.!?\n]{0,180}|CHAPITRE\s+\d+\b[^.!?\n]{0,180}|SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180}|SOUS-SECTION\s+\d+(?:\.\d+)*\b[^.!?\n]{0,180})(?:\*\*)?)(?:\s*[:.\-–]?\s+)([A-ZÀ-ÖØ-Þ][\s\S]+)$/iu);
-      if (match && match[3]) return [match[1] ? match[1] + match[2] : match[2], match[3]];
+      // Never infer a heading/body boundary from whitespace: a complete title
+      // such as “Introduction générale” would be split in the middle.
       return [joined];
     });
 
