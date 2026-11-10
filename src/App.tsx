@@ -2366,6 +2366,7 @@ export default function App() {
           content: limitedContent, wordCount: finalCount, status: "done", error: undefined,
         } : item));
         pushToast("success", finalCount + " mots rédigés dans ce bloc. " + (completedWords + finalCount >= 2500 ? "L’aperçu académique est disponible." : "Passez au bloc suivant."));
+        if (Array.isArray(data.warnings) && data.warnings.length) pushToast("info", String(data.warnings[0]));
       } catch (error) {
         const message = error instanceof Error ? error.message : "Impossible de rédiger ce bloc.";
         setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "pending", error: message } : item));
@@ -2448,6 +2449,7 @@ export default function App() {
             }
           : item
       ));
+      if (Array.isArray(result.warnings) && result.warnings.length) pushToast("info", String(result.warnings[0]));
     } catch (error) {
       const message = error instanceof Error
         ? error.message
