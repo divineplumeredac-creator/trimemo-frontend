@@ -205,6 +205,8 @@ type Block = {
   structure: string[];
   kind: "introduction" | "chapter" | "section" | "conclusion";
   error?: string;
+  previewRemainder?: string;
+  previewLimitReached?: boolean;
 };
 
 type PremiumOptions = {
@@ -229,7 +231,17 @@ function trimToWordsPreservingLayout(value: string, limit: number) {
   if (words.length <= limit) return source;
   const lastWord = words[limit - 1];
   const end = (lastWord.index || 0) + lastWord[0].length;
-  return source.slice(0, end).trimEnd();
+  const candidate = source.slice(0, end);
+  const boundaries = [...candidate.matchAll(/[.!?…](?:[»”"')\]]*)?(?=\s|$)/gu)];
+  if (!boundaries.length) return "";
+  const last = boundaries[boundaries.length - 1];
+  return candidate.slice(0, (last.index || 0) + last[0].length).trimEnd();
+}
+
+function restorePreviewRemainder(block: Block): Block {
+  if (!block.previewRemainder) return block;
+  const content = block.content + block.previewRemainder;
+  return { ...block, content, wordCount: countWords(content), previewRemainder: undefined, previewLimitReached: undefined };
 }
 
 function wordsToPages(words: number) {
@@ -579,6 +591,11 @@ export default function App() {
     () => blocks.filter((b) => b.status === "done").reduce((sum, b) => sum + b.wordCount, 0),
     [blocks],
   );
+  useEffect(() => {
+    const projectId = String(project.projectId || "");
+    if (!projectId || !blocks.some(block => block.previewRemainder) || !window.sessionStorage.getItem("trimemo_premium_token") || window.sessionStorage.getItem("trimemo_premium_project_id") !== projectId) return;
+    setBlocks(current => current.map(restorePreviewRemainder));
+  }, [blocks, project.projectId]);
   const targetWords = blocks.length
     ? blocks.reduce((sum, block) => sum + block.expectedWords, 0)
     : project.pages * WORDS_PER_PAGE;
@@ -2315,7 +2332,7 @@ export default function App() {
     if (!ownerRoute && !(window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) {
       const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
       const completedWords = completedBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
-      if (completedWords >= 2500) {
+      if (completedWords >= 2500 || completedBlocks.some(item => item.previewLimitReached)) {
         // Une fois les 2 500 mots atteints, tout nouveau bloc ouvre l’aperçu verrouillé.
         setSelectedWritingBlockId(blockId);
         await exportDocument();
@@ -2360,12 +2377,15 @@ export default function App() {
         if (!content) throw new Error("Le serveur n’a retourné aucun contenu pour ce bloc.");
         const remainingWords = Math.max(0, 2500 - completedWords);
         const limitedContent = trimToWordsPreservingLayout(content, Math.min(1000, remainingWords));
+        if (!limitedContent) throw new Error("La première phrase du bloc dépasse la limite de l’aperçu. Réessayez la rédaction de ce bloc.");
         const finalCount = countWords(limitedContent);
         setBlocks((current) => current.map((item) => item.id === blockId ? {
           ...item, ...data, id: item.id, title: item.title, kind: item.kind, structure: item.structure,
           content: limitedContent, wordCount: finalCount, status: "done", error: undefined,
+          previewRemainder: content.slice(limitedContent.length) || undefined,
+          previewLimitReached: countWords(content) > remainingWords || undefined,
         } : item));
-        pushToast("success", finalCount + " mots rédigés dans ce bloc. " + (completedWords + finalCount >= 2500 ? "L’aperçu académique est disponible." : "Passez au bloc suivant."));
+        pushToast("success", finalCount + " mots rédigés dans ce bloc. " + (completedWords + finalCount >= 2500 || countWords(content) > remainingWords ? "L’aperçu académique est disponible." : "Passez au bloc suivant."));
         if (Array.isArray(data.warnings) && data.warnings.length) pushToast("info", String(data.warnings[0]));
       } catch (error) {
         const message = error instanceof Error ? error.message : "Impossible de rédiger ce bloc.";
