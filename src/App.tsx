@@ -224,6 +224,12 @@ function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
 }
 
+function shouldRestoreSavedView(pathname: string, search: string, hash: string, ownerRoute: boolean) {
+  if (ownerRoute || pathname !== "/") return true;
+  const params = new URLSearchParams(search);
+  return Boolean(params.get("payment") || params.get("account") || params.get("reset-password") || params.get("project") || hash);
+}
+
 function trimToWordsPreservingLayout(value: string, limit: number) {
   const source = String(value || "");
   if (limit <= 0) return "";
@@ -656,7 +662,7 @@ export default function App() {
       if (saved?.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
       if (saved?.selectedPlan) setSelectedPlan(saved.selectedPlan);
       if (Array.isArray(saved?.blocks)) setBlocks(saved.blocks);
-      if (saved?.view) setView(saved.view);
+      if (saved?.view && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute)) setView(saved.view);
       if (saved?.previewTab) setPreviewTab(saved.previewTab);
       if (saved?.premiumNav) setPremiumNav(saved.premiumNav);
       if (saved?.premiumSection === "problematic" || saved?.premiumSection === "plan" || saved?.premiumSection === "writing") setPremiumSection(saved.premiumSection);
