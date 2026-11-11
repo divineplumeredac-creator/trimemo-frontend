@@ -1,0 +1,15 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const ts = require('typescript');
+const source = fs.readFileSync('src/App.tsx','utf8');
+const start = source.indexOf('function countWords(');
+const end = source.indexOf('\nfunction shouldRestoreSavedView(',start);
+assert.ok(start >= 0 && end > start);
+const js = ts.transpileModule(source.slice(start,end), {compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+const ready = new Function(js + '; return isPreviewReady;')();
+const block = (status, content, extra={}) => ({status,content,...extra});
+test('aperçu disponible au point d’arrêt même sous 2 500 mots',()=>assert.equal(ready([block('done','Texte complet.',{previewLimitReached:true}),block('pending','')]),true));
+test('aperçu disponible si tous les blocs sont achevés avant le plafond',()=>assert.equal(ready([block('done','Introduction.'),block('done','Conclusion.')]),true));
+test('aperçu non disponible sans rédaction ou avec blocs encore en cours',()=>{assert.equal(ready([]),false);assert.equal(ready([block('done','Introduction.'),block('pending','')]),false);assert.equal(ready([block('done',''),block('done','Conclusion.')]),false)});
+test('aperçu disponible à partir de 2 500 mots',()=>assert.equal(ready([block('done',Array(2500).fill('mot').join(' ')),block('pending','')]),true));

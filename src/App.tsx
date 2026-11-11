@@ -224,6 +224,14 @@ function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
 }
 
+function isPreviewReady(blocks: Block[]) {
+  const finished = blocks.filter(block => block.status === "done" && block.content.trim());
+  if (!finished.length) return false;
+  return finished.reduce((sum, block) => sum + countWords(block.content), 0) >= 2500 ||
+    finished.some(block => block.previewLimitReached) ||
+    (blocks.length > 0 && blocks.every(block => block.status === "done" && block.content.trim()));
+}
+
 function shouldRestoreSavedView(pathname: string, search: string, hash: string, ownerRoute: boolean) {
   if (ownerRoute || pathname !== "/") return true;
   const params = new URLSearchParams(search);
@@ -3536,7 +3544,7 @@ export default function App() {
                       <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
                         {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                       </button>
-                    ) : totalDoneWords >= 2500 ? (
+                    ) : isPreviewReady(blocks) ? (
                       <button type="button" onClick={() => void exportDocument()} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
                         Voir l’aperçu
                       </button>
@@ -3653,8 +3661,7 @@ export default function App() {
                               disabled={activeBlockId !== null}
                               onClick={() => {
                                 const next = blocks[index + 1];
-                                const completedWords = blocks.filter((item) => item.status === "done" && item.content.trim()).reduce((sum, item) => sum + (item.wordCount || countWords(item.content)), 0);
-                                if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token") && completedWords >= 2500) {
+                                if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token") && isPreviewReady(blocks)) {
                                   setSelectedWritingBlockId(next.id);
                                   void exportDocument();
                                   return;
@@ -4547,7 +4554,7 @@ export default function App() {
                       <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#172554] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
                       {ownerRoute || window.sessionStorage.getItem("trimemo_premium_token") ? (
                         <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#172554]/15 px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#F7FAF8]">Exporter le document</button>
-                      ) : totalDoneWords >= 2500 ? (
+                      ) : isPreviewReady(blocks) ? (
                         <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl bg-[#D4A23A] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554] hover:bg-[#e0b24f]">Voir l’aperçu</button>
                       ) : (
                         <div className="rounded-xl border border-[#172554]/10 px-4 py-3 font-inter text-xs leading-5 text-[#172554]/60">L’aperçu se débloque à 2 500 mots.</div>
