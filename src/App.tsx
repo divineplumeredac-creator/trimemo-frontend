@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AdminDashboard from "./AdminDashboard";
-import { registerOwnedProject } from "./project-account";
+import { registerOwnedProject, recoverMatchingAttachments } from "./project-account";
 import {
   ArrowRight,
   Check,
@@ -1300,7 +1300,6 @@ export default function App() {
       const draft = JSON.parse(window.localStorage.getItem(key) || "null");
       const projectId = String(draft?.project?.projectId || "");
       if (!projectId || !draft?.project?.sujet) throw new Error("Ce brouillon ne peut pas être lu. Les données restent sur cet appareil.");
-      if (draft.attachmentBackupKey || (Array.isArray(draft.project.files) && draft.project.files.some((file: FileInput) => Boolean(file?.content)))) throw new Error("Ce brouillon contient des pièces jointes locales. Il reste conservé ; contactez le support pour vérifier leur reprise avant de poursuivre.");
       // A local browser copy cannot prove ownership. Ask the server to verify
       // the existing account association before showing or transmitting it.
       const response = await fetch(CLIENT_ACCOUNT_API, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"resume", token:session.token, projectId }) });
@@ -1308,8 +1307,9 @@ export default function App() {
       if (!data.success || !data.state?.project) throw new Error("Le propriétaire du brouillon ne peut pas être confirmé. Le contenu reste sur cet appareil ; contactez le support.");
       const current = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
       if (current?.userId !== session.userId) throw new Error("Le compte a changé. Le brouillon reste conservé sur cet appareil.");
-      if (canonicalSnapshot(data.state.blocks || []) !== canonicalSnapshot(draft.blocks || [])) throw new Error("Le brouillon local diffère de la sauvegarde du compte. Les deux versions sont conservées ; contactez le support avant de poursuivre.");
-      await openClientProject(projectId);
+      const storedFiles = draft.attachmentBackupKey ? JSON.parse(window.sessionStorage.getItem(draft.attachmentBackupKey) || "null") : null;
+      recoverMatchingAttachments(draft, data.state, storedFiles);
+      await openClientProject(projectId, { draft, storedFiles });
     } catch (error) { pushToast("error", error instanceof Error ? error.message : "La reprise a échoué. Le brouillon est conservé."); }
     finally { setLoading(false); }
   }
@@ -2070,7 +2070,7 @@ export default function App() {
     finally { setRevisionSubmitting(false); }
   }
 
-  async function openClientProject(projectId: string) {
+  async function openClientProject(projectId: string, recovery?: { draft: any; storedFiles: unknown }) {
     const previousProject = project;
     const previousBlocks = blocks;
     let session: { token: string; userId?: string; email?: string; fullName?: string } | null = null;
@@ -2096,7 +2096,10 @@ export default function App() {
       if (String(previousProject.projectId || "") !== projectId) archiveCurrentDraft();
       activeOwnedProject.current = { projectId, userId: session.userId };
       const saved = data.state;
-      const remoteProject = { ...saved.project, projectId, files: [] };
+      // Recheck against the latest server state after the second request, so
+      // another tab cannot silently replace the version selected for recovery.
+      const restoredFiles = recovery ? recoverMatchingAttachments(recovery.draft, saved, recovery.storedFiles) : (Array.isArray(saved.project.files) ? saved.project.files : []);
+      const remoteProject = { ...saved.project, projectId, files: restoredFiles };
       setProject(remoteProject);
       setFormula(saved.formula || saved.project.formula || null);
       setPreview(saved.preview || null);
