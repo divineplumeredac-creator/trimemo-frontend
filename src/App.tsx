@@ -584,6 +584,7 @@ export default function App() {
   });
   const [clientAuthError, setClientAuthError] = useState("");
   const [clientAuthNotice, setClientAuthNotice] = useState("");
+  const [showConfirmationResend, setShowConfirmationResend] = useState(false);
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
   const authIntent = useRef(new URLSearchParams(window.location.search).get("start") === "1" ? "project" : "dashboard");
   const confirmationHandled = useRef(false);
@@ -1286,7 +1287,7 @@ export default function App() {
         setClientEmailDisplay(String(data.user.email || "")); setClientNameDisplay(fullName || "Mon compte");
         if (query.get("start") === "1") { authIntent.current = "dashboard"; await startProjectRef.current(); }
         else { setView("dashboard"); await loadClientProjects(); }
-      } catch { setClientAuthError("Le lien est expiré ou invalide. Connectez-vous ou demandez un nouveau lien de confirmation."); }
+      } catch { setClientAuthError("Le lien est expiré ou invalide. Connectez-vous ou demandez un nouveau lien de confirmation."); setShowConfirmationResend(true); }
     })();
   }, []);
 
@@ -2198,6 +2199,7 @@ export default function App() {
       if (clientAuthMode === "signup" && data.confirmation_required) {
         setClientPassword("");
         setClientAuthMode("login");
+        setShowConfirmationResend(true);
         setClientAuthNotice(data.message || "Consultez votre messagerie pour confirmer votre compte avant de vous connecter.");
         return;
       }
@@ -2207,6 +2209,7 @@ export default function App() {
       if ((!firstName || !lastName) && clientAuthMode === "login") { const enteredFirst=window.prompt("Saisissez votre prénom pour compléter votre profil Trimémo :","")?.trim()||""; const enteredLast=window.prompt("Saisissez votre nom pour compléter votre profil Trimémo :","")?.trim()||""; if(enteredFirst&&enteredLast){const profileResponse=await fetch(CLIENT_ACCOUNT_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"update-profile",token:String(data.token),firstName:enteredFirst,lastName:enteredLast})}); if(profileResponse.ok){firstName=enteredFirst;lastName=enteredLast;}}}
       const fullName=[firstName,lastName].filter(Boolean).join(" ").trim();
       const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id), fullName };
+      setShowConfirmationResend(false);
       const returningFromPayment = new URLSearchParams(window.location.search).get("payment") === "paypal";
       if (!returningFromPayment) archiveCurrentDraft();
       activeOwnedProject.current = null;
@@ -2247,7 +2250,10 @@ export default function App() {
         await loadClientProjects();
       }
     } catch (error) {
-      setClientAuthError(error instanceof Error ? error.message : "La création du compte ou la connexion a échoué.");
+      const message = error instanceof Error ? error.message : "La création du compte ou la connexion a échoué.";
+      const unconfirmed = clientAuthMode === "login" && /email not confirmed|email_not_confirmed|adresse.*(?:non confirmée|pas confirmée)/i.test(message);
+      if (unconfirmed) setShowConfirmationResend(true);
+      setClientAuthError(unconfirmed ? "Confirmez votre adresse e-mail avant de vous connecter. Si nécessaire, demandez un nouveau lien ci-dessous." : message);
     } finally {
       setClientAuthBusy(false);
     }
@@ -4160,7 +4166,7 @@ export default function App() {
                 </div>
               )}
               {clientAuthMode !== "reset" && <label className="block font-inter text-sm font-medium text-[#172554]">Adresse e-mail
-                <input type="email" required autoComplete="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#006443]" placeholder="vous@exemple.com" />
+              <input type="email" required autoComplete="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#006443]" placeholder="vous@exemple.com" />
               </label>}
               {clientAuthMode !== "forgot" && <label className="block font-inter text-sm font-medium text-[#172554]">{clientAuthMode === "reset" ? "Nouveau mot de passe" : "Mot de passe"}
                 <input type="password" required minLength={8} autoComplete={clientAuthMode === "signup" || clientAuthMode === "reset" ? "new-password" : "current-password"} value={clientPassword} onChange={(event) => setClientPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#006443]" placeholder="8 caractères minimum" />
@@ -4173,7 +4179,7 @@ export default function App() {
               {clientAuthMode === "reset" && !clientRecoveryToken && <p className="font-inter text-sm text-red-700">Ce lien est invalide ou incomplet. Demandez un nouveau lien de réinitialisation.</p>}
             </form>
             {clientAuthMode === "login" && <button type="button" onClick={() => { setClientAuthMode("forgot"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#006443]">Mot de passe oublié ?</button>}
-            {clientAuthMode === "login" && <button type="button" disabled={clientAuthBusy} onClick={() => void resendClientConfirmation()} className="mt-4 w-full font-inter text-sm text-[#006443] disabled:opacity-60">Renvoyer le lien de confirmation</button>}
+            {clientAuthMode === "login" && showConfirmationResend && <button type="button" disabled={clientAuthBusy} onClick={() => void resendClientConfirmation()} className="mt-4 w-full font-inter text-sm text-[#006443] disabled:opacity-60">Renvoyer le lien de confirmation</button>}
             {clientAuthMode !== "reset" && <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : clientAuthMode === "login" ? "signup" : "login"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#006443]">
               {clientAuthMode === "signup" ? "J’ai déjà un compte : me connecter" : clientAuthMode === "login" ? "Je n’ai pas encore de compte : m’inscrire" : "Retour à la connexion"}
             </button>}
