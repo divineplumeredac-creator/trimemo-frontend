@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AdminDashboard from "./AdminDashboard";
+import { registerOwnedProject } from "./project-account";
 import {
   ArrowRight,
   Check,
@@ -569,6 +570,10 @@ export default function App() {
   const [selectedProblematic, setSelectedProblematic] = useState<Problematic | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const latestProject = useRef(project);
+  const latestBlocks = useRef(blocks);
+  latestProject.current = project;
+  latestBlocks.current = blocks;
   const [clientProjectFlow, setClientProjectFlow] = useState(false);
   const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return params.get("account") === "signup" || params.get("reset-password") === "1" ? "account" : "home"; });
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
@@ -597,6 +602,7 @@ export default function App() {
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientProjects, setClientProjects] = useState<Array<{project_id:string;subject:string;payment_status:string;updated_at:string}>>([]);
+  const [localDraftKeys, setLocalDraftKeys] = useState<string[]>(() => Object.keys(window.localStorage).filter(key => key.startsWith("trimemo_draft_backup_")).sort().reverse());
   const [clientRevisions, setClientRevisions] = useState<any[]>([]);
   const [revisionModalOpen, setRevisionModalOpen] = useState(false);
   const [clientDashboardTab, setClientDashboardTab] = useState<"documents" | "in_progress" | "pending" | "completed">("documents");
@@ -636,6 +642,8 @@ export default function App() {
   const filesHydrated = useRef(false);
   const cloudHydrated = useRef(false);
   const cloudLoadStarted = useRef(false);
+  const creatingProject = useRef(false);
+  const activeOwnedProject = useRef<{projectId:string; userId:string} | null>(null);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cloudSaveQueue = useRef<Promise<void>>(Promise.resolve());
   const [cloudSaveStatus, setCloudSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -710,7 +718,7 @@ export default function App() {
       if (saved?.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
       if (saved?.selectedPlan) setSelectedPlan(saved.selectedPlan);
       if (Array.isArray(saved?.blocks)) setBlocks(saved.blocks);
-      if (saved?.view && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute)) setView(saved.view);
+      if (saved?.view && !new URLSearchParams(window.location.search).get("payment") && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute)) setView(saved.view);
       if (saved?.previewTab) setPreviewTab(saved.previewTab);
       if (saved?.premiumNav) setPremiumNav(saved.premiumNav);
       if (saved?.premiumSection === "problematic" || saved?.premiumSection === "plan" || saved?.premiumSection === "writing") setPremiumSection(saved.premiumSection);
@@ -767,8 +775,11 @@ export default function App() {
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Impossible de récupérer le projet distant.");
+        const activeSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (!cloudSession?.userId || activeSession?.userId !== cloudSession.userId) throw new Error("Le compte a changé pendant le chargement du projet.");
         if (data.found && data.state) {
           const saved = data.state;
+          if (cloudSession?.userId) activeOwnedProject.current = { projectId: sharedProjectId, userId: String(cloudSession.userId) };
           const remoteProject = saved.project ? { ...saved.project, projectId: sharedProjectId, files: [] } : null;
           if (remoteProject) setProject(remoteProject);
           if (saved.formula) setFormula(saved.formula);
@@ -778,8 +789,9 @@ export default function App() {
           if (saved.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
           if (saved.selectedPlan) setSelectedPlan(saved.selectedPlan);
           if (Array.isArray(saved.blocks)) setBlocks(saved.blocks);
-          // Un projet ouvert depuis le tableau de bord reprend toujours dans la rédaction.
-          setView("writing");
+          // An unfinished project without a validated plan must reopen at the
+          // appropriate earlier step rather than a blank writing screen.
+          setView(saved.selectedPlan && saved.selectedProblematic ? "writing" : saved.premium ? "premium" : "project");
           setWritingTab("writing");
           if (saved.previewTab) setPreviewTab(saved.previewTab);
           if (saved.premiumNav) setPremiumNav(saved.premiumNav);
@@ -813,7 +825,7 @@ export default function App() {
     try { cloudSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     // Les invités conservent leur travail localement. La sauvegarde cloud exige un compte lié.
     // L'espace propriétaire conserve sa persistance locale et ne passe pas par l'API client.
-    if (!cloudHydrated.current || !filesHydrated.current || ownerRoute || !cloudSession?.token || !String(project.sujet || "").trim()) return;
+    if (!cloudHydrated.current || !filesHydrated.current || ownerRoute || !cloudSession?.token || !cloudSession?.userId || activeOwnedProject.current?.projectId !== project.projectId || activeOwnedProject.current?.userId !== cloudSession.userId || !String(project.sujet || "").trim()) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
@@ -829,11 +841,6 @@ export default function App() {
       };
       cloudSaveQueue.current = cloudSaveQueue.current.catch(() => {}).then(async () => {
         setCloudSaveStatus("saving");
-        const linkWithToken = async (token: string) => fetch(CLIENT_ACCOUNT_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "link", token, projectId: project.projectId, subject: project.sujet }),
-        });
         const saveWithToken = async (token: string) => fetch(PROJECT_STATE_API, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
@@ -841,7 +848,8 @@ export default function App() {
         });
         try {
           let currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
-          let token = String(currentSession?.token || cloudSession.token);
+          if (!currentSession?.token || currentSession.userId !== cloudSession.userId || activeOwnedProject.current?.projectId !== project.projectId || activeOwnedProject.current?.userId !== currentSession.userId) return;
+          let token = String(currentSession.token);
           const refreshToken = async () => {
             if (!currentSession?.refreshToken) return false;
             const refreshResponse = await fetch(CLIENT_ACCOUNT_API, {
@@ -849,21 +857,24 @@ export default function App() {
               body: JSON.stringify({ action: "refresh", refreshToken: currentSession.refreshToken }),
             });
             const refreshed = await refreshResponse.json().catch(() => ({}));
-            if (!refreshResponse.ok || !refreshed.token) return false;
+            if (!refreshResponse.ok || !refreshed.token || refreshed.user?.id !== cloudSession.userId) return false;
+            const active = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+            if (active?.userId !== cloudSession.userId || activeOwnedProject.current?.projectId !== project.projectId) return false;
             currentSession = { ...currentSession, token: String(refreshed.token), refreshToken: String(refreshed.refresh_token || currentSession.refreshToken), expiresAt: refreshed.expires_at || null };
             token = currentSession.token;
             window.localStorage.setItem("trimemo_client_session", JSON.stringify(currentSession));
             return true;
           };
-          let linkResponse = await linkWithToken(token);
-          if (linkResponse.status === 401 && await refreshToken()) linkResponse = await linkWithToken(token);
-          const linkData = await linkResponse.json().catch(() => ({}));
-          if (!linkResponse.ok || !linkData.success) throw new Error(linkData?.error || "Le projet n’a pas pu être associé à votre compte.");
-
           let response = await saveWithToken(token);
           if (response.status === 401 && await refreshToken()) response = await saveWithToken(token);
           const data = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(data?.error || "Échec de la sauvegarde serveur.");
+          const active = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+          if (active?.userId !== cloudSession.userId || activeOwnedProject.current?.projectId !== project.projectId) return;
+          // The state write above is owner-authorized; updating the listing
+          // afterwards cannot claim a project for the current account.
+          const listing = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "link", token, projectId: project.projectId, subject: project.sujet }) });
+          if (!listing.ok) throw new Error("Le projet est enregistré, mais son nom n’a pas pu être actualisé dans la liste.");
           setCloudSaveStatus("saved");
           window.dispatchEvent(new CustomEvent("trimemo-cloud-save", { detail: { ok: true, savedAt: data.savedAt } }));
         } catch (error) {
@@ -1026,6 +1037,11 @@ export default function App() {
         const saved = data.project || loadPendingProject(stateStorageKey) || null;
         if (saved?.projectId) window.sessionStorage.setItem("trimemo_premium_project_id", String(saved.projectId));
         if (!saved) throw new Error("Le paiement est confirmé, mais les données du projet n'ont pas pu être restaurées. Contactez le support avec la référence de commande.");
+        if (payment === "paypal") {
+          const activeSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+          if (!verificationSession?.userId || activeSession?.userId !== verificationSession.userId) throw new Error("Le compte a changé. Reconnectez-vous au compte associé au projet.");
+          activeOwnedProject.current = { projectId: String(saved.projectId || ""), userId: verificationSession.userId };
+        }
         if (saved) {
           let storedPreview: Preview | null = data.preview || null;
           if (!storedPreview) { try { storedPreview = JSON.parse(window.sessionStorage.getItem("trimemo_preview_pending") || window.localStorage.getItem("trimemo_preview_pending") || "null"); } catch {} }
@@ -1218,17 +1234,38 @@ export default function App() {
     window.setTimeout(() => setToasts((current) => current.filter((toast) => toast.id !== id)), 4200);
   }
 
-  function startNewClientProject() {
+  async function startNewClientProject() {
+    if (creatingProject.current) return;
+    let session: any = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token || !session?.userId) {
+      setClientAuthMode("login"); setClientAuthNotice("Connectez-vous ou créez votre compte avant de commencer un projet."); setView("account"); return;
+    }
+    const next: ProjectData = {
+      projectId: createProjectId(), formula: formula || "MASTER", sujet: "", domaine: "", contexte: "",
+      problematiquePersonnelle: "", planPersonnel: "", consignes: "", niveau: "", typeDoc: "Mémoire",
+      pages: 0, email: "", files: [],
+    };
+    creatingProject.current = true;
+    try {
+      // Preserve the complete in-memory draft before replacing it. If the
+      // browser cannot store the backup, leave the current project untouched.
+      archiveCurrentDraft();
+      await registerOwnedProject(CLIENT_ACCOUNT_API, session, next, () => {
+        try { return JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch { return null; }
+      });
+      if (latestProject.current !== project || latestBlocks.current !== blocks) throw new Error("Le projet affiché a changé pendant la création. Votre travail est conservé ; ouvrez le nouveau projet depuis votre compte.");
+      activeOwnedProject.current = { projectId: next.projectId, userId: session.userId };
+    } catch (error) {
+      pushToast("error", error instanceof Error ? error.message : "Impossible de créer le projet dans votre compte.");
+      return;
+    } finally { creatingProject.current = false; }
     // Le formulaire s’ouvre dans le parcours client, sans retour à l’accueil.
     setClientProjectFlow(true);
     // Nouveau projet = nouvel identifiant et nouveau droit de paiement.
     window.sessionStorage.removeItem("trimemo_premium_token");
     window.sessionStorage.removeItem("trimemo_premium_project_id");
-    setProject({
-      projectId: createProjectId(), formula: formula || "MASTER", sujet: "", domaine: "", contexte: "",
-      problematiquePersonnelle: "", planPersonnel: "", consignes: "", niveau: "", typeDoc: "Mémoire",
-      pages: 0, email: "", files: [],
-    });
+    setProject(next);
     setPreview(null);
     setEstimate(null);
     setPremium(null);
@@ -1240,7 +1277,53 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function archiveCurrentDraft() {
+    if (!String(project.sujet || "").trim()) return;
+    const key = `trimemo_draft_backup_${project.projectId}_${Date.now()}`;
+    const hasLocalFiles = project.files?.some((file: FileInput) => Boolean(file?.content));
+    // Les contenus de pièces jointes restent limités à la session du navigateur.
+    const attachmentBackupKey = hasLocalFiles ? `${key}_files` : undefined;
+    if (attachmentBackupKey) window.sessionStorage.setItem(attachmentBackupKey, JSON.stringify(project.files));
+    const backupProject = { ...project, files: project.files?.map(({ content, ...file }: FileInput) => file) };
+    const backup = { schemaVersion: 2, project: backupProject, attachmentBackupKey, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount };
+    try { window.localStorage.setItem(key, JSON.stringify(backup)); }
+    catch (error) { if (attachmentBackupKey) window.sessionStorage.removeItem(attachmentBackupKey); throw error; }
+    setLocalDraftKeys(keys => [key, ...keys]);
+  }
+
+  async function recoverLocalDraft(key: string) {
+    let session: any = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token || !session?.userId) { setView("account"); pushToast("error", "Connectez-vous au compte du projet avant de reprendre ce brouillon."); return; }
+    setLoading(true);
+    try {
+      const draft = JSON.parse(window.localStorage.getItem(key) || "null");
+      const projectId = String(draft?.project?.projectId || "");
+      if (!projectId || !draft?.project?.sujet) throw new Error("Ce brouillon ne peut pas être lu. Les données restent sur cet appareil.");
+      if (draft.attachmentBackupKey || (Array.isArray(draft.project.files) && draft.project.files.some((file: FileInput) => Boolean(file?.content)))) throw new Error("Ce brouillon contient des pièces jointes locales. Il reste conservé ; contactez le support pour vérifier leur reprise avant de poursuivre.");
+      // A local browser copy cannot prove ownership. Ask the server to verify
+      // the existing account association before showing or transmitting it.
+      const response = await fetch(CLIENT_ACCOUNT_API, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"resume", token:session.token, projectId }) });
+      const data = await readApiResponse(response);
+      if (!data.success || !data.state?.project) throw new Error("Le propriétaire du brouillon ne peut pas être confirmé. Le contenu reste sur cet appareil ; contactez le support.");
+      const current = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      if (current?.userId !== session.userId) throw new Error("Le compte a changé. Le brouillon reste conservé sur cet appareil.");
+      if (canonicalSnapshot(data.state.blocks || []) !== canonicalSnapshot(draft.blocks || [])) throw new Error("Le brouillon local diffère de la sauvegarde du compte. Les deux versions sont conservées ; contactez le support avant de poursuivre.");
+      await openClientProject(projectId);
+    } catch (error) { pushToast("error", error instanceof Error ? error.message : "La reprise a échoué. Le brouillon est conservé."); }
+    finally { setLoading(false); }
+  }
+
   function goToProject() {
+    let session: any = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!ownerRoute && (!session?.token || !session?.userId)) {
+      setClientAuthMode("login");
+      setClientAuthNotice("Connectez-vous ou créez votre compte avant de commencer un projet.");
+      setView("account");
+      return;
+    }
+    if (!ownerRoute) { void startNewClientProject(); return; }
     // L'achat Premium couvre uniquement le projet auquel il est rattaché.
     window.sessionStorage.removeItem("trimemo_premium_token");
     window.sessionStorage.removeItem("trimemo_premium_project_id");
@@ -1255,6 +1338,28 @@ export default function App() {
     }));
     setView("project");
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+  }
+
+  async function reviseProjectInputs() {
+    if (creatingProject.current) return;
+    const next: ProjectData = { ...project, projectId: createProjectId(), pricingQuoteToken: undefined };
+    if (!ownerRoute) {
+      let session: any = null;
+      try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+      if (!session?.token || !session?.userId) { setClientAuthMode("login"); setView("account"); return; }
+      creatingProject.current = true;
+      try {
+        archiveCurrentDraft();
+        await registerOwnedProject(CLIENT_ACCOUNT_API, session, projectPayloadWithoutFiles(next), () => {
+          try { return JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch { return null; }
+        });
+        if (latestProject.current !== project || latestBlocks.current !== blocks) throw new Error("Le projet affiché a changé. Votre travail est conservé ; ouvrez le nouveau projet depuis votre compte.");
+        activeOwnedProject.current = { projectId: next.projectId, userId: session.userId };
+      } catch (error) { pushToast("error", error instanceof Error ? error.message : "Impossible de préparer le projet."); return; }
+      finally { creatingProject.current = false; }
+    }
+    window.sessionStorage.removeItem("trimemo_premium_token"); window.sessionStorage.removeItem("trimemo_premium_project_id");
+    setProject(next); setEstimate(null); setPremium(null); setPreview(null); setSelectedProblematic(null); setSelectedPlan(null); setBlocks([]); setProblematicGenerationCount(0); setPlanGenerationCount(0); setView("project");
   }
 
   async function handleFiles(fileList: FileList | null) {
@@ -1309,7 +1414,17 @@ export default function App() {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
-      return await fetch(input, { ...init, signal: controller.signal });
+      const protectedRoutes = [ESTIMATE_API, PROBLEMATICS_API, PLANS_API, FREE_PREVIEW_API, BLOCK_API];
+      let headers = init.headers;
+      if (!ownerRoute && typeof input === "string" && protectedRoutes.includes(input)) {
+        let session: any = null;
+        try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+        if (!session?.token || !session?.userId || activeOwnedProject.current?.userId !== session.userId || activeOwnedProject.current?.projectId !== project.projectId) throw new Error("Ouvrez ce projet depuis votre espace client avant de poursuivre ; votre travail local est conservé.");
+        const nextHeaders = new Headers(init.headers);
+        nextHeaders.set("X-Trimemo-Client-Token", String(session.token));
+        headers = nextHeaders;
+      }
+      return await fetch(input, { ...init, headers, signal: controller.signal });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw new Error("La génération a dépassé le délai prévu. L’API Trimémo n’a pas répondu à temps.");
@@ -1715,8 +1830,8 @@ export default function App() {
       try { analysisSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
       const response = await fetchWithTimeout(ESTIMATE_API, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", ...(analysisSession?.token ? { Authorization: "Bearer " + analysisSession.token } : {}) },
-        body: JSON.stringify({ project }),
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...(ownerRoute ? ownerAuthHeaders() : analysisSession?.token ? { Authorization: "Bearer " + analysisSession.token } : {}) },
+        body: JSON.stringify({ project, ownerMode: ownerRoute }),
       }, 90000);
       const data = await readApiResponse(response);
       if (!data?.estimate?.pricingQuoteToken) throw new Error("L'estimation du projet n'a pas été signée par le serveur.");
@@ -1821,11 +1936,15 @@ export default function App() {
       setView("account");
       return;
     }
+    const expectedUserId = String(session.userId || "");
+    if (!expectedUserId) { setClientAuthMode("login"); setView("account"); return; }
     const refreshSession = async () => {
       if (!session?.refreshToken) return false;
       const rr = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refreshToken: session.refreshToken }) });
       const rd = await rr.json().catch(() => ({}));
-      if (!rr.ok || !rd.token) return false;
+      if (!rr.ok || !rd.token || String(rd.user?.id || "") !== expectedUserId) return false;
+      const active = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      if (active?.userId !== expectedUserId) return false;
       session = { ...session!, token: String(rd.token), refreshToken: String(rd.refresh_token || session!.refreshToken || ""), expiresAt: rd.expires_at || null, email: String(rd.user?.email || session!.email || ""), userId: String(rd.user?.id || session!.userId || "") };
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
       return true;
@@ -1836,6 +1955,8 @@ export default function App() {
         response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "list", token: session!.token }) });
       }
       const data = await readApiResponse(response);
+      const active = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      if (active?.userId !== expectedUserId || data.user?.id !== expectedUserId) return;
       setClientProjects(Array.isArray(data.projects) ? data.projects : []);
       setClientEmailDisplay(String(data.user?.email || session.email || ""));
       const profileName=[data.user?.firstName,data.user?.lastName].filter(Boolean).join(" ").trim();
@@ -1846,6 +1967,8 @@ export default function App() {
           rr = await fetch(`${API_BASE_URL}/api/admin-console`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "revision-client-list", token: session!.token }) });
         }
         const rd = await rr.json().catch(() => ({}));
+        const current = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (current?.userId !== expectedUserId) return;
         if (rr.ok) setClientRevisions(Array.isArray(rd.requests) ? rd.requests : []);
         else pushToast("error", String(rd.error || "Les demandes de révision n’ont pas pu être actualisées."));
       } catch {
@@ -1948,7 +2071,9 @@ export default function App() {
   }
 
   async function openClientProject(projectId: string) {
-    let session: { token: string; email?: string; fullName?: string } | null = null;
+    const previousProject = project;
+    const previousBlocks = blocks;
+    let session: { token: string; userId?: string; email?: string; fullName?: string } | null = null;
     try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     if (!session?.token) {
       setClientAuthMode("login");
@@ -1965,6 +2090,11 @@ export default function App() {
       });
       const data = await readApiResponse(response);
       if (!data.state?.project) throw new Error("Le contenu du projet n'a pas été retourné par le serveur.");
+      const activeSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      if (!session.userId || activeSession?.userId !== session.userId) throw new Error("Le compte a changé pendant l’ouverture du projet.");
+      if (latestProject.current !== previousProject || latestBlocks.current !== previousBlocks) throw new Error("Le projet affiché a changé pendant l’ouverture. Réessayez sans fermer votre travail.");
+      if (String(previousProject.projectId || "") !== projectId) archiveCurrentDraft();
+      activeOwnedProject.current = { projectId, userId: session.userId };
       const saved = data.state;
       const remoteProject = { ...saved.project, projectId, files: [] };
       setProject(remoteProject);
@@ -1998,7 +2128,7 @@ export default function App() {
       }
       setClientEmailDisplay(String(session.email || ""));
       setClientNameDisplay(String(session.fullName || "Mon compte"));
-      setView("writing");
+      setView(saved.selectedPlan && saved.selectedProblematic ? "writing" : saved.premium ? "premium" : "project");
       setWritingTab("writing");
       window.history.replaceState({}, document.title, window.location.pathname);
       pushToast("success", data.project?.payment_status === "paid"
@@ -2013,6 +2143,8 @@ export default function App() {
   }
 
   async function submitClientAuth() {
+    const previousProject = project;
+    const previousBlocks = blocks;
     setClientAuthBusy(true);
     setClientAuthError("");
     setClientAuthNotice("");
@@ -2044,10 +2176,14 @@ export default function App() {
       });
       const data = await readApiResponse(response);
       if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
+      if (latestProject.current !== previousProject || latestBlocks.current !== previousBlocks) throw new Error("Le projet affiché a changé pendant la connexion. Votre travail est conservé ; réessayez.");
       let firstName=String(data.user?.firstName||clientFirstName.trim()).trim(); let lastName=String(data.user?.lastName||clientLastName.trim()).trim();
       if ((!firstName || !lastName) && clientAuthMode === "login") { const enteredFirst=window.prompt("Saisissez votre prénom pour compléter votre profil Trimémo :","")?.trim()||""; const enteredLast=window.prompt("Saisissez votre nom pour compléter votre profil Trimémo :","")?.trim()||""; if(enteredFirst&&enteredLast){const profileResponse=await fetch(CLIENT_ACCOUNT_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"update-profile",token:String(data.token),firstName:enteredFirst,lastName:enteredLast})}); if(profileResponse.ok){firstName=enteredFirst;lastName=enteredLast;}}}
       const fullName=[firstName,lastName].filter(Boolean).join(" ").trim();
       const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id), fullName };
+      const returningFromPayment = new URLSearchParams(window.location.search).get("payment") === "paypal";
+      if (!returningFromPayment) archiveCurrentDraft();
+      activeOwnedProject.current = null;
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
       setClientEmailDisplay(session.email);
       setClientNameDisplay(fullName || "Mon compte");
@@ -2055,57 +2191,25 @@ export default function App() {
 
       // A pending PayPal return must be verified under the newly authenticated
       // account; do not bind the browser's currently displayed project here.
-      if (new URLSearchParams(window.location.search).get("payment") === "paypal") {
+      if (returningFromPayment) {
         window.location.reload();
         return;
       }
 
-      // Ne créer une entrée de projet que si un vrai sujet est déjà renseigné.
-      if (String(project.sujet || "").trim()) {
-        const persistedProject = { ...project, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
-        const state = {
-          schemaVersion: 2,
-          project: persistedProject, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
-          view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
-          problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
-        };
-        // Associer d'abord le projet au compte authentifié. L'API cloud exige ensuite
-        // une appartenance vérifiée pour autoriser la sauvegarde de son contenu.
-        const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet, state }),
-        });
-        const linkData = await linkResponse.json().catch(() => ({}));
-        if (!linkResponse.ok || !linkData.success) {
-          if (linkResponse.status === 409) {
-            // Une connexion valide doit rester possible si le projet affiché
-            // appartient déjà à un autre compte. Ne jamais transférer ce projet.
-            setPendingPaymentMethod(null);
-            setClientAuthError("");
-            setView("dashboard");
-            await loadClientProjects();
-            pushToast("info", "Connexion réussie. Le document affiché appartient déjà à un autre compte et reste intact dans cet espace. Pour votre essai, choisissez « Nouveau projet » depuis le tableau de bord.");
-            return;
-          }
-          throw new Error(String(linkData.error || "Le projet n'a pas pu être associé au compte client."));
-        }
+      // A previous account's in-memory project must not appear in the next
+      // account. Its local copy has been archived above before resetting UI.
+      setProject({ projectId:createProjectId(), formula:"MASTER", sujet:"", domaine:"", contexte:"", problematiquePersonnelle:"", planPersonnel:"", consignes:"", niveau:"", typeDoc:"Mémoire", pages:0, email:"", files:[] });
+      setPreview(null); setEstimate(null); setPremium(null); setSelectedProblematic(null); setSelectedPlan(null); setBlocks([]); setSelectedWritingBlockId(null);
+      window.sessionStorage.removeItem("trimemo_premium_token"); window.sessionStorage.removeItem("trimemo_premium_project_id");
 
-        const saveResponse = await fetch(PROJECT_STATE_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.token },
-          body: JSON.stringify({ projectId: project.projectId, state }),
-        });
-        const saveData = await readApiResponse(saveResponse);
-        if (!saveData.success) throw new Error("Le projet n'a pas pu être sauvegardé dans votre compte.");
-      }
-
-      pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : String(project.sujet || "").trim() ? "Connexion réussie. Votre projet est associé à votre compte." : "Connexion réussie. Chargement de votre espace client.");
+      // A browser draft is never attached just because someone signed in.
+      // It remains in local storage until the user explicitly chooses recovery.
+      pushToast("success", "Connexion réussie. Vos projets enregistrés sont disponibles dans votre espace client.");
       if (pendingPaymentMethod) {
-        const method = pendingPaymentMethod;
         setPendingPaymentMethod(null);
-        setView("preview");
-        await startPayment(method);
+        setView("dashboard");
+        await loadClientProjects();
+        pushToast("info", "Pour reprendre ce brouillon, utilisez la reprise explicite dans votre espace client avant de poursuivre.");
       } else {
         setView("dashboard");
         await loadClientProjects();
@@ -2169,7 +2273,7 @@ export default function App() {
       }
       const response = await fetch(`${API_URL}?action=${method === "paypal" ? "create-paypal-order" : "create-mobile-money"}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + clientSession.token },
         body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true) }),
       });
       const data = await readApiResponse(response);
@@ -3923,7 +4027,8 @@ export default function App() {
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                setView("project");
+                setView("dashboard");
+                void loadClientProjects();
               }}
             >
               <span className="text-white hover:text-[#D4A23A]">Mon projet</span>
@@ -3961,7 +4066,7 @@ export default function App() {
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
             <button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
             <button onClick={() => navigateToSection("formules")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Formules</button>
-            <button onClick={() => { setMobileMenuOpen(false); setView("project"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
+            <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon compte client</button>
             {view === "preview" && preview && (
               <>
@@ -4040,7 +4145,7 @@ export default function App() {
             <div className="rounded-3xl bg-[#172554] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div><div className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-2 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientNameDisplay || "Mon compte"}</p></div>
-                <button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); startNewClientProject(); setClientProjectFlow(false); setView("home"); }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
+                <button onClick={() => { activeOwnedProject.current = null; window.localStorage.removeItem("trimemo_client_session"); window.sessionStorage.removeItem("trimemo_premium_token"); window.sessionStorage.removeItem("trimemo_premium_project_id"); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); setClientProjectFlow(false); setView("home"); }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -4051,6 +4156,14 @@ export default function App() {
             </div>
             <div className="mt-6 rounded-3xl border border-[#DCE3F0] bg-white p-5 shadow-sm sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-2xl font-bold text-[#172554]">{clientDashboardTab==="documents"?"Mes documents rédigés":clientDashboardTab==="in_progress"?"Demandes de révision en cours":clientDashboardTab==="pending"?"Demandes de révision en attente":"Révisions terminées et livrées"}</h2><p className="mt-1 font-inter text-sm text-[#64748B]">{clientDashboardTab==="documents"?"Retrouvez vos projets et demandez une révision humaine.":"Suivez l'avancement et récupérez les documents corrigés."}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{setClientDashboardTab("documents");void loadClientProjects();}} className="rounded-full border border-[#172554]/15 px-4 py-2 font-inter text-xs font-semibold text-[#172554] hover:bg-[#F2F5FC]">Actualiser</button><button type="button" onClick={startNewClientProject} className="rounded-full bg-[#D4A23A] px-4 py-2 font-inter text-xs font-semibold text-[#172554]">Nouveau projet</button></div></div>
+              {clientDashboardTab === "documents" && (localDraftKeys.length > 0 || Boolean(project.sujet?.trim())) && (
+                <div className="mt-5 rounded-xl border border-[#DCE3F0] p-4 font-inter text-sm text-[#172554]">
+                  <p>Reprendre un brouillon conservé sur cet appareil</p>
+                  <p className="mt-1 text-xs text-[#64748B]">Le compte propriétaire est vérifié avant la reprise. Si les versions diffèrent, elles restent conservées.</p>
+                  {Boolean(project.sujet?.trim()) && <button type="button" onClick={() => { try { archiveCurrentDraft(); pushToast("success", "Copie locale conservée sur cet appareil."); } catch { pushToast("error", "Impossible de conserver la copie : libérez de l’espace sans supprimer le projet."); } }} className="mt-3 rounded-full border px-4 py-2 text-xs">Conserver le brouillon affiché</button>}
+                  {localDraftKeys.map((key, index) => <button key={key} type="button" disabled={loading} onClick={() => void recoverLocalDraft(key)} className="ml-2 mt-3 rounded-full border px-4 py-2 text-xs disabled:opacity-50">Reprendre une copie locale {index + 1}</button>)}
+                </div>
+              )}
               {clientDashboardTab==="documents"?<div className="mt-5 grid gap-4">{clientProjects.length?clientProjects.map((item)=><article key={item.project_id} className="flex flex-col gap-4 rounded-2xl border border-[#DCE3F0] bg-white p-5 shadow-sm transition hover:border-[#D4A23A] hover:shadow-md sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={()=>{void openClientProject(item.project_id);}} className="min-w-0 flex-1 text-left"><span className="block font-playfair text-xl font-semibold text-[#172554]">{item.subject||"Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#64748B]">Dernière mise à jour : {item.updated_at?new Date(item.updated_at).toLocaleString("fr-FR"):"Non disponible"}</span><span className="mt-2 inline-block rounded-full bg-[#EAF7EE] px-3 py-2 font-inter text-xs font-semibold text-[#2F6B45]">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Premium payé":"Projet enregistré"}</span></button><button type="button" disabled={loading} onClick={()=>void openHumanRevisionForProject(item)} className="rounded-full border border-[#172554]/20 px-4 py-3 font-inter text-xs font-semibold text-[#172554] hover:border-[#D4A23A] hover:bg-[#FFFBEB] disabled:opacity-50">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Demander une révision humaine":"Révision humaine disponible après paiement"}</button></article>):<div className="rounded-2xl border border-dashed border-[#172554]/20 bg-[#F8FAFC] p-8 font-inter text-sm text-[#64748B]">Aucun document enregistré dans ce compte pour le moment.</div>}</div>:<div className="mt-5 grid gap-3">{clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?r.status!=="in_progress"&&r.status!=="completed":r.status==="completed").length?clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?r.status!=="in_progress"&&r.status!=="completed":r.status==="completed").map((revision:any)=><article key={revision.id} className={`rounded-2xl border p-4 sm:p-5 ${revision.status==="completed"?"border-[#BBF7D0] bg-[#F0FDF4]":revision.status==="in_progress"?"border-[#BFDBFE] bg-[#EFF6FF]":"border-[#FDE68A] bg-[#FFFBEB]"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-playfair text-lg font-bold text-[#172554]">{revision.document_title}</h3><p className="mt-1 font-inter text-xs text-[#64748B]">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</p>{revision.admin_notes&&<p className="mt-2 whitespace-pre-wrap font-inter text-sm text-[#475569]">Note : {revision.admin_notes}</p>}</div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#15803D] px-4 py-2 font-inter text-xs font-semibold text-white">Télécharger le document corrigé</button>}</div></article>):<p className="rounded-xl bg-[#F8FAFC] p-5 font-inter text-sm text-[#64748B]">Aucune demande dans cette catégorie pour le moment.</p>}</div>}
             </div>
             {revisionModalOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#172554]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title"><form onSubmit={submitHumanRevision} className="max-h-[90vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-8"><div className="flex items-start justify-between gap-4"><div><p className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">Assistance humaine</p><h2 id="revision-modal-title" className="mt-2 font-playfair text-2xl font-bold text-[#172554]">Demande de révision</h2><p className="mt-2 font-inter text-sm text-slate-600">Document sélectionné : {revisionTargetTitle} · Référence : {revisionTargetProjectId}</p></div><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-3 py-1 text-slate-600" aria-label="Fermer">✕</button></div><div className="grid gap-4 sm:grid-cols-2"><label className="block font-inter text-sm font-semibold text-[#172554]">Niveau de révision<select value={revisionTier} onChange={e=>{const tier=e.target.value as "essential"|"standard"|"deep";setRevisionTier(tier);if(revisionFile)void calculateHumanRevisionQuote(revisionFile,tier);}} className="mt-2 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal"><option value="essential">Correction essentielle</option><option value="standard">Révision standard</option><option value="deep">Révision approfondie</option></select><span className="mt-1 block text-xs font-normal text-slate-500">{revisionTier==="essential"?"Orthographe, grammaire, ponctuation et typographie.":revisionTier==="standard"?"Correction essentielle, reformulation, fluidité et réduction des répétitions.":"Révision standard, restructuration ciblée et contrôle de cohérence méthodologique."}</span></label><div className="rounded-xl border border-[#DCE3F0] bg-[#F8FAFC] p-4"><div className="font-inter text-sm font-semibold text-[#172554]">Estimation de votre révision</div>{revisionQuoteLoading?<p className="mt-2 text-sm text-slate-600">Analyse du document et calcul du devis…</p>:revisionQuote?<div className="mt-3 grid gap-2 text-sm text-slate-700"><div className="flex justify-between gap-3"><span>Nombre de pages estimé</span><strong>{revisionPages}</strong></div><div className="flex justify-between gap-3"><span>Tarif par page</span><strong>{revisionQuote.unitPrice.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3 border-t border-slate-200 pt-2"><span>Coût estimé</span><strong className="text-lg text-[#172554]">{revisionQuote.estimatedAmount.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3"><span>Délai de livraison estimé</span><strong>{revisionQuote.deliveryLabel}</strong></div></div>:<p className="mt-2 text-sm text-slate-600">Joignez votre document Word pour afficher le volume, le tarif et le délai de livraison.</p>}</div></div><label className="block font-inter text-sm font-semibold text-[#172554]">Corrections demandées<textarea required minLength={10} value={revisionInstructions} onChange={e=>setRevisionInstructions(e.target.value)} rows={5} placeholder="Précisez les passages à corriger et les consignes à respecter…" className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:border-[#D4A23A]"/></label><div className="rounded-xl border border-[#DCE3F0] bg-[#F8FAFC] p-3 text-sm text-slate-600"><label className="block font-inter text-sm font-semibold text-[#172554]">Document Word exporté depuis Trimémo<input type="file" required accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={e=>{const file=e.target.files?.[0]||null;setRevisionFile(file);setRevisionQuote(null);setRevisionPages(0);if(file)void calculateHumanRevisionQuote(file,revisionTier);else setRevisionError("");}} className="mt-2 block w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal file:mr-3 file:rounded-full file:border-0 file:bg-[#EAF0FF] file:px-3 file:py-2 file:text-xs file:font-semibold"/></label><span className="mt-2 block text-xs">Exportez d’abord le document Word final depuis votre projet, puis joignez-le ici. Format accepté : .docx. Taille maximale : 3 Mo.</span>{revisionFile&&<span className="mt-2 block text-xs font-semibold text-emerald-700">Fichier sélectionné : {revisionFile.name}</span>}</div>{revisionError&&<p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{revisionError}</p>}{revisionMessage&&<p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{revisionMessage}</p>}<div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-5 py-3 text-sm">Annuler</button><button type="submit" disabled={revisionSubmitting} className="rounded-full bg-[#D4A23A] px-5 py-3 text-sm font-semibold text-[#172554] disabled:opacity-50">{revisionSubmitting?"Envoi en cours…":"Envoyer la demande"}</button></div></form></div>}
@@ -4284,7 +4397,7 @@ export default function App() {
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                     Commencer les problématiques
                   </button>
-                  <button onClick={() => { setProject((current) => ({ ...current, projectId: createProjectId(), pricingQuoteToken: undefined })); setEstimate(null); setPremium(null); setPreview(null); setSelectedProblematic(null); setSelectedPlan(null); setBlocks([]); setProblematicGenerationCount(0); setPlanGenerationCount(0); setView("project"); }} className="mt-3 w-full rounded-full border border-white/20 px-4 py-3 font-inter text-xs font-semibold text-white">Modifier les informations</button>
+                  <button onClick={() => void reviseProjectInputs()} className="mt-3 w-full rounded-full border border-white/20 px-4 py-3 font-inter text-xs font-semibold text-white">Modifier les informations</button>
                 </aside>
               </section>
             )}
