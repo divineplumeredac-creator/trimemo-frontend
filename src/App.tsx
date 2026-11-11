@@ -174,6 +174,7 @@ type Plan = {
 };
 
 type Preview = {
+  recoveryDigest?: string;
   problematic: Problematic;
   plan: Plan;
   introduction: {
@@ -228,10 +229,43 @@ function isWritingProtected(owner: boolean, token: string | null, tokenProjectId
   return !owner && !(token && projectId && tokenProjectId === projectId);
 }
 
-function isPreviewReady(blocks: Block[]) {
+
+function previewWordLimit(pages: number) {
+  const n = Number(pages);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(2500, Math.max(1, Math.round(2500 * n / 30)));
+}
+
+function hasMatchingIntroRecovery(projectId: string, local: any, pending: any) {
+  return Boolean(projectId && String(local?.project?.projectId || "") === projectId && Array.isArray(pending) && Array.isArray(local?.blocks) && pending.some((block: Block) => block.kind === "introduction" && Boolean(block.content?.trim())) && pending.every((block: Block) => local.blocks.some((savedBlock: Block) => savedBlock.id === block.id && savedBlock.content === block.content)));
+}
+
+function hasMatchingRemoteRecovery(projectId: string, preview: Preview, state: any) {
+  if (!projectId || String(state?.project?.projectId || "") !== projectId || state?.selectedPlan?.id !== preview.plan?.id || state?.selectedProblematic?.id !== preview.problematic?.id || !Array.isArray(state?.blocks)) return false;
+  const intro = state.blocks.find((block: Block) => block.kind === "introduction" && block.status === "done");
+  const displayed = String(preview.introduction?.content || "").trim();
+  return Boolean(displayed && intro && String(intro.content || "").trim().startsWith(displayed) && state.blocks.every((block: Block) => typeof block?.id === "string" && typeof block?.content === "string"));
+}
+
+function canonicalSnapshot(value: any): string {
+  const normalized = JSON.parse(JSON.stringify(value));
+  const sort = (item: any): any => Array.isArray(item) ? item.map(sort) : item && typeof item === "object" ? Object.fromEntries(Object.keys(item).sort().map(key => [key, sort(item[key])])) : item;
+  return JSON.stringify(sort(normalized));
+}
+
+async function snapshotDigest(blocks: Block[]) {
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonicalSnapshot(blocks)));
+  return Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function isCurrentRemoteSnapshot(projectId: string, preview: Preview, state: any, blocks: Block[]) {
+  return hasMatchingRemoteRecovery(projectId, preview, state) && canonicalSnapshot(state.blocks) === canonicalSnapshot(blocks);
+}
+
+function isPreviewReady(blocks: Block[], limit = 2500) {
   const finished = blocks.filter(block => block.status === "done" && block.content.trim());
   if (!finished.length) return false;
-  return finished.reduce((sum, block) => sum + countWords(block.content), 0) >= 2500 ||
+  return (limit > 0 && finished.reduce((sum, block) => sum + countWords(block.content), 0) >= limit) ||
     finished.some(block => block.previewLimitReached) ||
     (blocks.length > 0 && blocks.every(block => block.status === "done" && block.content.trim()));
 }
@@ -610,6 +644,7 @@ export default function App() {
     () => blocks.filter((b) => b.status === "done").reduce((sum, b) => sum + b.wordCount, 0),
     [blocks],
   );
+  const previewLimit = previewWordLimit(project.pages);
   useEffect(() => {
     const projectId = String(project.projectId || "");
     if (!projectId || !blocks.some(block => block.previewRemainder) || !window.sessionStorage.getItem("trimemo_premium_token") || window.sessionStorage.getItem("trimemo_premium_project_id") !== projectId) return;
@@ -972,12 +1007,33 @@ export default function App() {
         if (saved?.projectId) window.sessionStorage.setItem("trimemo_premium_project_id", String(saved.projectId));
         if (!saved) throw new Error("Le paiement est confirmé, mais les données du projet n'ont pas pu être restaurées. Contactez le support avec la référence de commande.");
         if (saved) {
-          setProject(saved);
           let storedPreview: Preview | null = data.preview || null;
           if (!storedPreview) { try { storedPreview = JSON.parse(window.sessionStorage.getItem("trimemo_preview_pending") || window.localStorage.getItem("trimemo_preview_pending") || "null"); } catch {} }
           if (!storedPreview && saved.paidPreviewSnapshot) storedPreview = saved.paidPreviewSnapshot;
 
-          if (storedPreview?.problematic?.question && storedPreview?.plan?.parts?.length && storedPreview?.chapterOne?.content) {
+          if (storedPreview?.problematic?.question && storedPreview?.plan?.parts?.length && (storedPreview?.chapterOne?.content || storedPreview?.introduction?.content)) {
+            let remoteRecoveryBlocks: Block[] = [];
+            if (!storedPreview?.chapterOne?.content) {
+              let safeRecovery = false;
+              try {
+                const local = JSON.parse(window.localStorage.getItem(stateStorageKey) || "null");
+                const pending = JSON.parse(window.sessionStorage.getItem("trimemo_blocks_pending") || "null");
+                safeRecovery = hasMatchingIntroRecovery(String(saved.projectId || ""), local, pending) && Boolean(storedPreview.recoveryDigest) && await snapshotDigest(pending) === storedPreview.recoveryDigest;
+              } catch {}
+              if (!safeRecovery) {
+                // Do not let autosave overwrite the remote copy while recovery is in progress.
+                cloudHydrated.current = false;
+                let session: any = null;
+                try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+                if (session?.token) {
+                  const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(String(saved.projectId || ""))}`, { headers: { Authorization: "Bearer " + String(session.token) } });
+                  const result = await response.json().catch(() => ({}));
+                  if (response.ok && result.found && hasMatchingRemoteRecovery(String(saved.projectId || ""), storedPreview, result.state) && storedPreview.recoveryDigest && await snapshotDigest(result.state.blocks) === storedPreview.recoveryDigest) remoteRecoveryBlocks = result.state.blocks;
+                }
+                if (!remoteRecoveryBlocks.length) throw new Error("Paiement confirmé. La sauvegarde du projet n’a pas pu être vérifiée ; connectez-vous au compte associé et ouvrez le projet depuis votre espace client. Ne régénérez pas le document.");
+              }
+            }
+            setProject(saved);
             const problematic = normalizeProblematic(storedPreview.problematic, 0);
             const plan = normalizePlan(storedPreview.plan, 0);
             setPreview(storedPreview);
@@ -1025,13 +1081,16 @@ export default function App() {
             // La liste des blocs sauvegardée avant le paiement est la source de vérité :
             // elle contient les blocs déjà rédigés et le prochain bloc qui attend la rédaction.
             // Ne pas remplacer le chapitre partiellement rédigé par un bloc synthétique d'aperçu.
-            const restoredBlocks = savedBlocks.length
+            const recoveryBlocks = remoteRecoveryBlocks.length ? remoteRecoveryBlocks : savedBlocks;
+            if (remoteRecoveryBlocks.length && remoteRecoveryBlocks.some(block => !prepared.some(item => item.id === block.id))) throw new Error("Paiement confirmé. La structure du projet sauvegardé a changé ; ouvrez le projet depuis votre espace client pour éviter toute perte.");
+            const restoredBlocks = recoveryBlocks.length
               ? prepared.map((block) => {
-                  const savedBlock = savedBlocks.find((item) => item.id === block.id);
+                  const savedBlock = recoveryBlocks.find((item) => item.id === block.id);
                   return savedBlock ? { ...block, ...savedBlock, id: block.id } : block;
                 })
               : nextBlocks;
             setBlocks(restoredBlocks);
+            cloudHydrated.current = true;
             const nextPendingBlock = restoredBlocks.find((block) => block.status !== "done" || !block.content.trim());
             const selectedBlock = nextPendingBlock?.id
               || restoredBlocks.find((block) => block.content.trim())?.id
@@ -1045,6 +1104,7 @@ export default function App() {
             window.sessionStorage.removeItem("trimemo_preview_pending");
             pushToast("success", "Paiement confirmé. La rédaction reprend au prochain bloc non rédigé, en conservant le contenu déjà produit.");
           } else {
+            setProject(saved);
             const personalQuestion = String(saved.problematiquePersonnelle || saved.problematique || "").trim();
 
             if (personalQuestion) {
@@ -2064,9 +2124,19 @@ export default function App() {
       return;
     }
     setPaymentLoading(method);
-    const paymentProject: ProjectData = { ...project, paymentProblematicId: selectedProblematic.id, paymentPlanId: selectedPlan.id, paidPreviewSnapshot: preview || undefined };
-    setProject(paymentProject);
+    let paymentProject: ProjectData = { ...project, paymentProblematicId: selectedProblematic.id, paymentPlanId: selectedPlan.id, paidPreviewSnapshot: preview || undefined };
     try {
+      if (!preview.chapterOne?.content) {
+        // Read back the authenticated cloud copy before leaving the app. A
+        // stale or missing copy must not proceed to payment and risk work loss.
+        const response = await fetch(`${PROJECT_STATE_API}?projectId=${encodeURIComponent(String(project.projectId || ""))}`, { headers: { Authorization: "Bearer " + clientSession.token } });
+        const remote = await response.json().catch(() => ({}));
+        if (!response.ok || !remote.found || !isCurrentRemoteSnapshot(String(project.projectId || ""), preview, remote.state, blocks)) {
+          throw new Error("La dernière version du projet n’est pas encore confirmée dans votre espace client. Attendez la fin de la sauvegarde, puis réessayez ; votre rédaction reste ouverte.");
+        }
+        paymentProject = { ...paymentProject, paidPreviewSnapshot: { ...preview, recoveryDigest: await snapshotDigest(blocks) } };
+      }
+      setProject(paymentProject);
       if (!savePendingProject(paymentProject) && paymentProject.files.length) {
         pushToast("info", "Espace de stockage du navigateur insuffisant : vos documents joints devront peut-être être rattachés à nouveau après le paiement.");
       }
@@ -2351,7 +2421,8 @@ export default function App() {
     if (!ownerRoute && !(window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) {
       const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
       const completedWords = completedBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
-      if (completedWords >= 2500 || completedBlocks.some(item => item.previewLimitReached)) {
+      if (!previewLimit) { pushToast("error", "Indiquez le nombre de pages du projet avant de rédiger l’aperçu."); return; }
+      if (completedWords >= previewLimit || completedBlocks.some(item => item.previewLimitReached)) {
         // Une fois les 2 500 mots atteints, tout nouveau bloc ouvre l’aperçu verrouillé.
         setSelectedWritingBlockId(blockId);
         await exportDocument();
@@ -2384,7 +2455,7 @@ export default function App() {
             blockTitle: block.title,
             structure: block.structure,
             kind: block.kind,
-            targetWords: Math.min(block.expectedWords || 900, 1000, 2500 - completedWords),
+            targetWords: Math.min(block.expectedWords || 900, 1000, previewLimit - completedWords),
             preceding,
             previewBlocks: completedBlocks.map((item) => ({ id: item.id, title: item.title, content: item.content })),
             previewMode: true,
@@ -2394,7 +2465,7 @@ export default function App() {
         const data = await readApiResponse(response);
         const content = String(data.content || data.block?.content || data.text || "").trim();
         if (!content) throw new Error("Le serveur n’a retourné aucun contenu pour ce bloc.");
-        const remainingWords = Math.max(0, 2500 - completedWords);
+        const remainingWords = Math.max(0, previewLimit - completedWords);
         const limitedContent = trimToWordsPreservingLayout(content, Math.min(1000, remainingWords));
         if (!limitedContent) throw new Error("La première phrase du bloc dépasse la limite de l’aperçu. Réessayez la rédaction de ce bloc.");
         const finalCount = countWords(limitedContent);
@@ -2404,7 +2475,7 @@ export default function App() {
           previewRemainder: content.slice(limitedContent.length) || undefined,
           previewLimitReached: countWords(content) > remainingWords || undefined,
         } : item));
-        pushToast("success", finalCount + " mots rédigés dans ce bloc. " + (completedWords + finalCount >= 2500 || countWords(content) > remainingWords ? "L’aperçu académique est disponible." : "Passez au bloc suivant."));
+        pushToast("success", finalCount + " mots rédigés dans ce bloc. " + (completedWords + finalCount >= previewLimit || countWords(content) > remainingWords ? "L’aperçu académique est disponible." : "Passez au bloc suivant."));
         if (Array.isArray(data.warnings) && data.warnings.length) pushToast("info", String(data.warnings[0]));
       } catch (error) {
         const message = error instanceof Error ? error.message : "Impossible de rédiger ce bloc.";
@@ -2693,15 +2764,13 @@ export default function App() {
 
   function academicPreviewSegments() {
     const finished = blocks.filter((block) => block.status === "done" && block.content.trim());
-    let remaining = 2500;
+    let remaining = previewLimit;
     return finished.flatMap((block) => {
       if (remaining <= 0) return [];
-      const matches = [...block.content.matchAll(/\S+/gu)];
-      const selected = matches.slice(0, remaining);
-      remaining -= selected.length;
-      const end = selected.length ? selected[selected.length - 1].index + selected[selected.length - 1][0].length : 0;
-      const content = end > 0 ? block.content.slice(0, end).trim() : "";
-      return content ? [{ id: block.id, title: block.title, kind: block.kind, content, words: selected.length, structure: block.structure || [] }] : [];
+      const content = trimToWordsPreservingLayout(block.content, remaining).trim();
+      const words = countWords(content);
+      remaining = countWords(block.content) > remaining ? 0 : remaining - words;
+      return content ? [{ id: block.id, title: block.title, kind: block.kind, content, words, structure: block.structure || [] }] : [];
     });
   }
 
@@ -3549,13 +3618,13 @@ export default function App() {
                       <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
                         {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                       </button>
-                    ) : isPreviewReady(blocks) ? (
+                    ) : isPreviewReady(blocks, previewLimit) ? (
                       <button type="button" onClick={() => void exportDocument()} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
                         Voir l’aperçu
                       </button>
                     ) : (
                       <div className="rounded-full border border-[#172554]/10 px-4 py-3 font-inter text-xs text-[#172554]/60">
-                        Aperçu disponible à 2 500 mots ({totalDoneWords.toLocaleString("fr-FR")}/2 500)
+                        Aperçu disponible à {previewLimit.toLocaleString("fr-FR")} mots ({totalDoneWords.toLocaleString("fr-FR")}/{previewLimit.toLocaleString("fr-FR")})
                       </div>
                     )}
 
@@ -3671,7 +3740,7 @@ export default function App() {
                               disabled={activeBlockId !== null}
                               onClick={() => {
                                 const next = blocks[index + 1];
-                                if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token") && isPreviewReady(blocks)) {
+                                if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token") && isPreviewReady(blocks, previewLimit)) {
                                   setSelectedWritingBlockId(next.id);
                                   void exportDocument();
                                   return;
@@ -4183,7 +4252,7 @@ export default function App() {
                   <div className="mt-2 font-playfair text-4xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"}</div>
                   <div className="mt-3 font-inter text-xs leading-[1.7] text-white/65">Tarif de base {estimate.baseRate} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"} par page × coefficient de niveau {estimate.levelCoefficient} × coefficient de complexité {estimate.complexityCoefficient}.</div>
                   {estimate.currency === "XOF" && <div className="mt-3 rounded-xl bg-white/10 p-3 font-inter text-xs leading-[1.6] text-white/80">Si vous payez par PayPal, le montant sera converti en euros selon la parité fixe FCFA/euro : environ {estimate.checkoutAmount} €.</div>}
-                  <div className="mt-5 rounded-xl border border-white/15 p-3 font-inter text-xs leading-[1.7] text-white/75">Le montant affiché couvre le document complet. Les 2 500 mots de l’aperçu sont inclus dans ce prix global : ils ne sont pas gratuits et ne seront pas facturés une seconde fois.</div>
+                  <div className="mt-5 rounded-xl border border-white/15 p-3 font-inter text-xs leading-[1.7] text-white/75">Le montant affiché couvre le document complet. Les mots de l’aperçu sont inclus dans ce prix global : ils ne sont pas gratuits et ne seront pas facturés une seconde fois.</div>
                   <button onClick={() => void generatePublicProblematics()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-50">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                     Commencer les problématiques
@@ -4316,7 +4385,7 @@ export default function App() {
                     <div><strong>Problématique :</strong> {preview.problematic.question}</div>
                     <div className="mt-2"><strong>Plan retenu :</strong> {preview.plan.title}</div>
                   </div>
-                  <div className="mt-3 text-sm">{academicPreviewSegments().reduce((sum, segment) => sum + segment.words, 0).toLocaleString("fr-FR")} / 2 500 mots rédigés</div>
+                  <div className="mt-3 text-sm">{academicPreviewSegments().reduce((sum, segment) => sum + segment.words, 0).toLocaleString("fr-FR")} / {previewLimit.toLocaleString("fr-FR")} mots rédigés</div>
                 </div>
                 <section className="mb-10 border-b border-[#999] pb-8">
                   <h3 className="mb-5 text-center text-base font-bold uppercase tracking-wide">Sommaire</h3>
@@ -4564,17 +4633,17 @@ export default function App() {
                       <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#172554] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
                       {ownerRoute || window.sessionStorage.getItem("trimemo_premium_token") ? (
                         <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#172554]/15 px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#F7FAF8]">Exporter le document</button>
-                      ) : isPreviewReady(blocks) ? (
+                      ) : isPreviewReady(blocks, previewLimit) ? (
                         <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl bg-[#D4A23A] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554] hover:bg-[#e0b24f]">Voir l’aperçu</button>
                       ) : (
-                        <div className="rounded-xl border border-[#172554]/10 px-4 py-3 font-inter text-xs leading-5 text-[#172554]/60">L’aperçu se débloque à 2 500 mots.</div>
+                        <div className="rounded-xl border border-[#172554]/10 px-4 py-3 font-inter text-xs leading-5 text-[#172554]/60">L’aperçu se débloque à {previewLimit.toLocaleString("fr-FR")} mots au maximum.</div>
                       )}
                     </nav>
                     <div className="mt-5 rounded-xl bg-[#F7FAF8] p-3">
                       <div className="font-inter text-[11px] text-[#172554]/60">Progression rédactionnelle</div>
                       <div className="mt-1 font-inter text-sm font-semibold">{totalDoneWords.toLocaleString("fr-FR")} mots rédigés</div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E5E7EB]"><div className="h-full rounded-full bg-[#1D78C1]" style={{ width: `${Math.min(100, Math.round(totalDoneWords / 2500 * 100))}%` }} /></div>
-                      <div className="mt-1 font-inter text-[10px] text-[#172554]/55">Aperçu indicatif à 2 500 mots cumulés</div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E5E7EB]"><div className="h-full rounded-full bg-[#1D78C1]" style={{ width: `${previewLimit ? Math.min(100, Math.round(totalDoneWords / previewLimit * 100)) : 0}%` }} /></div>
+                      <div className="mt-1 font-inter text-[10px] text-[#172554]/55">Aperçu indicatif : {previewLimit.toLocaleString("fr-FR")} mots maximum</div>
                     </div>
                   </aside>
                   <div className="min-w-0">
