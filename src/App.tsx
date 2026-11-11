@@ -586,6 +586,7 @@ export default function App() {
   const [clientAuthNotice, setClientAuthNotice] = useState("");
   const [showConfirmationResend, setShowConfirmationResend] = useState(false);
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
+  const [clientLogoutBusy, setClientLogoutBusy] = useState(false);
   const authIntent = useRef(new URLSearchParams(window.location.search).get("start") === "1" ? "project" : "dashboard");
   const confirmationHandled = useRef(false);
   const startProjectRef = useRef<() => Promise<void>>(async () => {});
@@ -1326,6 +1327,36 @@ export default function App() {
       await openClientProject(projectId, { draft, storedFiles });
     } catch (error) { pushToast("error", error instanceof Error ? error.message : "La reprise a échoué. Le brouillon est conservé."); }
     finally { setLoading(false); }
+  }
+
+  async function logoutClient() {
+    if (clientLogoutBusy || loading) return;
+    setClientLogoutBusy(true);
+    try {
+      const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      const active = activeOwnedProject.current;
+      if (session?.token && session?.userId && active?.projectId === project.projectId && active?.userId === session.userId && String(project.sujet || "").trim()) {
+        const snapshotProject = project;
+        const snapshotBlocks = blocks;
+        // Preserve the current work even if the server is unavailable.
+        archiveCurrentDraft();
+        if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+        await cloudSaveQueue.current.catch(() => {});
+        const currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (currentSession?.userId !== session.userId || activeOwnedProject.current?.projectId !== project.projectId || latestProject.current !== snapshotProject || latestBlocks.current !== snapshotBlocks) throw new Error("Le projet a changé pendant la sauvegarde. Réessayez de vous déconnecter.");
+        const { paidPreviewSnapshot, ...persistedProject } = snapshotProject;
+        const state = { schemaVersion: 2, project: { ...persistedProject, files: snapshotProject.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) }, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks: snapshotBlocks, view: view === "dashboard" || view === "account" || view === "home" ? "writing" : view, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount };
+        const response = await fetch(PROJECT_STATE_API, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + currentSession.token }, body: JSON.stringify({ projectId: snapshotProject.projectId, state }) });
+        if (!response.ok || latestProject.current !== snapshotProject || latestBlocks.current !== snapshotBlocks) throw new Error("La dernière sauvegarde n’a pas pu être confirmée. Votre projet reste ouvert ; vérifiez votre connexion et réessayez.");
+      }
+      activeOwnedProject.current = null;
+      window.localStorage.removeItem("trimemo_client_session");
+      window.sessionStorage.removeItem("trimemo_premium_token");
+      window.sessionStorage.removeItem("trimemo_premium_project_id");
+      setClientEmailDisplay(""); setClientNameDisplay(""); setClientProjects([]); setClientRevisions([]); setClientProjectFlow(false); setMobileMenuOpen(false); setView("home");
+    } catch (error) {
+      pushToast("error", error instanceof Error ? error.message : "Déconnexion impossible. Votre projet reste ouvert.");
+    } finally { setClientLogoutBusy(false); }
   }
 
   function goToProject() {
@@ -4054,7 +4085,7 @@ export default function App() {
       {view !== "dashboard" && (<>
       <header className={`sticky top-0 z-50 border-b border-white/15 bg-[#005b3f] backdrop-blur-xl`}>
         {view !== "home" ? (
-          <div className="mx-auto flex min-h-[72px] max-w-[1280px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex min-h-[72px] max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain" />
               <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#78C850]">mo</span></span>
@@ -4064,6 +4095,7 @@ export default function App() {
             <button type="button" onClick={() => { setMobileMenuOpen(false); if (view === "account") { setView("home"); } else { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); } }} className="rounded-full border border-white/25 px-4 py-2 text-center font-inter text-xs font-semibold text-white hover:bg-white/10">
               {view === "account" ? "Retour à l’accueil" : "Tableau de bord"}
             </button>
+            {view !== "account" && <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/25 px-3 py-2 text-center font-inter text-xs font-semibold text-white hover:bg-white/10 disabled:opacity-60 sm:px-4">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>}
             </div>
           </div>
         ) : (
@@ -4199,7 +4231,7 @@ export default function App() {
             <div className="rounded-3xl bg-[#005b3f] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div><div className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-2 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientNameDisplay || "Mon compte"}</p></div>
-                <button onClick={() => { activeOwnedProject.current = null; window.localStorage.removeItem("trimemo_client_session"); window.sessionStorage.removeItem("trimemo_premium_token"); window.sessionStorage.removeItem("trimemo_premium_project_id"); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); setClientProjectFlow(false); setView("home"); }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
+                <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
