@@ -829,11 +829,6 @@ export default function App() {
       };
       cloudSaveQueue.current = cloudSaveQueue.current.catch(() => {}).then(async () => {
         setCloudSaveStatus("saving");
-        const linkWithToken = async (token: string) => fetch(CLIENT_ACCOUNT_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "link", token, projectId: project.projectId, subject: project.sujet }),
-        });
         const saveWithToken = async (token: string) => fetch(PROJECT_STATE_API, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
@@ -855,11 +850,6 @@ export default function App() {
             window.localStorage.setItem("trimemo_client_session", JSON.stringify(currentSession));
             return true;
           };
-          let linkResponse = await linkWithToken(token);
-          if (linkResponse.status === 401 && await refreshToken()) linkResponse = await linkWithToken(token);
-          const linkData = await linkResponse.json().catch(() => ({}));
-          if (!linkResponse.ok || !linkData.success) throw new Error(linkData?.error || "Le projet n’a pas pu être associé à votre compte.");
-
           let response = await saveWithToken(token);
           if (response.status === 401 && await refreshToken()) response = await saveWithToken(token);
           const data = await response.json().catch(() => ({}));
@@ -2079,47 +2069,9 @@ export default function App() {
         return;
       }
 
-      // Ne créer une entrée de projet que si un vrai sujet est déjà renseigné.
-      if (String(project.sujet || "").trim()) {
-        const persistedProject = { ...project, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
-        const state = {
-          schemaVersion: 2,
-          project: persistedProject, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
-          view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
-          problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
-        };
-        // Associer d'abord le projet au compte authentifié. L'API cloud exige ensuite
-        // une appartenance vérifiée pour autoriser la sauvegarde de son contenu.
-        const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet, state }),
-        });
-        const linkData = await linkResponse.json().catch(() => ({}));
-        if (!linkResponse.ok || !linkData.success) {
-          if (linkResponse.status === 409) {
-            // Une connexion valide doit rester possible si le projet affiché
-            // appartient déjà à un autre compte. Ne jamais transférer ce projet.
-            setPendingPaymentMethod(null);
-            setClientAuthError("");
-            setView("dashboard");
-            await loadClientProjects();
-            pushToast("info", "Connexion réussie. Le document affiché appartient déjà à un autre compte et reste intact dans cet espace. Pour votre essai, choisissez « Nouveau projet » depuis le tableau de bord.");
-            return;
-          }
-          throw new Error(String(linkData.error || "Le projet n'a pas pu être associé au compte client."));
-        }
-
-        const saveResponse = await fetch(PROJECT_STATE_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.token },
-          body: JSON.stringify({ projectId: project.projectId, state }),
-        });
-        const saveData = await readApiResponse(saveResponse);
-        if (!saveData.success) throw new Error("Le projet n'a pas pu être sauvegardé dans votre compte.");
-      }
-
-      pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : String(project.sujet || "").trim() ? "Connexion réussie. Votre projet est associé à votre compte." : "Connexion réussie. Chargement de votre espace client.");
+      // A browser draft is never attached just because someone signed in.
+      // It remains in local storage until the user explicitly chooses recovery.
+      pushToast("success", "Connexion réussie. Vos projets enregistrés sont disponibles dans votre espace client.");
       if (pendingPaymentMethod) {
         const method = pendingPaymentMethod;
         setPendingPaymentMethod(null);
