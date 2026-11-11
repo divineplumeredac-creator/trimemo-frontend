@@ -575,7 +575,7 @@ export default function App() {
   latestProject.current = project;
   latestBlocks.current = blocks;
   const [clientProjectFlow, setClientProjectFlow] = useState(false);
-  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return params.get("account") === "signup" || params.get("reset-password") === "1" ? "account" : "home"; });
+  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return ["signup", "confirmed"].includes(params.get("account") || "") || params.get("reset-password") === "1" ? "account" : "home"; });
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
@@ -600,6 +600,9 @@ export default function App() {
   const [clientAuthError, setClientAuthError] = useState("");
   const [clientAuthNotice, setClientAuthNotice] = useState("");
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
+  const authIntent = useRef(new URLSearchParams(window.location.search).get("start") === "1" ? "project" : "dashboard");
+  const confirmationHandled = useRef(false);
+  const startProjectRef = useRef<() => Promise<void>>(async () => {});
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientProjects, setClientProjects] = useState<Array<{project_id:string;subject:string;payment_status:string;updated_at:string}>>([]);
   const [localDraftKeys, setLocalDraftKeys] = useState<string[]>(() => Object.keys(window.localStorage).filter(key => key.startsWith("trimemo_draft_backup_")).sort().reverse());
@@ -718,7 +721,7 @@ export default function App() {
       if (saved?.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
       if (saved?.selectedPlan) setSelectedPlan(saved.selectedPlan);
       if (Array.isArray(saved?.blocks)) setBlocks(saved.blocks);
-      if (saved?.view && !new URLSearchParams(window.location.search).get("payment") && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute)) setView(saved.view);
+      if (saved?.view && new URLSearchParams(window.location.search).get("account") !== "confirmed" && !new URLSearchParams(window.location.search).get("payment") && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute)) setView(saved.view);
       if (saved?.previewTab) setPreviewTab(saved.previewTab);
       if (saved?.premiumNav) setPremiumNav(saved.premiumNav);
       if (saved?.premiumSection === "problematic" || saved?.premiumSection === "plan" || saved?.premiumSection === "writing") setPremiumSection(saved.premiumSection);
@@ -1276,6 +1279,31 @@ export default function App() {
     setView("project");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  startProjectRef.current = startNewClientProject;
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("account") !== "confirmed" || confirmationHandled.current) return;
+    confirmationHandled.current = true;
+    const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const token = fragment.get("access_token") || "";
+    const refreshToken = fragment.get("refresh_token") || "";
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setClientAuthMode("login");
+    if (!token) { setClientAuthNotice("Si votre adresse est confirmée, connectez-vous pour continuer."); return; }
+    void (async () => {
+      try {
+        const response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "confirm-session", token }) });
+        const data = await readApiResponse(response);
+        if (!data.user?.id) throw new Error("La confirmation de votre compte n’a pas pu être vérifiée.");
+        const fullName = [data.user.firstName, data.user.lastName].filter(Boolean).join(" ");
+        window.localStorage.setItem("trimemo_client_session", JSON.stringify({ token, refreshToken, userId: data.user.id, email: data.user.email || "", fullName }));
+        setClientEmailDisplay(String(data.user.email || "")); setClientNameDisplay(fullName || "Mon compte");
+        if (query.get("start") === "1") { authIntent.current = "dashboard"; await startProjectRef.current(); }
+        else { setView("dashboard"); await loadClientProjects(); }
+      } catch { setClientAuthError("Le lien est expiré ou invalide. Connectez-vous ou demandez un nouveau lien de confirmation."); }
+    })();
+  }, []);
 
   function archiveCurrentDraft() {
     if (!String(project.sujet || "").trim()) return;
@@ -1318,6 +1346,7 @@ export default function App() {
     let session: any = null;
     try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     if (!ownerRoute && (!session?.token || !session?.userId)) {
+      authIntent.current = "project";
       setClientAuthMode("login");
       setClientAuthNotice("Connectez-vous ou créez votre compte avant de commencer un projet.");
       setView("account");
@@ -1931,6 +1960,7 @@ export default function App() {
     let session: { token: string; refreshToken?: string; expiresAt?: number | string | null; email?: string; userId?: string; fullName?: string } | null = null;
     try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     if (!session?.token) {
+      authIntent.current = "dashboard";
       setClientAuthMode("login");
       setClientAuthError("");
       setView("account");
@@ -2177,9 +2207,15 @@ export default function App() {
       const response = await fetch(CLIENT_ACCOUNT_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: clientAuthMode, firstName: clientFirstName.trim(), lastName: clientLastName.trim(), email: clientEmail.trim(), password: clientPassword }),
+        body: JSON.stringify({ action: clientAuthMode, firstName: clientFirstName.trim(), lastName: clientLastName.trim(), email: clientEmail.trim(), password: clientPassword, startProject: authIntent.current === "project" }),
       });
       const data = await readApiResponse(response);
+      if (clientAuthMode === "signup" && data.confirmation_required) {
+        setClientPassword("");
+        setClientAuthMode("login");
+        setClientAuthNotice(data.message || "Consultez votre messagerie pour confirmer votre compte avant de vous connecter.");
+        return;
+      }
       if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
       if (latestProject.current !== previousProject || latestBlocks.current !== previousBlocks) throw new Error("Le projet affiché a changé pendant la connexion. Votre travail est conservé ; réessayez.");
       let firstName=String(data.user?.firstName||clientFirstName.trim()).trim(); let lastName=String(data.user?.lastName||clientLastName.trim()).trim();
@@ -2198,6 +2234,12 @@ export default function App() {
       // account; do not bind the browser's currently displayed project here.
       if (returningFromPayment) {
         window.location.reload();
+        return;
+      }
+
+      if (authIntent.current === "project") {
+        authIntent.current = "dashboard";
+        await startNewClientProject();
         return;
       }
 
@@ -2224,6 +2266,16 @@ export default function App() {
     } finally {
       setClientAuthBusy(false);
     }
+  }
+
+  async function resendClientConfirmation() {
+    setClientAuthBusy(true); setClientAuthError(""); setClientAuthNotice("");
+    try {
+      const response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "resend-confirmation", email: clientEmail.trim(), startProject: authIntent.current === "project" }) });
+      const data = await readApiResponse(response);
+      setClientAuthNotice(data.message || "Si ce compte attend une confirmation, un nouveau lien sera envoyé.");
+    } catch (error) { setClientAuthError(error instanceof Error ? error.message : "Impossible de renvoyer le lien."); }
+    finally { setClientAuthBusy(false); }
   }
 
   async function startPayment(method: "paypal" | "mobile-money") {
@@ -4134,6 +4186,7 @@ export default function App() {
               {clientAuthMode === "reset" && !clientRecoveryToken && <p className="font-inter text-sm text-red-700">Ce lien est invalide ou incomplet. Demandez un nouveau lien de réinitialisation.</p>}
             </form>
             {clientAuthMode === "login" && <button type="button" onClick={() => { setClientAuthMode("forgot"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#1D78C1]">Mot de passe oublié ?</button>}
+            {clientAuthMode === "login" && <button type="button" disabled={clientAuthBusy} onClick={() => void resendClientConfirmation()} className="mt-4 w-full font-inter text-sm text-[#1D78C1] disabled:opacity-60">Renvoyer le lien de confirmation</button>}
             {clientAuthMode !== "reset" && <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : clientAuthMode === "login" ? "signup" : "login"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#1D78C1]">
               {clientAuthMode === "signup" ? "J’ai déjà un compte : me connecter" : clientAuthMode === "login" ? "Je n’ai pas encore de compte : m’inscrire" : "Retour à la connexion"}
             </button>}
