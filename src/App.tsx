@@ -2686,7 +2686,7 @@ export default function App() {
           previewLimitReached: countWords(content) > remainingWords || undefined,
         } : item));
         pushToast("success", finalCount + " mots rédigés dans ce bloc. " + (completedWords + finalCount >= previewLimit || countWords(content) > remainingWords ? "L’aperçu académique est disponible." : "Passez au bloc suivant."));
-        if (Array.isArray(data.warnings) && data.warnings.length) pushToast("info", String(data.warnings[0]));
+        if (Array.isArray(data.warnings)) data.warnings.forEach((warning: unknown) => pushToast("info", String(warning)));
       } catch (error) {
         const message = error instanceof Error ? error.message : "Impossible de rédiger ce bloc.";
         setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "pending", error: message } : item));
@@ -2769,7 +2769,7 @@ export default function App() {
             }
           : item
       ));
-      if (Array.isArray(result.warnings) && result.warnings.length) pushToast("info", String(result.warnings[0]));
+      if (Array.isArray(result.warnings)) result.warnings.forEach((warning: unknown) => pushToast("info", String(warning)));
     } catch (error) {
       const message = error instanceof Error
         ? error.message
@@ -3097,12 +3097,14 @@ export default function App() {
       window.setTimeout(() => URL.revokeObjectURL(url), 1500);
       const missingLinks = Number(response.headers.get("X-Trimemo-Bibliography-Missing-Links") || 0);
       const citationIssues = Number(response.headers.get("X-Trimemo-Citation-Issue-Count") || 0);
+      const styleSkipped = response.headers.get("X-Trimemo-Style-Control") === "skipped";
       const exportAttempt = Number(response.headers.get("X-Trimemo-Export-Attempt") || 0);
       const attemptsRemaining = Number(response.headers.get("X-Trimemo-Export-Attempts-Remaining") || 0);
       const exportNotice = exportAttempt ? ` Tentative ${exportAttempt}/3 ; ${attemptsRemaining} restante(s).` : "";
       const exportWarnings = [
         missingLinks > 0 ? `${missingLinks} référence(s) n’ont ni DOI ni lien.` : "",
         citationIssues > 0 ? `${citationIssues} citation(s) ne correspondent pas clairement aux références ou leur année diffère. Vérifiez-les avant remise.` : "",
+        styleSkipped ? "La vérification stylistique automatique n’a pas abouti ; relisez le document." : "",
       ].filter(Boolean);
       if (exportWarnings.length) {
         pushToast("info", "Document exporté. " + exportWarnings.join(" ") + exportNotice);
