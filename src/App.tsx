@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AdminDashboard from "./AdminDashboard";
+import MarketingHome from "./MarketingHome";
 import { registerOwnedProject, recoverMatchingAttachments } from "./project-account";
 import {
   ArrowRight,
@@ -1502,7 +1503,7 @@ export default function App() {
     return data;
   }
 
-  function navigateToSection(id: "fonctionnement" | "formules") {
+  function navigateToSection(id: "fonctionnement" | "formules" | "revision-humaine") {
     setMobileMenuOpen(false);
     setView("home");
 
@@ -4061,7 +4062,7 @@ export default function App() {
       )}
 
       {view !== "dashboard" && (<>
-      <header className="sticky top-0 z-50 border-b border-white/15 bg-[#172554] backdrop-blur-xl">
+      <header className={`sticky top-0 z-50 border-b border-white/15 ${view === "home" ? "bg-[#005b3f]" : "bg-[#172554]"} backdrop-blur-xl`}>
         {clientProjectFlow ? (
           <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
             <div className="flex items-center gap-3">
@@ -4079,9 +4080,9 @@ export default function App() {
             <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#78C850]">mo</span></span>
           </button>
           <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">
-            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection("fonctionnement")}>Fonctionnement</button>
-            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection("formules")}>Formules</button>
-            <button
+            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
+            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection(view === "home" ? "revision-humaine" : "formules")}>{view === "home" ? "Révision humaine" : "Formules"}</button>
+            {view !== "home" && <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 setView("dashboard");
@@ -4089,7 +4090,7 @@ export default function App() {
               }}
             >
               <span className="text-white hover:text-[#D4A23A]">Mon projet</span>
-            </button>
+            </button>}
           </div>
 
           <div className="flex items-center gap-2">
@@ -4105,11 +4106,12 @@ export default function App() {
               onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }}
               className="hidden rounded-full border border-white/25 px-4 py-2 font-inter text-[12px] text-white sm:inline-flex"
             >
-              Mon compte
+              {view === "home" ? "Se connecter" : "Mon compte"}
             </button>
+            {view === "home" && <button onClick={() => { authIntent.current = "dashboard"; setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} className="hidden rounded-lg border border-white px-4 py-2 font-inter text-sm font-semibold text-white sm:inline-flex">Créer un compte</button>}
             <button
               onClick={goToProject}
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-[#D4A23A] px-5 font-inter text-[13px] font-medium"
+              className={`${view === "home" ? "hidden" : "inline-flex"} h-10 items-center gap-2 rounded-full bg-[#D4A23A] px-5 font-inter text-[13px] font-medium`}
             >
               Commencer <ArrowRight className="h-4 w-4" />
             </button>
@@ -4119,12 +4121,13 @@ export default function App() {
       </header>
 
       {!clientProjectFlow && mobileMenuOpen && (
-        <div className="sticky top-[72px] z-40 border-b border-white/15 bg-[#172554] px-6 py-4 shadow-sm md:hidden">
+        <div className={`sticky top-[72px] z-40 border-b border-white/15 ${view === "home" ? "bg-[#005b3f]" : "bg-[#172554]"} px-6 py-4 shadow-sm md:hidden`}>
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
             <button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
             <button onClick={() => navigateToSection("formules")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Formules</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon compte client</button>
+            {view === "home" && <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button>}
             {view === "preview" && preview && (
               <>
                 <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Aperçu</div>
@@ -4231,44 +4234,7 @@ export default function App() {
       {view !== "dashboard" && (<>
       {view === "home" && (
         <>
-          <section className="px-6 pb-24 pt-20 lg:px-8 lg:pt-28">
-            <div className="mx-auto max-w-[820px] text-center">
-              <div className="font-inter text-[11px] uppercase tracking-[0.22em] text-[#D4A23A]">Plateforme académique francophone internationale</div>
-              <h1 className="mt-5 font-playfair text-5xl font-bold leading-[0.98] tracking-[-0.02em] lg:text-6xl">Une rédaction guidée par votre sujet réel.</h1>
-              <p className="mx-auto mt-7 max-w-[690px] font-inter text-[16px] leading-[1.75] text-[#172554]/75">
-                Vos consignes, votre contexte, vos documents et vos exigences commandent la génération. Aucun contenu académique préécrit n’est utilisé comme source de remplacement.
-              </p>
-              <div className="mt-9 flex justify-center">
-                <button onClick={goToProject} className="inline-flex h-13 items-center gap-3 rounded-full bg-[#1D78C1] px-7 font-inter text-sm font-medium text-white">
-                  Créer mon projet <ArrowRight className="h-4 w-4 text-[#D4A23A]" />
-                </button>
-              </div>
-              <div className="mt-7 font-inter text-xs text-[#172554]/75">1 page = {WORDS_PER_PAGE} mots · Aperçu avant paiement · Coût calculé dès l’analyse</div>
-            </div>
-          </section>
-
-          <section id="fonctionnement" className="border-y border-[#172554]/5 bg-[#EAF7EE] px-6 py-20 lg:px-8 lg:py-24">
-            <div className="mx-auto max-w-[1280px]">
-              <div className="max-w-[650px]">
-                <div className="font-inter text-[11px] uppercase tracking-[0.22em] text-[#D4A23A]">Fonctionnement</div>
-                <h2 className="mt-4 font-playfair text-4xl leading-tight">Un flux qui sépare aperçu, validation et rédaction complète.</h2>
-              </div>
-              <div className="mt-12 grid gap-5 md:grid-cols-4">
-                {[
-                  ["01", "Votre formule", "Vous choisissez la formule qui correspond à votre niveau ou à votre besoin."],
-                  ["02", "Votre dossier", "Sujet, contexte, consignes et documents sont transmis au moteur de génération."],
-                  ["03", "Choix et validation", "Générez jusqu’à trois problématiques, améliorez-les ou proposez-en d’autres, puis comparez jusqu’à trois plans avant de choisir."],
-                  ["04", "Aperçu rédactionnel puis accès complet", "Après validation de la problématique et du plan, rédigez jusqu’à 2 500 mots pour examiner le document en cours. Ces mots sont inclus dans le prix global du document : ils ne sont ni gratuits ni facturés une seconde fois. Le paiement permet de poursuivre la rédaction et d’exporter le document complet."],
-                ].map(([n, title, text]) => (
-                  <div key={n} className="rounded-[20px] border border-[#172554]/5 bg-white p-6">
-                    <div className="font-inter text-[11px] tracking-[0.2em] text-[#D4A23A]">{n}</div>
-                    <div className="mt-3 font-playfair text-xl">{title}</div>
-                    <div className="mt-2 font-inter text-[13px] leading-[1.6] text-[#172554]/70">{text}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+          <MarketingHome onStart={goToProject} onRevision={() => { setClientDashboardTab("documents"); setView("dashboard"); void loadClientProjects(); }} />
 
           <section
             id="formules"
