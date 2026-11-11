@@ -4053,15 +4053,18 @@ export default function App() {
 
       {view !== "dashboard" && (<>
       <header className={`sticky top-0 z-50 border-b border-white/15 bg-[#005b3f] backdrop-blur-xl`}>
-        {clientProjectFlow ? (
-          <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
+        {view !== "home" ? (
+          <div className="mx-auto flex min-h-[72px] max-w-[1280px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain" />
               <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#78C850]">mo</span></span>
             </div>
-            <button type="button" onClick={() => { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-full border border-white/25 px-4 py-2 font-inter text-xs font-semibold text-white hover:bg-white/10">
-              Retour au tableau de bord
+            <div className="flex items-center gap-2">
+            {view !== "account" && <button type="button" onClick={() => setMobileMenuOpen(value => !value)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-white md:hidden" aria-label={mobileMenuOpen ? "Fermer la navigation du projet" : "Ouvrir la navigation du projet"} aria-expanded={mobileMenuOpen}>{mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>}
+            <button type="button" onClick={() => { setMobileMenuOpen(false); if (view === "account") { setView("home"); } else { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); } }} className="rounded-full border border-white/25 px-4 py-2 text-center font-inter text-xs font-semibold text-white hover:bg-white/10">
+              {view === "account" ? "Retour à l’accueil" : "Tableau de bord"}
             </button>
+            </div>
           </div>
         ) : (
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
@@ -4110,14 +4113,14 @@ export default function App() {
         )}
       </header>
 
-      {!clientProjectFlow && mobileMenuOpen && (
+      {view !== "account" && mobileMenuOpen && (
         <div className={`sticky top-[72px] z-40 border-b border-white/15 bg-[#005b3f] px-6 py-4 shadow-sm md:hidden`}>
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
-            <button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
+            {view === "home" && <><button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
             <button onClick={() => navigateToSection("revision-humaine")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Révision humaine</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon compte client</button>
-            {view === "home" && <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button>}
+            <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button></>}
             {view === "preview" && preview && (
               <>
                 <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Aperçu</div>
@@ -4236,9 +4239,9 @@ export default function App() {
               <div className="flex items-start gap-3">
                 {(
                   <button
-                    onClick={() => { if (clientProjectFlow) { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); } else { setView("home"); } }}
+                    onClick={() => { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); }}
                     className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#172554]/10 bg-white"
-                    aria-label="Retour à l'accueil"
+                    aria-label="Retour au tableau de bord"
                   >
                     <ArrowRight className="h-4 w-4 rotate-180" />
                   </button>
@@ -4358,10 +4361,6 @@ export default function App() {
                 <aside className="h-fit rounded-[24px] border border-[#172554]/5 bg-white p-7 lg:sticky lg:top-[98px]">
                   <div className="font-playfair text-xl">Paramètres du projet</div>
                   <div className="mt-6 space-y-5">
-                    <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Formule</label>
-                      <div className="mt-2 rounded-[12px] bg-[#005b3f] px-4 py-3 font-inter text-sm text-white">{formulaOptions.find((item) => item.id === project.formula)?.title || "À sélectionner"}</div>
-                    </div>
                     <div>
                       <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Niveau *</label>
                       <select value={project.niveau} onChange={(e) => setProject({ ...project, niveau: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#172554]/10 bg-white px-4 font-inter text-sm">
