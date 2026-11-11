@@ -62,22 +62,6 @@ type FormulaId = (typeof formulaOptions)[number]["id"];
 const domainOptions = ["Gestion","Management","Management stratégique","Management des ressources humaines","Finance","Comptabilité","Audit","Contrôle de gestion","Banque","Assurance","Économie","Marketing","Communication","Commerce","Entrepreneuriat","Gestion de projet","Logistique et supply chain","Achats","Management de la qualité","Management des organisations","Droit","Droit des affaires","Droit public","Sciences politiques","Relations internationales","Sociologie","Psychologie","Éducation et sciences de l’éducation","Sciences de l’information et de la communication","Informatique","Intelligence artificielle","Data science","Systèmes d’information","Génie industriel","Génie civil","Agronomie","Environnement","Santé","Sciences infirmières","Médecine","Pharmacie","Tourisme et hôtellerie","Transport","Immobilier","Développement durable","Sciences sociales","Sciences humaines","Autre"];
 
 
-const pricing = {
-  individual: [
-    { id: "LICENCE", title: "Mémoire Licence", pages: "Volume au choix", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Licence 3", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
-    { id: "MASTER", title: "Mémoire Master", pages: "Volume au choix", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Le plus choisi", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
-    { id: "DOCTORAT", title: "Thèse", pages: "Volume au choix", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Doctorat", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
-  ],
-};
-
-const pricingInclusions = [
-  "Jusqu’à 3 problématiques et jusqu’à 3 plans générés, améliorés et choisis avant paiement",
-  "Sources bibliographiques contrôlées (DOI ou URL vérifiée lorsque disponible)",
-  "Export Word",
-  "Correction humaine disponible en option, avec devis séparé",
-];
-
-
 type FileCategory = "methodology" | "instructions" | "context" | "source" | "reference";
 
 type FileInput = {
@@ -1503,7 +1487,7 @@ export default function App() {
     return data;
   }
 
-  function navigateToSection(id: "fonctionnement" | "formules" | "revision-humaine") {
+  function navigateToSection(id: "fonctionnement" | "revision-humaine") {
     setMobileMenuOpen(false);
     setView("home");
 
@@ -4081,7 +4065,7 @@ export default function App() {
           </button>
           <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">
             <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
-            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection(view === "home" ? "revision-humaine" : "formules")}>{view === "home" ? "Révision humaine" : "Formules"}</button>
+            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection("revision-humaine")}>Révision humaine</button>
             {view !== "home" && <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -4124,7 +4108,7 @@ export default function App() {
         <div className={`sticky top-[72px] z-40 border-b border-white/15 ${view === "home" ? "bg-[#005b3f]" : "bg-[#172554]"} px-6 py-4 shadow-sm md:hidden`}>
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
             <button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
-            <button onClick={() => navigateToSection("formules")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Formules</button>
+            <button onClick={() => navigateToSection("revision-humaine")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Révision humaine</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon compte client</button>
             {view === "home" && <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button>}
@@ -4236,129 +4220,6 @@ export default function App() {
         <>
           <MarketingHome onStart={goToProject} onRevision={() => { setClientDashboardTab("documents"); setView("dashboard"); void loadClientProjects(); }} />
 
-          <section
-            id="formules"
-            className="border-y border-[#172554]/5 bg-[#EAF7EE] px-6 py-20 lg:px-8 lg:py-24"
-          >
-            <div className="mx-auto max-w-[1280px]">
-              <div>
-                <div className="font-inter text-[11px] uppercase tracking-[0.22em] text-[#D4A23A]">
-                  Tarifs Trimémo
-                </div>
-                <h2 className="mt-4 font-playfair text-4xl">
-                  Tarification personnalisée
-                </h2>
-                <p className="mt-3 max-w-[760px] font-inter text-sm leading-[1.7] text-[#172554]/70">
-                  Un coût estimé après analyse du pays, du type de document, du volume, du niveau et des exigences du guide.
-                  La correction humaine est proposée en option et facturée séparément.
-                </p>
-              </div>
-
-              <div className="mt-10 grid gap-5 lg:grid-cols-3">
-                {pricing.individual.map((item) => (
-                  <div
-                    key={item.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      setFormula(item.id as FormulaId);
-                      setProject((current) => ({
-                        ...current,
-                        formula: item.id as FormulaId,
-                      }));
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setFormula(item.id as FormulaId);
-                        setProject((current) => ({
-                          ...current,
-                          formula: item.id as FormulaId,
-                        }));
-                      }
-                    }}
-                    className={`rounded-[24px] border p-7 text-left transition ${
-                      formula === item.id
-                        ? "border-[#172554] bg-[#172554] text-white"
-                        : "border-[#172554]/10 bg-white hover:border-[#172554]/25"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="font-playfair text-2xl">{item.title}</div>
-                      {item.id === "MASTER" && (
-                        <span className="rounded-full bg-[#D4A23A] px-2.5 py-1 font-inter text-[10px] font-semibold text-[#172554]">
-                          {item.badge}
-                        </span>
-                      )}
-                    </div>
-
-                    <div
-                      className={`mt-2 font-inter text-xs ${
-                        formula === item.id ? "text-white/55" : "text-[#172554]/75"
-                      }`}
-                    >
-                      {item.pages}
-                    </div>
-
-                    <div className="mt-6 flex flex-wrap items-end gap-x-3 gap-y-1">
-                      <span className="font-playfair text-3xl">{item.eur}</span>
-                      <span
-                        className={`pb-1 font-inter text-xs ${
-                          formula === item.id ? "text-white/55" : "text-[#172554]/75"
-                        }`}
-                      >
-                        {item.fcfa}
-                      </span>
-                    </div>
-
-                    <div
-                      className={`mt-4 font-inter text-xs leading-[1.6] ${
-                        formula === item.id ? "text-white/70" : "text-[#172554]/60"
-                      }`}
-                    >
-                      {item.details}
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between gap-3">
-                      <span className="font-inter text-xs font-semibold">
-                        {formula === item.id ? "Formule sélectionnée" : "Sélectionner cette formule →"}
-                      </span>
-                      {formula === item.id && (
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            goToProject();
-                          }}
-                          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#D4A23A] px-5 font-inter text-xs font-semibold text-[#172554] transition hover:brightness-95"
-                        >
-                          Commencer <ArrowRight className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-10 rounded-[22px] border border-[#172554]/10 bg-white p-6">
-                <div className="font-playfair text-xl">
-                  Inclus dans votre projet
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {pricingInclusions.map((item) => (
-                    <span
-                      key={item}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#EAF7EE] px-3 py-2 font-inter text-xs text-[#172554]/70"
-                    >
-                      <Check className="h-3.5 w-3.5 text-[#D4A23A]" />
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
         </>
       )}
 
