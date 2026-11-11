@@ -1241,6 +1241,14 @@ export default function App() {
   }
 
   function goToProject() {
+    let session: any = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!ownerRoute && (!session?.token || !session?.userId)) {
+      setClientAuthMode("login");
+      setClientAuthNotice("Connectez-vous ou créez votre compte avant de commencer un projet.");
+      setView("account");
+      return;
+    }
     // L'achat Premium couvre uniquement le projet auquel il est rattaché.
     window.sessionStorage.removeItem("trimemo_premium_token");
     window.sessionStorage.removeItem("trimemo_premium_project_id");
@@ -1309,7 +1317,18 @@ export default function App() {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
-      return await fetch(input, { ...init, signal: controller.signal });
+      const protectedRoutes = [ESTIMATE_API, PROBLEMATICS_API, PLANS_API, FREE_PREVIEW_API, BLOCK_API];
+      let headers = init.headers;
+      if (!ownerRoute && typeof input === "string" && protectedRoutes.includes(input)) {
+        let session: any = null;
+        try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+        if (session?.token) {
+          const nextHeaders = new Headers(init.headers);
+          nextHeaders.set("X-Trimemo-Client-Token", String(session.token));
+          headers = nextHeaders;
+        }
+      }
+      return await fetch(input, { ...init, headers, signal: controller.signal });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw new Error("La génération a dépassé le délai prévu. L’API Trimémo n’a pas répondu à temps.");
