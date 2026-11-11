@@ -990,11 +990,31 @@ export default function App() {
       try {
         setLoading(true);
         const action = payment === "paypal" ? "verify-paypal" : "verify-mobile-money";
-        const response = await fetch(`${API_URL}?action=${action}`, {
+        let verificationSession: any = null;
+        try { verificationSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+        if (payment === "paypal" && !verificationSession?.token) {
+          setClientAuthMode("login");
+          setView("account");
+          throw new Error("Connectez-vous au compte associé au projet pour reprendre la vérification du paiement.");
+        }
+        const verify = (token: string) => fetch(`${API_URL}?action=${action}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ id, project: loadPendingProject(stateStorageKey) }),
         });
+        let response = await verify(String(verificationSession?.token || ""));
+        if (payment === "paypal" && response.status === 401 && verificationSession?.refreshToken) {
+          const refresh = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refreshToken: verificationSession.refreshToken }) });
+          const renewed = await refresh.json().catch(() => ({}));
+          if (refresh.ok && renewed.token && renewed.user?.id === verificationSession.userId) {
+            const current = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+            if (!current || current.userId !== verificationSession.userId) throw new Error("Le compte a changé. Reconnectez-vous au compte associé au projet.");
+            verificationSession = { ...verificationSession, token: String(renewed.token), refreshToken: String(renewed.refresh_token || verificationSession.refreshToken), expiresAt: renewed.expires_at || null };
+            window.localStorage.setItem("trimemo_client_session", JSON.stringify(verificationSession));
+            response = await verify(verificationSession.token);
+          }
+        }
+        if (payment === "paypal" && response.status === 401) { setClientAuthMode("login"); setView("account"); }
         const data = await readApiResponse(response);
         if (data.status !== "PAID") {
           throw new Error(data.error || "Le paiement n’a pas été confirmé.");
@@ -2032,6 +2052,13 @@ export default function App() {
       setClientEmailDisplay(session.email);
       setClientNameDisplay(fullName || "Mon compte");
       setClientPassword("");
+
+      // A pending PayPal return must be verified under the newly authenticated
+      // account; do not bind the browser's currently displayed project here.
+      if (new URLSearchParams(window.location.search).get("payment") === "paypal") {
+        window.location.reload();
+        return;
+      }
 
       // Ne créer une entrée de projet que si un vrai sujet est déjà renseigné.
       if (String(project.sujet || "").trim()) {
