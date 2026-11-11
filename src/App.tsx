@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AdminDashboard from "./AdminDashboard";
+import MarketingHome from "./MarketingHome";
+import { registerOwnedProject, recoverMatchingAttachments } from "./project-account";
 import {
   ArrowRight,
   Check,
@@ -58,22 +60,6 @@ const formulaOptions = [
 type FormulaId = (typeof formulaOptions)[number]["id"];
 
 const domainOptions = ["Gestion","Management","Management stratégique","Management des ressources humaines","Finance","Comptabilité","Audit","Contrôle de gestion","Banque","Assurance","Économie","Marketing","Communication","Commerce","Entrepreneuriat","Gestion de projet","Logistique et supply chain","Achats","Management de la qualité","Management des organisations","Droit","Droit des affaires","Droit public","Sciences politiques","Relations internationales","Sociologie","Psychologie","Éducation et sciences de l’éducation","Sciences de l’information et de la communication","Informatique","Intelligence artificielle","Data science","Systèmes d’information","Génie industriel","Génie civil","Agronomie","Environnement","Santé","Sciences infirmières","Médecine","Pharmacie","Tourisme et hôtellerie","Transport","Immobilier","Développement durable","Sciences sociales","Sciences humaines","Autre"];
-
-
-const pricing = {
-  individual: [
-    { id: "LICENCE", title: "Mémoire Licence", pages: "Volume au choix", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Licence 3", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
-    { id: "MASTER", title: "Mémoire Master", pages: "Volume au choix", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Le plus choisi", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
-    { id: "DOCTORAT", title: "Thèse", pages: "Volume au choix", eur: "Prix estimé après analyse", fcfa: "Prix estimé après analyse", badge: "Doctorat", details: "Tarif calculé selon le document, le volume, le niveau et le marché du client." },
-  ],
-};
-
-const pricingInclusions = [
-  "Jusqu’à 3 problématiques et jusqu’à 3 plans générés, améliorés et choisis avant paiement",
-  "Sources bibliographiques contrôlées (DOI ou URL vérifiée lorsque disponible)",
-  "Export Word",
-  "Correction humaine disponible en option, avec devis séparé",
-];
 
 
 type FileCategory = "methodology" | "instructions" | "context" | "source" | "reference";
@@ -569,8 +555,12 @@ export default function App() {
   const [selectedProblematic, setSelectedProblematic] = useState<Problematic | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const latestProject = useRef(project);
+  const latestBlocks = useRef(blocks);
+  latestProject.current = project;
+  latestBlocks.current = blocks;
   const [clientProjectFlow, setClientProjectFlow] = useState(false);
-  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return params.get("account") === "signup" || params.get("reset-password") === "1" ? "account" : "home"; });
+  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return ["signup", "confirmed"].includes(params.get("account") || "") || params.get("reset-password") === "1" ? "account" : "home"; });
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
@@ -594,9 +584,15 @@ export default function App() {
   });
   const [clientAuthError, setClientAuthError] = useState("");
   const [clientAuthNotice, setClientAuthNotice] = useState("");
+  const [showConfirmationResend, setShowConfirmationResend] = useState(false);
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
+  const [clientLogoutBusy, setClientLogoutBusy] = useState(false);
+  const authIntent = useRef(new URLSearchParams(window.location.search).get("start") === "1" ? "project" : "dashboard");
+  const confirmationHandled = useRef(false);
+  const startProjectRef = useRef<() => Promise<void>>(async () => {});
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientProjects, setClientProjects] = useState<Array<{project_id:string;subject:string;payment_status:string;updated_at:string}>>([]);
+  const [localDraftKeys, setLocalDraftKeys] = useState<string[]>(() => Object.keys(window.localStorage).filter(key => key.startsWith("trimemo_draft_backup_")).sort().reverse());
   const [clientRevisions, setClientRevisions] = useState<any[]>([]);
   const [revisionModalOpen, setRevisionModalOpen] = useState(false);
   const [clientDashboardTab, setClientDashboardTab] = useState<"documents" | "in_progress" | "pending" | "completed">("documents");
@@ -636,6 +632,8 @@ export default function App() {
   const filesHydrated = useRef(false);
   const cloudHydrated = useRef(false);
   const cloudLoadStarted = useRef(false);
+  const creatingProject = useRef(false);
+  const activeOwnedProject = useRef<{projectId:string; userId:string} | null>(null);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cloudSaveQueue = useRef<Promise<void>>(Promise.resolve());
   const [cloudSaveStatus, setCloudSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -710,7 +708,7 @@ export default function App() {
       if (saved?.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
       if (saved?.selectedPlan) setSelectedPlan(saved.selectedPlan);
       if (Array.isArray(saved?.blocks)) setBlocks(saved.blocks);
-      if (saved?.view && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute)) setView(saved.view);
+      if (saved?.view && new URLSearchParams(window.location.search).get("account") !== "confirmed" && !new URLSearchParams(window.location.search).get("payment") && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute)) setView(saved.view);
       if (saved?.previewTab) setPreviewTab(saved.previewTab);
       if (saved?.premiumNav) setPremiumNav(saved.premiumNav);
       if (saved?.premiumSection === "problematic" || saved?.premiumSection === "plan" || saved?.premiumSection === "writing") setPremiumSection(saved.premiumSection);
@@ -767,8 +765,11 @@ export default function App() {
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Impossible de récupérer le projet distant.");
+        const activeSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (!cloudSession?.userId || activeSession?.userId !== cloudSession.userId) throw new Error("Le compte a changé pendant le chargement du projet.");
         if (data.found && data.state) {
           const saved = data.state;
+          if (cloudSession?.userId) activeOwnedProject.current = { projectId: sharedProjectId, userId: String(cloudSession.userId) };
           const remoteProject = saved.project ? { ...saved.project, projectId: sharedProjectId, files: [] } : null;
           if (remoteProject) setProject(remoteProject);
           if (saved.formula) setFormula(saved.formula);
@@ -778,8 +779,9 @@ export default function App() {
           if (saved.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
           if (saved.selectedPlan) setSelectedPlan(saved.selectedPlan);
           if (Array.isArray(saved.blocks)) setBlocks(saved.blocks);
-          // Un projet ouvert depuis le tableau de bord reprend toujours dans la rédaction.
-          setView("writing");
+          // An unfinished project without a validated plan must reopen at the
+          // appropriate earlier step rather than a blank writing screen.
+          setView(saved.selectedPlan && saved.selectedProblematic ? "writing" : saved.premium ? "premium" : "project");
           setWritingTab("writing");
           if (saved.previewTab) setPreviewTab(saved.previewTab);
           if (saved.premiumNav) setPremiumNav(saved.premiumNav);
@@ -813,7 +815,7 @@ export default function App() {
     try { cloudSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     // Les invités conservent leur travail localement. La sauvegarde cloud exige un compte lié.
     // L'espace propriétaire conserve sa persistance locale et ne passe pas par l'API client.
-    if (!cloudHydrated.current || !filesHydrated.current || ownerRoute || !cloudSession?.token || !String(project.sujet || "").trim()) return;
+    if (!cloudHydrated.current || !filesHydrated.current || ownerRoute || !cloudSession?.token || !cloudSession?.userId || activeOwnedProject.current?.projectId !== project.projectId || activeOwnedProject.current?.userId !== cloudSession.userId || !String(project.sujet || "").trim()) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
@@ -829,11 +831,6 @@ export default function App() {
       };
       cloudSaveQueue.current = cloudSaveQueue.current.catch(() => {}).then(async () => {
         setCloudSaveStatus("saving");
-        const linkWithToken = async (token: string) => fetch(CLIENT_ACCOUNT_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "link", token, projectId: project.projectId, subject: project.sujet }),
-        });
         const saveWithToken = async (token: string) => fetch(PROJECT_STATE_API, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
@@ -841,7 +838,8 @@ export default function App() {
         });
         try {
           let currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
-          let token = String(currentSession?.token || cloudSession.token);
+          if (!currentSession?.token || currentSession.userId !== cloudSession.userId || activeOwnedProject.current?.projectId !== project.projectId || activeOwnedProject.current?.userId !== currentSession.userId) return;
+          let token = String(currentSession.token);
           const refreshToken = async () => {
             if (!currentSession?.refreshToken) return false;
             const refreshResponse = await fetch(CLIENT_ACCOUNT_API, {
@@ -849,21 +847,24 @@ export default function App() {
               body: JSON.stringify({ action: "refresh", refreshToken: currentSession.refreshToken }),
             });
             const refreshed = await refreshResponse.json().catch(() => ({}));
-            if (!refreshResponse.ok || !refreshed.token) return false;
+            if (!refreshResponse.ok || !refreshed.token || refreshed.user?.id !== cloudSession.userId) return false;
+            const active = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+            if (active?.userId !== cloudSession.userId || activeOwnedProject.current?.projectId !== project.projectId) return false;
             currentSession = { ...currentSession, token: String(refreshed.token), refreshToken: String(refreshed.refresh_token || currentSession.refreshToken), expiresAt: refreshed.expires_at || null };
             token = currentSession.token;
             window.localStorage.setItem("trimemo_client_session", JSON.stringify(currentSession));
             return true;
           };
-          let linkResponse = await linkWithToken(token);
-          if (linkResponse.status === 401 && await refreshToken()) linkResponse = await linkWithToken(token);
-          const linkData = await linkResponse.json().catch(() => ({}));
-          if (!linkResponse.ok || !linkData.success) throw new Error(linkData?.error || "Le projet n’a pas pu être associé à votre compte.");
-
           let response = await saveWithToken(token);
           if (response.status === 401 && await refreshToken()) response = await saveWithToken(token);
           const data = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(data?.error || "Échec de la sauvegarde serveur.");
+          const active = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+          if (active?.userId !== cloudSession.userId || activeOwnedProject.current?.projectId !== project.projectId) return;
+          // The state write above is owner-authorized; updating the listing
+          // afterwards cannot claim a project for the current account.
+          const listing = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "link", token, projectId: project.projectId, subject: project.sujet }) });
+          if (!listing.ok) throw new Error("Le projet est enregistré, mais son nom n’a pas pu être actualisé dans la liste.");
           setCloudSaveStatus("saved");
           window.dispatchEvent(new CustomEvent("trimemo-cloud-save", { detail: { ok: true, savedAt: data.savedAt } }));
         } catch (error) {
@@ -1026,6 +1027,11 @@ export default function App() {
         const saved = data.project || loadPendingProject(stateStorageKey) || null;
         if (saved?.projectId) window.sessionStorage.setItem("trimemo_premium_project_id", String(saved.projectId));
         if (!saved) throw new Error("Le paiement est confirmé, mais les données du projet n'ont pas pu être restaurées. Contactez le support avec la référence de commande.");
+        if (payment === "paypal") {
+          const activeSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+          if (!verificationSession?.userId || activeSession?.userId !== verificationSession.userId) throw new Error("Le compte a changé. Reconnectez-vous au compte associé au projet.");
+          activeOwnedProject.current = { projectId: String(saved.projectId || ""), userId: verificationSession.userId };
+        }
         if (saved) {
           let storedPreview: Preview | null = data.preview || null;
           if (!storedPreview) { try { storedPreview = JSON.parse(window.sessionStorage.getItem("trimemo_preview_pending") || window.localStorage.getItem("trimemo_preview_pending") || "null"); } catch {} }
@@ -1218,17 +1224,38 @@ export default function App() {
     window.setTimeout(() => setToasts((current) => current.filter((toast) => toast.id !== id)), 4200);
   }
 
-  function startNewClientProject() {
+  async function startNewClientProject() {
+    if (creatingProject.current) return;
+    let session: any = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token || !session?.userId) {
+      setClientAuthMode("login"); setClientAuthNotice("Connectez-vous ou créez votre compte avant de commencer un projet."); setView("account"); return;
+    }
+    const next: ProjectData = {
+      projectId: createProjectId(), formula: formula || "MASTER", sujet: "", domaine: "", contexte: "",
+      problematiquePersonnelle: "", planPersonnel: "", consignes: "", niveau: "", typeDoc: "Mémoire",
+      pages: 0, email: "", files: [],
+    };
+    creatingProject.current = true;
+    try {
+      // Preserve the complete in-memory draft before replacing it. If the
+      // browser cannot store the backup, leave the current project untouched.
+      archiveCurrentDraft();
+      await registerOwnedProject(CLIENT_ACCOUNT_API, session, next, () => {
+        try { return JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch { return null; }
+      });
+      if (latestProject.current !== project || latestBlocks.current !== blocks) throw new Error("Le projet affiché a changé pendant la création. Votre travail est conservé ; ouvrez le nouveau projet depuis votre compte.");
+      activeOwnedProject.current = { projectId: next.projectId, userId: session.userId };
+    } catch (error) {
+      pushToast("error", error instanceof Error ? error.message : "Impossible de créer le projet dans votre compte.");
+      return;
+    } finally { creatingProject.current = false; }
     // Le formulaire s’ouvre dans le parcours client, sans retour à l’accueil.
     setClientProjectFlow(true);
     // Nouveau projet = nouvel identifiant et nouveau droit de paiement.
     window.sessionStorage.removeItem("trimemo_premium_token");
     window.sessionStorage.removeItem("trimemo_premium_project_id");
-    setProject({
-      projectId: createProjectId(), formula: formula || "MASTER", sujet: "", domaine: "", contexte: "",
-      problematiquePersonnelle: "", planPersonnel: "", consignes: "", niveau: "", typeDoc: "Mémoire",
-      pages: 0, email: "", files: [],
-    });
+    setProject(next);
     setPreview(null);
     setEstimate(null);
     setPremium(null);
@@ -1239,8 +1266,110 @@ export default function App() {
     setView("project");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  startProjectRef.current = startNewClientProject;
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("account") !== "confirmed" || confirmationHandled.current) return;
+    confirmationHandled.current = true;
+    const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const token = fragment.get("access_token") || "";
+    const refreshToken = fragment.get("refresh_token") || "";
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setClientAuthMode("login");
+    if (!token) { setClientAuthNotice("Si votre adresse est confirmée, connectez-vous pour continuer."); return; }
+    void (async () => {
+      try {
+        const response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "confirm-session", token }) });
+        const data = await readApiResponse(response);
+        if (!data.user?.id) throw new Error("La confirmation de votre compte n’a pas pu être vérifiée.");
+        const fullName = [data.user.firstName, data.user.lastName].filter(Boolean).join(" ");
+        window.localStorage.setItem("trimemo_client_session", JSON.stringify({ token, refreshToken, userId: data.user.id, email: data.user.email || "", fullName }));
+        setClientEmailDisplay(String(data.user.email || "")); setClientNameDisplay(fullName || "Mon compte");
+        if (query.get("start") === "1") { authIntent.current = "dashboard"; await startProjectRef.current(); }
+        else { setView("dashboard"); await loadClientProjects(); }
+      } catch { setClientAuthError("Le lien est expiré ou invalide. Connectez-vous ou demandez un nouveau lien de confirmation."); setShowConfirmationResend(true); }
+    })();
+  }, []);
+
+  function archiveCurrentDraft() {
+    if (!String(project.sujet || "").trim()) return;
+    const key = `trimemo_draft_backup_${project.projectId}_${Date.now()}`;
+    const hasLocalFiles = project.files?.some((file: FileInput) => Boolean(file?.content));
+    // Les contenus de pièces jointes restent limités à la session du navigateur.
+    const attachmentBackupKey = hasLocalFiles ? `${key}_files` : undefined;
+    if (attachmentBackupKey) window.sessionStorage.setItem(attachmentBackupKey, JSON.stringify(project.files));
+    const backupProject = { ...project, files: project.files?.map(({ content, ...file }: FileInput) => file) };
+    const backup = { schemaVersion: 2, project: backupProject, attachmentBackupKey, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount };
+    try { window.localStorage.setItem(key, JSON.stringify(backup)); }
+    catch (error) { if (attachmentBackupKey) window.sessionStorage.removeItem(attachmentBackupKey); throw error; }
+    setLocalDraftKeys(keys => [key, ...keys]);
+  }
+
+  async function recoverLocalDraft(key: string) {
+    let session: any = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token || !session?.userId) { setView("account"); pushToast("error", "Connectez-vous au compte du projet avant de reprendre ce brouillon."); return; }
+    setLoading(true);
+    try {
+      const draft = JSON.parse(window.localStorage.getItem(key) || "null");
+      const projectId = String(draft?.project?.projectId || "");
+      if (!projectId || !draft?.project?.sujet) throw new Error("Ce brouillon ne peut pas être lu. Les données restent sur cet appareil.");
+      // A local browser copy cannot prove ownership. Ask the server to verify
+      // the existing account association before showing or transmitting it.
+      const response = await fetch(CLIENT_ACCOUNT_API, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ action:"resume", token:session.token, projectId }) });
+      const data = await readApiResponse(response);
+      if (!data.success || !data.state?.project) throw new Error("Le propriétaire du brouillon ne peut pas être confirmé. Le contenu reste sur cet appareil ; contactez le support.");
+      const current = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      if (current?.userId !== session.userId) throw new Error("Le compte a changé. Le brouillon reste conservé sur cet appareil.");
+      const storedFiles = draft.attachmentBackupKey ? JSON.parse(window.sessionStorage.getItem(draft.attachmentBackupKey) || "null") : null;
+      recoverMatchingAttachments(draft, data.state, storedFiles);
+      await openClientProject(projectId, { draft, storedFiles });
+    } catch (error) { pushToast("error", error instanceof Error ? error.message : "La reprise a échoué. Le brouillon est conservé."); }
+    finally { setLoading(false); }
+  }
+
+  async function logoutClient() {
+    if (clientLogoutBusy || loading) return;
+    setClientLogoutBusy(true);
+    try {
+      const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      const active = activeOwnedProject.current;
+      if (session?.token && session?.userId && active?.projectId === project.projectId && active?.userId === session.userId && String(project.sujet || "").trim()) {
+        const snapshotProject = project;
+        const snapshotBlocks = blocks;
+        // Preserve the current work even if the server is unavailable.
+        archiveCurrentDraft();
+        if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+        await cloudSaveQueue.current.catch(() => {});
+        const currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (currentSession?.userId !== session.userId || activeOwnedProject.current?.projectId !== project.projectId || latestProject.current !== snapshotProject || latestBlocks.current !== snapshotBlocks) throw new Error("Le projet a changé pendant la sauvegarde. Réessayez de vous déconnecter.");
+        const { paidPreviewSnapshot, ...persistedProject } = snapshotProject;
+        const state = { schemaVersion: 2, project: { ...persistedProject, files: snapshotProject.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) }, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks: snapshotBlocks, view: view === "dashboard" || view === "account" || view === "home" ? "writing" : view, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount };
+        const response = await fetch(PROJECT_STATE_API, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + currentSession.token }, body: JSON.stringify({ projectId: snapshotProject.projectId, state }) });
+        if (!response.ok || latestProject.current !== snapshotProject || latestBlocks.current !== snapshotBlocks) throw new Error("La dernière sauvegarde n’a pas pu être confirmée. Votre projet reste ouvert ; vérifiez votre connexion et réessayez.");
+      }
+      activeOwnedProject.current = null;
+      window.localStorage.removeItem("trimemo_client_session");
+      window.sessionStorage.removeItem("trimemo_premium_token");
+      window.sessionStorage.removeItem("trimemo_premium_project_id");
+      setClientEmailDisplay(""); setClientNameDisplay(""); setClientProjects([]); setClientRevisions([]); setClientProjectFlow(false); setMobileMenuOpen(false); setView("home");
+    } catch (error) {
+      pushToast("error", error instanceof Error ? error.message : "Déconnexion impossible. Votre projet reste ouvert.");
+    } finally { setClientLogoutBusy(false); }
+  }
 
   function goToProject() {
+    let session: any = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!ownerRoute && (!session?.token || !session?.userId)) {
+      authIntent.current = "project";
+      setClientAuthMode("login");
+      setClientAuthNotice("Connectez-vous ou créez votre compte avant de commencer un projet.");
+      setView("account");
+      return;
+    }
+    if (!ownerRoute) { void startNewClientProject(); return; }
     // L'achat Premium couvre uniquement le projet auquel il est rattaché.
     window.sessionStorage.removeItem("trimemo_premium_token");
     window.sessionStorage.removeItem("trimemo_premium_project_id");
@@ -1255,6 +1384,28 @@ export default function App() {
     }));
     setView("project");
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+  }
+
+  async function reviseProjectInputs() {
+    if (creatingProject.current) return;
+    const next: ProjectData = { ...project, projectId: createProjectId(), pricingQuoteToken: undefined };
+    if (!ownerRoute) {
+      let session: any = null;
+      try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+      if (!session?.token || !session?.userId) { setClientAuthMode("login"); setView("account"); return; }
+      creatingProject.current = true;
+      try {
+        archiveCurrentDraft();
+        await registerOwnedProject(CLIENT_ACCOUNT_API, session, projectPayloadWithoutFiles(next), () => {
+          try { return JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch { return null; }
+        });
+        if (latestProject.current !== project || latestBlocks.current !== blocks) throw new Error("Le projet affiché a changé. Votre travail est conservé ; ouvrez le nouveau projet depuis votre compte.");
+        activeOwnedProject.current = { projectId: next.projectId, userId: session.userId };
+      } catch (error) { pushToast("error", error instanceof Error ? error.message : "Impossible de préparer le projet."); return; }
+      finally { creatingProject.current = false; }
+    }
+    window.sessionStorage.removeItem("trimemo_premium_token"); window.sessionStorage.removeItem("trimemo_premium_project_id");
+    setProject(next); setEstimate(null); setPremium(null); setPreview(null); setSelectedProblematic(null); setSelectedPlan(null); setBlocks([]); setProblematicGenerationCount(0); setPlanGenerationCount(0); setView("project");
   }
 
   async function handleFiles(fileList: FileList | null) {
@@ -1309,7 +1460,17 @@ export default function App() {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
-      return await fetch(input, { ...init, signal: controller.signal });
+      const protectedRoutes = [ESTIMATE_API, PROBLEMATICS_API, PLANS_API, FREE_PREVIEW_API, BLOCK_API];
+      let headers = init.headers;
+      if (!ownerRoute && typeof input === "string" && protectedRoutes.includes(input)) {
+        let session: any = null;
+        try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+        if (!session?.token || !session?.userId || activeOwnedProject.current?.userId !== session.userId || activeOwnedProject.current?.projectId !== project.projectId) throw new Error("Ouvrez ce projet depuis votre espace client avant de poursuivre ; votre travail local est conservé.");
+        const nextHeaders = new Headers(init.headers);
+        nextHeaders.set("X-Trimemo-Client-Token", String(session.token));
+        headers = nextHeaders;
+      }
+      return await fetch(input, { ...init, headers, signal: controller.signal });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         throw new Error("La génération a dépassé le délai prévu. L’API Trimémo n’a pas répondu à temps.");
@@ -1358,7 +1519,7 @@ export default function App() {
     return data;
   }
 
-  function navigateToSection(id: "fonctionnement" | "formules") {
+  function navigateToSection(id: "fonctionnement" | "revision-humaine") {
     setMobileMenuOpen(false);
     setView("home");
 
@@ -1715,8 +1876,8 @@ export default function App() {
       try { analysisSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
       const response = await fetchWithTimeout(ESTIMATE_API, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", ...(analysisSession?.token ? { Authorization: "Bearer " + analysisSession.token } : {}) },
-        body: JSON.stringify({ project }),
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...(ownerRoute ? ownerAuthHeaders() : analysisSession?.token ? { Authorization: "Bearer " + analysisSession.token } : {}) },
+        body: JSON.stringify({ project, ownerMode: ownerRoute }),
       }, 90000);
       const data = await readApiResponse(response);
       if (!data?.estimate?.pricingQuoteToken) throw new Error("L'estimation du projet n'a pas été signée par le serveur.");
@@ -1816,16 +1977,21 @@ export default function App() {
     let session: { token: string; refreshToken?: string; expiresAt?: number | string | null; email?: string; userId?: string; fullName?: string } | null = null;
     try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     if (!session?.token) {
+      authIntent.current = "dashboard";
       setClientAuthMode("login");
       setClientAuthError("");
       setView("account");
       return;
     }
+    const expectedUserId = String(session.userId || "");
+    if (!expectedUserId) { setClientAuthMode("login"); setView("account"); return; }
     const refreshSession = async () => {
       if (!session?.refreshToken) return false;
       const rr = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refreshToken: session.refreshToken }) });
       const rd = await rr.json().catch(() => ({}));
-      if (!rr.ok || !rd.token) return false;
+      if (!rr.ok || !rd.token || String(rd.user?.id || "") !== expectedUserId) return false;
+      const active = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      if (active?.userId !== expectedUserId) return false;
       session = { ...session!, token: String(rd.token), refreshToken: String(rd.refresh_token || session!.refreshToken || ""), expiresAt: rd.expires_at || null, email: String(rd.user?.email || session!.email || ""), userId: String(rd.user?.id || session!.userId || "") };
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
       return true;
@@ -1836,6 +2002,8 @@ export default function App() {
         response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "list", token: session!.token }) });
       }
       const data = await readApiResponse(response);
+      const active = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      if (active?.userId !== expectedUserId || data.user?.id !== expectedUserId) return;
       setClientProjects(Array.isArray(data.projects) ? data.projects : []);
       setClientEmailDisplay(String(data.user?.email || session.email || ""));
       const profileName=[data.user?.firstName,data.user?.lastName].filter(Boolean).join(" ").trim();
@@ -1846,6 +2014,8 @@ export default function App() {
           rr = await fetch(`${API_BASE_URL}/api/admin-console`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "revision-client-list", token: session!.token }) });
         }
         const rd = await rr.json().catch(() => ({}));
+        const current = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (current?.userId !== expectedUserId) return;
         if (rr.ok) setClientRevisions(Array.isArray(rd.requests) ? rd.requests : []);
         else pushToast("error", String(rd.error || "Les demandes de révision n’ont pas pu être actualisées."));
       } catch {
@@ -1947,8 +2117,10 @@ export default function App() {
     finally { setRevisionSubmitting(false); }
   }
 
-  async function openClientProject(projectId: string) {
-    let session: { token: string; email?: string; fullName?: string } | null = null;
+  async function openClientProject(projectId: string, recovery?: { draft: any; storedFiles: unknown }) {
+    const previousProject = project;
+    const previousBlocks = blocks;
+    let session: { token: string; userId?: string; email?: string; fullName?: string } | null = null;
     try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     if (!session?.token) {
       setClientAuthMode("login");
@@ -1965,8 +2137,18 @@ export default function App() {
       });
       const data = await readApiResponse(response);
       if (!data.state?.project) throw new Error("Le contenu du projet n'a pas été retourné par le serveur.");
+      const activeSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      if (!session.userId || activeSession?.userId !== session.userId) throw new Error("Le compte a changé pendant l’ouverture du projet.");
+      if (latestProject.current !== previousProject || latestBlocks.current !== previousBlocks) throw new Error("Le projet affiché a changé pendant l’ouverture. Réessayez sans fermer votre travail.");
+      // Even the same project may have local edits that have not reached the
+      // server yet. Preserve them before replacing the in-memory state.
+      archiveCurrentDraft();
+      activeOwnedProject.current = { projectId, userId: session.userId };
       const saved = data.state;
-      const remoteProject = { ...saved.project, projectId, files: [] };
+      // Recheck against the latest server state after the second request, so
+      // another tab cannot silently replace the version selected for recovery.
+      const restoredFiles = recovery ? recoverMatchingAttachments(recovery.draft, saved, recovery.storedFiles) : (Array.isArray(saved.project.files) ? saved.project.files : []);
+      const remoteProject = { ...saved.project, projectId, files: restoredFiles };
       setProject(remoteProject);
       setFormula(saved.formula || saved.project.formula || null);
       setPreview(saved.preview || null);
@@ -1998,7 +2180,7 @@ export default function App() {
       }
       setClientEmailDisplay(String(session.email || ""));
       setClientNameDisplay(String(session.fullName || "Mon compte"));
-      setView("writing");
+      setView(saved.selectedPlan && saved.selectedProblematic ? "writing" : saved.premium ? "premium" : "project");
       setWritingTab("writing");
       window.history.replaceState({}, document.title, window.location.pathname);
       pushToast("success", data.project?.payment_status === "paid"
@@ -2013,6 +2195,8 @@ export default function App() {
   }
 
   async function submitClientAuth() {
+    const previousProject = project;
+    const previousBlocks = blocks;
     setClientAuthBusy(true);
     setClientAuthError("");
     setClientAuthNotice("");
@@ -2040,14 +2224,26 @@ export default function App() {
       const response = await fetch(CLIENT_ACCOUNT_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: clientAuthMode, firstName: clientFirstName.trim(), lastName: clientLastName.trim(), email: clientEmail.trim(), password: clientPassword }),
+        body: JSON.stringify({ action: clientAuthMode, firstName: clientFirstName.trim(), lastName: clientLastName.trim(), email: clientEmail.trim(), password: clientPassword, startProject: authIntent.current === "project" }),
       });
       const data = await readApiResponse(response);
+      if (clientAuthMode === "signup" && data.confirmation_required) {
+        setClientPassword("");
+        setClientAuthMode("login");
+        setShowConfirmationResend(true);
+        setClientAuthNotice(data.message || "Consultez votre messagerie pour confirmer votre compte avant de vous connecter.");
+        return;
+      }
       if (!data.token || !data.user?.id) throw new Error("Le compte a été traité, mais aucune session sécurisée n'a été retournée.");
+      if (latestProject.current !== previousProject || latestBlocks.current !== previousBlocks) throw new Error("Le projet affiché a changé pendant la connexion. Votre travail est conservé ; réessayez.");
       let firstName=String(data.user?.firstName||clientFirstName.trim()).trim(); let lastName=String(data.user?.lastName||clientLastName.trim()).trim();
       if ((!firstName || !lastName) && clientAuthMode === "login") { const enteredFirst=window.prompt("Saisissez votre prénom pour compléter votre profil Trimémo :","")?.trim()||""; const enteredLast=window.prompt("Saisissez votre nom pour compléter votre profil Trimémo :","")?.trim()||""; if(enteredFirst&&enteredLast){const profileResponse=await fetch(CLIENT_ACCOUNT_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"update-profile",token:String(data.token),firstName:enteredFirst,lastName:enteredLast})}); if(profileResponse.ok){firstName=enteredFirst;lastName=enteredLast;}}}
       const fullName=[firstName,lastName].filter(Boolean).join(" ").trim();
       const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id), fullName };
+      setShowConfirmationResend(false);
+      const returningFromPayment = new URLSearchParams(window.location.search).get("payment") === "paypal";
+      if (!returningFromPayment) archiveCurrentDraft();
+      activeOwnedProject.current = null;
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
       setClientEmailDisplay(session.email);
       setClientNameDisplay(fullName || "Mon compte");
@@ -2055,66 +2251,53 @@ export default function App() {
 
       // A pending PayPal return must be verified under the newly authenticated
       // account; do not bind the browser's currently displayed project here.
-      if (new URLSearchParams(window.location.search).get("payment") === "paypal") {
+      if (returningFromPayment) {
         window.location.reload();
         return;
       }
 
-      // Ne créer une entrée de projet que si un vrai sujet est déjà renseigné.
-      if (String(project.sujet || "").trim()) {
-        const persistedProject = { ...project, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) };
-        const state = {
-          schemaVersion: 2,
-          project: persistedProject, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
-          view: "preview", previewTab, premiumNav, premiumSection, selectedWritingBlockId,
-          problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount,
-        };
-        // Associer d'abord le projet au compte authentifié. L'API cloud exige ensuite
-        // une appartenance vérifiée pour autoriser la sauvegarde de son contenu.
-        const linkResponse = await fetch(CLIENT_ACCOUNT_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "link", token: session.token, projectId: project.projectId, subject: project.sujet, state }),
-        });
-        const linkData = await linkResponse.json().catch(() => ({}));
-        if (!linkResponse.ok || !linkData.success) {
-          if (linkResponse.status === 409) {
-            // Une connexion valide doit rester possible si le projet affiché
-            // appartient déjà à un autre compte. Ne jamais transférer ce projet.
-            setPendingPaymentMethod(null);
-            setClientAuthError("");
-            setView("dashboard");
-            await loadClientProjects();
-            pushToast("info", "Connexion réussie. Le document affiché appartient déjà à un autre compte et reste intact dans cet espace. Pour votre essai, choisissez « Nouveau projet » depuis le tableau de bord.");
-            return;
-          }
-          throw new Error(String(linkData.error || "Le projet n'a pas pu être associé au compte client."));
-        }
-
-        const saveResponse = await fetch(PROJECT_STATE_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.token },
-          body: JSON.stringify({ projectId: project.projectId, state }),
-        });
-        const saveData = await readApiResponse(saveResponse);
-        if (!saveData.success) throw new Error("Le projet n'a pas pu être sauvegardé dans votre compte.");
+      if (authIntent.current === "project") {
+        authIntent.current = "dashboard";
+        await startNewClientProject();
+        return;
       }
 
-      pushToast("success", clientAuthMode === "signup" ? "Compte créé. Votre projet est enregistré dans votre espace." : String(project.sujet || "").trim() ? "Connexion réussie. Votre projet est associé à votre compte." : "Connexion réussie. Chargement de votre espace client.");
+      // A previous account's in-memory project must not appear in the next
+      // account. Its local copy has been archived above before resetting UI.
+      setProject({ projectId:createProjectId(), formula:"MASTER", sujet:"", domaine:"", contexte:"", problematiquePersonnelle:"", planPersonnel:"", consignes:"", niveau:"", typeDoc:"Mémoire", pages:0, email:"", files:[] });
+      setPreview(null); setEstimate(null); setPremium(null); setSelectedProblematic(null); setSelectedPlan(null); setBlocks([]); setSelectedWritingBlockId(null);
+      window.sessionStorage.removeItem("trimemo_premium_token"); window.sessionStorage.removeItem("trimemo_premium_project_id");
+
+      // A browser draft is never attached just because someone signed in.
+      // It remains in local storage until the user explicitly chooses recovery.
+      pushToast("success", "Connexion réussie. Vos projets enregistrés sont disponibles dans votre espace client.");
       if (pendingPaymentMethod) {
-        const method = pendingPaymentMethod;
         setPendingPaymentMethod(null);
-        setView("preview");
-        await startPayment(method);
+        setView("dashboard");
+        await loadClientProjects();
+        pushToast("info", "Pour reprendre ce brouillon, utilisez la reprise explicite dans votre espace client avant de poursuivre.");
       } else {
         setView("dashboard");
         await loadClientProjects();
       }
     } catch (error) {
-      setClientAuthError(error instanceof Error ? error.message : "La création du compte ou la connexion a échoué.");
+      const message = error instanceof Error ? error.message : "La création du compte ou la connexion a échoué.";
+      const unconfirmed = clientAuthMode === "login" && /email not confirmed|email_not_confirmed|adresse.*(?:non confirmée|pas confirmée)/i.test(message);
+      if (unconfirmed) setShowConfirmationResend(true);
+      setClientAuthError(unconfirmed ? "Confirmez votre adresse e-mail avant de vous connecter. Si nécessaire, demandez un nouveau lien ci-dessous." : message);
     } finally {
       setClientAuthBusy(false);
     }
+  }
+
+  async function resendClientConfirmation() {
+    setClientAuthBusy(true); setClientAuthError(""); setClientAuthNotice("");
+    try {
+      const response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "resend-confirmation", email: clientEmail.trim(), startProject: authIntent.current === "project" }) });
+      const data = await readApiResponse(response);
+      setClientAuthNotice(data.message || "Si ce compte attend une confirmation, un nouveau lien sera envoyé.");
+    } catch (error) { setClientAuthError(error instanceof Error ? error.message : "Impossible de renvoyer le lien."); }
+    finally { setClientAuthBusy(false); }
   }
 
   async function startPayment(method: "paypal" | "mobile-money") {
@@ -2169,7 +2352,7 @@ export default function App() {
       }
       const response = await fetch(`${API_URL}?action=${method === "paypal" ? "create-paypal-order" : "create-mobile-money"}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + clientSession.token },
         body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true) }),
       });
       const data = await readApiResponse(response);
@@ -2503,7 +2686,7 @@ export default function App() {
           previewLimitReached: countWords(content) > remainingWords || undefined,
         } : item));
         pushToast("success", finalCount + " mots rédigés dans ce bloc. " + (completedWords + finalCount >= previewLimit || countWords(content) > remainingWords ? "L’aperçu académique est disponible." : "Passez au bloc suivant."));
-        if (Array.isArray(data.warnings) && data.warnings.length) pushToast("info", String(data.warnings[0]));
+        if (Array.isArray(data.warnings)) data.warnings.forEach((warning: unknown) => pushToast("info", String(warning)));
       } catch (error) {
         const message = error instanceof Error ? error.message : "Impossible de rédiger ce bloc.";
         setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "pending", error: message } : item));
@@ -2586,7 +2769,7 @@ export default function App() {
             }
           : item
       ));
-      if (Array.isArray(result.warnings) && result.warnings.length) pushToast("info", String(result.warnings[0]));
+      if (Array.isArray(result.warnings)) result.warnings.forEach((warning: unknown) => pushToast("info", String(warning)));
     } catch (error) {
       const message = error instanceof Error
         ? error.message
@@ -2914,12 +3097,14 @@ export default function App() {
       window.setTimeout(() => URL.revokeObjectURL(url), 1500);
       const missingLinks = Number(response.headers.get("X-Trimemo-Bibliography-Missing-Links") || 0);
       const citationIssues = Number(response.headers.get("X-Trimemo-Citation-Issue-Count") || 0);
+      const styleSkipped = response.headers.get("X-Trimemo-Style-Control") === "skipped";
       const exportAttempt = Number(response.headers.get("X-Trimemo-Export-Attempt") || 0);
       const attemptsRemaining = Number(response.headers.get("X-Trimemo-Export-Attempts-Remaining") || 0);
       const exportNotice = exportAttempt ? ` Tentative ${exportAttempt}/3 ; ${attemptsRemaining} restante(s).` : "";
       const exportWarnings = [
         missingLinks > 0 ? `${missingLinks} référence(s) n’ont ni DOI ni lien.` : "",
         citationIssues > 0 ? `${citationIssues} citation(s) ne correspondent pas clairement aux références ou leur année diffère. Vérifiez-les avant remise.` : "",
+        styleSkipped ? "La vérification stylistique automatique n’a pas abouti ; relisez le document." : "",
       ].filter(Boolean);
       if (exportWarnings.length) {
         pushToast("info", "Document exporté. " + exportWarnings.join(" ") + exportNotice);
@@ -3900,16 +4085,20 @@ export default function App() {
       )}
 
       {view !== "dashboard" && (<>
-      <header className="sticky top-0 z-50 border-b border-white/15 bg-[#172554] backdrop-blur-xl">
-        {clientProjectFlow ? (
-          <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
+      <header className={`sticky top-0 z-50 border-b border-white/15 bg-[#005b3f] backdrop-blur-xl`}>
+        {view !== "home" ? (
+          <div className="mx-auto flex min-h-[72px] max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain" />
               <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#78C850]">mo</span></span>
             </div>
-            <button type="button" onClick={() => { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-full border border-white/25 px-4 py-2 font-inter text-xs font-semibold text-white hover:bg-white/10">
-              Retour au tableau de bord
+            <div className="flex items-center gap-2">
+            {view !== "account" && <button type="button" onClick={() => setMobileMenuOpen(value => !value)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-white md:hidden" aria-label={mobileMenuOpen ? "Fermer la navigation du projet" : "Ouvrir la navigation du projet"} aria-expanded={mobileMenuOpen}>{mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>}
+            <button type="button" onClick={() => { setMobileMenuOpen(false); if (view === "account") { setView("home"); } else { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); } }} className="rounded-full border border-white/25 px-4 py-2 text-center font-inter text-xs font-semibold text-white hover:bg-white/10">
+              {view === "account" ? "Retour à l’accueil" : "Tableau de bord"}
             </button>
+            {view !== "account" && <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/25 px-3 py-2 text-center font-inter text-xs font-semibold text-white hover:bg-white/10 disabled:opacity-60 sm:px-4">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>}
+            </div>
           </div>
         ) : (
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
@@ -3918,16 +4107,17 @@ export default function App() {
             <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#78C850]">mo</span></span>
           </button>
           <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">
-            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection("fonctionnement")}>Fonctionnement</button>
-            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection("formules")}>Formules</button>
-            <button
+            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
+            <button className="text-white hover:text-[#D4A23A]" onClick={() => navigateToSection("revision-humaine")}>Révision humaine</button>
+            {view !== "home" && <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                setView("project");
+                setView("dashboard");
+                void loadClientProjects();
               }}
             >
               <span className="text-white hover:text-[#D4A23A]">Mon projet</span>
-            </button>
+            </button>}
           </div>
 
           <div className="flex items-center gap-2">
@@ -3943,11 +4133,12 @@ export default function App() {
               onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }}
               className="hidden rounded-full border border-white/25 px-4 py-2 font-inter text-[12px] text-white sm:inline-flex"
             >
-              Mon compte
+              {view === "home" ? "Se connecter" : "Mon compte"}
             </button>
+            {view === "home" && <button onClick={() => { authIntent.current = "dashboard"; setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} className="hidden rounded-lg border border-white px-4 py-2 font-inter text-sm font-semibold text-white sm:inline-flex">Créer un compte</button>}
             <button
               onClick={goToProject}
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-[#D4A23A] px-5 font-inter text-[13px] font-medium"
+              className={`${view === "home" ? "hidden" : "inline-flex"} h-10 items-center gap-2 rounded-full bg-white px-5 font-inter text-[13px] font-medium text-[#005b3f]`}
             >
               Commencer <ArrowRight className="h-4 w-4" />
             </button>
@@ -3956,13 +4147,14 @@ export default function App() {
         )}
       </header>
 
-      {!clientProjectFlow && mobileMenuOpen && (
-        <div className="sticky top-[72px] z-40 border-b border-white/15 bg-[#172554] px-6 py-4 shadow-sm md:hidden">
+      {view !== "account" && mobileMenuOpen && (
+        <div className={`sticky top-[72px] z-40 border-b border-white/15 bg-[#005b3f] px-6 py-4 shadow-sm md:hidden`}>
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
-            <button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
-            <button onClick={() => navigateToSection("formules")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Formules</button>
-            <button onClick={() => { setMobileMenuOpen(false); setView("project"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
+            {view === "home" && <><button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
+            <button onClick={() => navigateToSection("revision-humaine")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Révision humaine</button>
+            <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon compte client</button>
+            <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button></>}
             {view === "preview" && preview && (
               <>
                 <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#D4A23A]">Aperçu</div>
@@ -3994,7 +4186,7 @@ export default function App() {
       )}
 
       {view === "account" && (
-        <section className="min-h-[72vh] bg-gradient-to-b from-[#EEF4FF] via-[#F8FAFC] to-[#EAF7EE] px-4 py-8 sm:px-6 sm:py-12">
+        <section className="min-h-[72vh] bg-gradient-to-b from-[#e8f4ef] via-[#F8FAFC] to-[#EAF7EE] px-4 py-8 sm:px-6 sm:py-12">
           <div className="mx-auto max-w-xl rounded-3xl border border-[#172554]/10 bg-white p-6 shadow-sm sm:p-9">
             <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Compte client Trimémo</div>
             <h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
@@ -4003,28 +4195,29 @@ export default function App() {
               {clientAuthMode === "signup" && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block font-inter text-sm font-medium text-[#172554]">Prénom
-                    <input type="text" required autoComplete="given-name" value={clientFirstName} onChange={(event) => setClientFirstName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="Votre prénom" />
+                    <input type="text" required autoComplete="given-name" value={clientFirstName} onChange={(event) => setClientFirstName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#006443]" placeholder="Votre prénom" />
                   </label>
                   <label className="block font-inter text-sm font-medium text-[#172554]">Nom
-                    <input type="text" required autoComplete="family-name" value={clientLastName} onChange={(event) => setClientLastName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="Votre nom" />
+                    <input type="text" required autoComplete="family-name" value={clientLastName} onChange={(event) => setClientLastName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#006443]" placeholder="Votre nom" />
                   </label>
                 </div>
               )}
               {clientAuthMode !== "reset" && <label className="block font-inter text-sm font-medium text-[#172554]">Adresse e-mail
-                <input type="email" required autoComplete="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="vous@exemple.com" />
+              <input type="email" required autoComplete="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#006443]" placeholder="vous@exemple.com" />
               </label>}
               {clientAuthMode !== "forgot" && <label className="block font-inter text-sm font-medium text-[#172554]">{clientAuthMode === "reset" ? "Nouveau mot de passe" : "Mot de passe"}
-                <input type="password" required minLength={8} autoComplete={clientAuthMode === "signup" || clientAuthMode === "reset" ? "new-password" : "current-password"} value={clientPassword} onChange={(event) => setClientPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#D4A23A]" placeholder="8 caractères minimum" />
+                <input type="password" required minLength={8} autoComplete={clientAuthMode === "signup" || clientAuthMode === "reset" ? "new-password" : "current-password"} value={clientPassword} onChange={(event) => setClientPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-[#172554]/15 px-4 py-3 font-normal outline-none focus:border-[#006443]" placeholder="8 caractères minimum" />
               </label>}
               {clientAuthError && <div role="alert" className="rounded-xl bg-red-50 p-3 font-inter text-sm text-red-700">{clientAuthError}</div>}
               {clientAuthNotice && <div role="status" className="rounded-xl bg-[#EAF7EE] p-3 font-inter text-sm text-[#172554]">{clientAuthNotice}</div>}
-              <button type="submit" disabled={clientAuthBusy || (clientAuthMode === "reset" && !clientRecoveryToken)} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#172554] px-5 py-3 font-inter text-sm font-semibold text-white disabled:opacity-60">
+              <button type="submit" disabled={clientAuthBusy || (clientAuthMode === "reset" && !clientRecoveryToken)} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#005b3f] px-5 py-3 font-inter text-sm font-semibold text-white disabled:opacity-60">
                 {clientAuthBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : clientAuthMode === "signup" ? "Créer mon compte et continuer" : clientAuthMode === "login" ? "Se connecter" : clientAuthMode === "forgot" ? "Envoyer le lien de réinitialisation" : "Modifier mon mot de passe"}
               </button>
               {clientAuthMode === "reset" && !clientRecoveryToken && <p className="font-inter text-sm text-red-700">Ce lien est invalide ou incomplet. Demandez un nouveau lien de réinitialisation.</p>}
             </form>
-            {clientAuthMode === "login" && <button type="button" onClick={() => { setClientAuthMode("forgot"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#1D78C1]">Mot de passe oublié ?</button>}
-            {clientAuthMode !== "reset" && <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : clientAuthMode === "login" ? "signup" : "login"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#1D78C1]">
+            {clientAuthMode === "login" && <button type="button" onClick={() => { setClientAuthMode("forgot"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#006443]">Mot de passe oublié ?</button>}
+            {clientAuthMode === "login" && showConfirmationResend && <button type="button" disabled={clientAuthBusy} onClick={() => void resendClientConfirmation()} className="mt-4 w-full font-inter text-sm text-[#006443] disabled:opacity-60">Renvoyer le lien de confirmation</button>}
+            {clientAuthMode !== "reset" && <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : clientAuthMode === "login" ? "signup" : "login"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#006443]">
               {clientAuthMode === "signup" ? "J’ai déjà un compte : me connecter" : clientAuthMode === "login" ? "Je n’ai pas encore de compte : m’inscrire" : "Retour à la connexion"}
             </button>}
             <button type="button" onClick={() => { setPendingPaymentMethod(null); setView("preview"); }} className="mt-4 w-full font-inter text-xs text-[#172554]/60">Retour à mon aperçu</button>
@@ -4035,193 +4228,41 @@ export default function App() {
             </>)}
 
       {view === "dashboard" && (
-        <section className="min-h-[72vh] bg-[#F2F5FC] px-4 py-6 sm:px-6 sm:py-8">
+        <section className="min-h-[72vh] bg-[#f3f7f8] px-4 py-6 sm:px-6 sm:py-8">
           <div className="mx-auto max-w-7xl">
-            <div className="rounded-3xl bg-[#172554] p-5 text-white shadow-lg sm:p-7">
+            <div className="rounded-3xl bg-[#005b3f] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div><div className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-2 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientNameDisplay || "Mon compte"}</p></div>
-                <button onClick={() => { window.localStorage.removeItem("trimemo_client_session"); setClientEmailDisplay(""); setClientProjects([]); setClientRevisions([]); startNewClientProject(); setClientProjectFlow(false); setView("home"); }} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10">Déconnexion</button>
+                <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <button type="button" onClick={() => setClientDashboardTab("documents")} className={`rounded-2xl border border-[#D7E1F7] bg-white p-4 text-left shadow-sm hover:bg-[#EAF0FF] sm:p-5 ${clientDashboardTab==="documents"?"ring-2 ring-[#172554] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#344A83] sm:text-sm">Documents rédigés</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#172554]">{clientProjects.length}</span><span className="mt-1 block font-inter text-[11px] text-[#53658C]">Mes projets</span></button>
+              <button type="button" onClick={() => setClientDashboardTab("documents")} className={`rounded-2xl border border-[#D7E1F7] bg-white p-4 text-left shadow-sm hover:bg-[#EAF0FF] sm:p-5 ${clientDashboardTab==="documents"?"ring-2 ring-[#006443] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#344A83] sm:text-sm">Documents rédigés</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#172554]">{clientProjects.length}</span><span className="mt-1 block font-inter text-[11px] text-[#53658C]">Mes projets</span></button>
               <button type="button" onClick={() => setClientDashboardTab("in_progress")} className={`rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-4 text-left shadow-sm hover:bg-[#DBEAFE] sm:p-5 ${clientDashboardTab==="in_progress"?"ring-2 ring-[#2563EB] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#1D4ED8] sm:text-sm">Révisions en cours</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#1D4ED8]">{clientRevisions.filter((r:any)=>r.status==="in_progress").length}</span><span className="mt-1 block font-inter text-[11px] text-[#1D4ED8]/75">Traitement en cours</span></button>
               <button type="button" onClick={() => setClientDashboardTab("pending")} className={`rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-4 text-left shadow-sm hover:bg-[#FEF3C7] sm:p-5 ${clientDashboardTab==="pending"?"ring-2 ring-[#D97706] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#92400E] sm:text-sm">Révisions en attente</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#B45309]">{clientRevisions.filter((r:any)=>r.status!=="in_progress"&&r.status!=="completed").length}</span><span className="mt-1 block font-inter text-[11px] text-[#92400E]/75">À traiter</span></button>
               <button type="button" onClick={() => setClientDashboardTab("completed")} className={`rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] p-4 text-left shadow-sm hover:bg-[#DCFCE7] sm:p-5 ${clientDashboardTab==="completed"?"ring-2 ring-[#15803D] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#166534] sm:text-sm">Révisions terminées</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#15803D]">{clientRevisions.filter((r:any)=>r.status==="completed").length}</span><span className="mt-1 block font-inter text-[11px] text-[#166534]/75">Documents livrés</span></button>
             </div>
             <div className="mt-6 rounded-3xl border border-[#DCE3F0] bg-white p-5 shadow-sm sm:p-7">
-              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-2xl font-bold text-[#172554]">{clientDashboardTab==="documents"?"Mes documents rédigés":clientDashboardTab==="in_progress"?"Demandes de révision en cours":clientDashboardTab==="pending"?"Demandes de révision en attente":"Révisions terminées et livrées"}</h2><p className="mt-1 font-inter text-sm text-[#64748B]">{clientDashboardTab==="documents"?"Retrouvez vos projets et demandez une révision humaine.":"Suivez l'avancement et récupérez les documents corrigés."}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{setClientDashboardTab("documents");void loadClientProjects();}} className="rounded-full border border-[#172554]/15 px-4 py-2 font-inter text-xs font-semibold text-[#172554] hover:bg-[#F2F5FC]">Actualiser</button><button type="button" onClick={startNewClientProject} className="rounded-full bg-[#D4A23A] px-4 py-2 font-inter text-xs font-semibold text-[#172554]">Nouveau projet</button></div></div>
-              {clientDashboardTab==="documents"?<div className="mt-5 grid gap-4">{clientProjects.length?clientProjects.map((item)=><article key={item.project_id} className="flex flex-col gap-4 rounded-2xl border border-[#DCE3F0] bg-white p-5 shadow-sm transition hover:border-[#D4A23A] hover:shadow-md sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={()=>{void openClientProject(item.project_id);}} className="min-w-0 flex-1 text-left"><span className="block font-playfair text-xl font-semibold text-[#172554]">{item.subject||"Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#64748B]">Dernière mise à jour : {item.updated_at?new Date(item.updated_at).toLocaleString("fr-FR"):"Non disponible"}</span><span className="mt-2 inline-block rounded-full bg-[#EAF7EE] px-3 py-2 font-inter text-xs font-semibold text-[#2F6B45]">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Premium payé":"Projet enregistré"}</span></button><button type="button" disabled={loading} onClick={()=>void openHumanRevisionForProject(item)} className="rounded-full border border-[#172554]/20 px-4 py-3 font-inter text-xs font-semibold text-[#172554] hover:border-[#D4A23A] hover:bg-[#FFFBEB] disabled:opacity-50">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Demander une révision humaine":"Révision humaine disponible après paiement"}</button></article>):<div className="rounded-2xl border border-dashed border-[#172554]/20 bg-[#F8FAFC] p-8 font-inter text-sm text-[#64748B]">Aucun document enregistré dans ce compte pour le moment.</div>}</div>:<div className="mt-5 grid gap-3">{clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?r.status!=="in_progress"&&r.status!=="completed":r.status==="completed").length?clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?r.status!=="in_progress"&&r.status!=="completed":r.status==="completed").map((revision:any)=><article key={revision.id} className={`rounded-2xl border p-4 sm:p-5 ${revision.status==="completed"?"border-[#BBF7D0] bg-[#F0FDF4]":revision.status==="in_progress"?"border-[#BFDBFE] bg-[#EFF6FF]":"border-[#FDE68A] bg-[#FFFBEB]"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-playfair text-lg font-bold text-[#172554]">{revision.document_title}</h3><p className="mt-1 font-inter text-xs text-[#64748B]">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</p>{revision.admin_notes&&<p className="mt-2 whitespace-pre-wrap font-inter text-sm text-[#475569]">Note : {revision.admin_notes}</p>}</div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#15803D] px-4 py-2 font-inter text-xs font-semibold text-white">Télécharger le document corrigé</button>}</div></article>):<p className="rounded-xl bg-[#F8FAFC] p-5 font-inter text-sm text-[#64748B]">Aucune demande dans cette catégorie pour le moment.</p>}</div>}
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-2xl font-bold text-[#172554]">{clientDashboardTab==="documents"?"Mes documents rédigés":clientDashboardTab==="in_progress"?"Demandes de révision en cours":clientDashboardTab==="pending"?"Demandes de révision en attente":"Révisions terminées et livrées"}</h2><p className="mt-1 font-inter text-sm text-[#64748B]">{clientDashboardTab==="documents"?"Retrouvez vos projets et demandez une révision humaine.":"Suivez l'avancement et récupérez les documents corrigés."}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{setClientDashboardTab("documents");void loadClientProjects();}} className="rounded-full border border-[#172554]/15 px-4 py-2 font-inter text-xs font-semibold text-[#172554] hover:bg-[#f3f7f8]">Actualiser</button><button type="button" onClick={startNewClientProject} className="rounded-full bg-[#005b3f] px-4 py-2 font-inter text-xs font-semibold text-white">Nouveau projet</button></div></div>
+              {clientDashboardTab === "documents" && (localDraftKeys.length > 0 || Boolean(project.sujet?.trim())) && (
+                <div className="mt-5 rounded-xl border border-[#DCE3F0] p-4 font-inter text-sm text-[#172554]">
+                  <p>Reprendre un brouillon conservé sur cet appareil</p>
+                  <p className="mt-1 text-xs text-[#64748B]">Le compte propriétaire est vérifié avant la reprise. Si les versions diffèrent, elles restent conservées.</p>
+                  {Boolean(project.sujet?.trim()) && <button type="button" onClick={() => { try { archiveCurrentDraft(); pushToast("success", "Copie locale conservée sur cet appareil."); } catch { pushToast("error", "Impossible de conserver la copie : libérez de l’espace sans supprimer le projet."); } }} className="mt-3 rounded-full border px-4 py-2 text-xs">Conserver le brouillon affiché</button>}
+                  {localDraftKeys.map((key, index) => <button key={key} type="button" disabled={loading} onClick={() => void recoverLocalDraft(key)} className="ml-2 mt-3 rounded-full border px-4 py-2 text-xs disabled:opacity-50">Reprendre une copie locale {index + 1}</button>)}
+                </div>
+              )}
+              {clientDashboardTab==="documents"?<div className="mt-5 grid gap-4">{clientProjects.length?clientProjects.map((item)=><article key={item.project_id} className="flex flex-col gap-4 rounded-2xl border border-[#DCE3F0] bg-white p-5 shadow-sm transition hover:border-[#006443] hover:shadow-md sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={()=>{void openClientProject(item.project_id);}} className="min-w-0 flex-1 text-left"><span className="block font-playfair text-xl font-semibold text-[#172554]">{item.subject||"Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#64748B]">Dernière mise à jour : {item.updated_at?new Date(item.updated_at).toLocaleString("fr-FR"):"Non disponible"}</span><span className="mt-2 inline-block rounded-full bg-[#EAF7EE] px-3 py-2 font-inter text-xs font-semibold text-[#2F6B45]">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Premium payé":"Projet enregistré"}</span></button><button type="button" disabled={loading} onClick={()=>void openHumanRevisionForProject(item)} className="rounded-full border border-[#172554]/20 px-4 py-3 font-inter text-xs font-semibold text-[#172554] hover:border-[#006443] hover:bg-[#FFFBEB] disabled:opacity-50">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Demander une révision humaine":"Révision humaine disponible après paiement"}</button></article>):<div className="rounded-2xl border border-dashed border-[#172554]/20 bg-[#F8FAFC] p-8 font-inter text-sm text-[#64748B]">Aucun document enregistré dans ce compte pour le moment.</div>}</div>:<div className="mt-5 grid gap-3">{clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?r.status!=="in_progress"&&r.status!=="completed":r.status==="completed").length?clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?r.status!=="in_progress"&&r.status!=="completed":r.status==="completed").map((revision:any)=><article key={revision.id} className={`rounded-2xl border p-4 sm:p-5 ${revision.status==="completed"?"border-[#BBF7D0] bg-[#F0FDF4]":revision.status==="in_progress"?"border-[#BFDBFE] bg-[#EFF6FF]":"border-[#FDE68A] bg-[#FFFBEB]"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-playfair text-lg font-bold text-[#172554]">{revision.document_title}</h3><p className="mt-1 font-inter text-xs text-[#64748B]">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</p>{revision.admin_notes&&<p className="mt-2 whitespace-pre-wrap font-inter text-sm text-[#475569]">Note : {revision.admin_notes}</p>}</div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#15803D] px-4 py-2 font-inter text-xs font-semibold text-white">Télécharger le document corrigé</button>}</div></article>):<p className="rounded-xl bg-[#F8FAFC] p-5 font-inter text-sm text-[#64748B]">Aucune demande dans cette catégorie pour le moment.</p>}</div>}
             </div>
-            {revisionModalOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#172554]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title"><form onSubmit={submitHumanRevision} className="max-h-[90vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-8"><div className="flex items-start justify-between gap-4"><div><p className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">Assistance humaine</p><h2 id="revision-modal-title" className="mt-2 font-playfair text-2xl font-bold text-[#172554]">Demande de révision</h2><p className="mt-2 font-inter text-sm text-slate-600">Document sélectionné : {revisionTargetTitle} · Référence : {revisionTargetProjectId}</p></div><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-3 py-1 text-slate-600" aria-label="Fermer">✕</button></div><div className="grid gap-4 sm:grid-cols-2"><label className="block font-inter text-sm font-semibold text-[#172554]">Niveau de révision<select value={revisionTier} onChange={e=>{const tier=e.target.value as "essential"|"standard"|"deep";setRevisionTier(tier);if(revisionFile)void calculateHumanRevisionQuote(revisionFile,tier);}} className="mt-2 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal"><option value="essential">Correction essentielle</option><option value="standard">Révision standard</option><option value="deep">Révision approfondie</option></select><span className="mt-1 block text-xs font-normal text-slate-500">{revisionTier==="essential"?"Orthographe, grammaire, ponctuation et typographie.":revisionTier==="standard"?"Correction essentielle, reformulation, fluidité et réduction des répétitions.":"Révision standard, restructuration ciblée et contrôle de cohérence méthodologique."}</span></label><div className="rounded-xl border border-[#DCE3F0] bg-[#F8FAFC] p-4"><div className="font-inter text-sm font-semibold text-[#172554]">Estimation de votre révision</div>{revisionQuoteLoading?<p className="mt-2 text-sm text-slate-600">Analyse du document et calcul du devis…</p>:revisionQuote?<div className="mt-3 grid gap-2 text-sm text-slate-700"><div className="flex justify-between gap-3"><span>Nombre de pages estimé</span><strong>{revisionPages}</strong></div><div className="flex justify-between gap-3"><span>Tarif par page</span><strong>{revisionQuote.unitPrice.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3 border-t border-slate-200 pt-2"><span>Coût estimé</span><strong className="text-lg text-[#172554]">{revisionQuote.estimatedAmount.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3"><span>Délai de livraison estimé</span><strong>{revisionQuote.deliveryLabel}</strong></div></div>:<p className="mt-2 text-sm text-slate-600">Joignez votre document Word pour afficher le volume, le tarif et le délai de livraison.</p>}</div></div><label className="block font-inter text-sm font-semibold text-[#172554]">Corrections demandées<textarea required minLength={10} value={revisionInstructions} onChange={e=>setRevisionInstructions(e.target.value)} rows={5} placeholder="Précisez les passages à corriger et les consignes à respecter…" className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:border-[#D4A23A]"/></label><div className="rounded-xl border border-[#DCE3F0] bg-[#F8FAFC] p-3 text-sm text-slate-600"><label className="block font-inter text-sm font-semibold text-[#172554]">Document Word exporté depuis Trimémo<input type="file" required accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={e=>{const file=e.target.files?.[0]||null;setRevisionFile(file);setRevisionQuote(null);setRevisionPages(0);if(file)void calculateHumanRevisionQuote(file,revisionTier);else setRevisionError("");}} className="mt-2 block w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal file:mr-3 file:rounded-full file:border-0 file:bg-[#EAF0FF] file:px-3 file:py-2 file:text-xs file:font-semibold"/></label><span className="mt-2 block text-xs">Exportez d’abord le document Word final depuis votre projet, puis joignez-le ici. Format accepté : .docx. Taille maximale : 3 Mo.</span>{revisionFile&&<span className="mt-2 block text-xs font-semibold text-emerald-700">Fichier sélectionné : {revisionFile.name}</span>}</div>{revisionError&&<p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{revisionError}</p>}{revisionMessage&&<p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{revisionMessage}</p>}<div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-5 py-3 text-sm">Annuler</button><button type="submit" disabled={revisionSubmitting} className="rounded-full bg-[#D4A23A] px-5 py-3 text-sm font-semibold text-[#172554] disabled:opacity-50">{revisionSubmitting?"Envoi en cours…":"Envoyer la demande"}</button></div></form></div>}
+            {revisionModalOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#005b3f]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title"><form onSubmit={submitHumanRevision} className="max-h-[90vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-8"><div className="flex items-start justify-between gap-4"><div><p className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">Assistance humaine</p><h2 id="revision-modal-title" className="mt-2 font-playfair text-2xl font-bold text-[#172554]">Demande de révision</h2><p className="mt-2 font-inter text-sm text-slate-600">Document sélectionné : {revisionTargetTitle} · Référence : {revisionTargetProjectId}</p></div><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-3 py-1 text-slate-600" aria-label="Fermer">✕</button></div><div className="grid gap-4 sm:grid-cols-2"><label className="block font-inter text-sm font-semibold text-[#172554]">Niveau de révision<select value={revisionTier} onChange={e=>{const tier=e.target.value as "essential"|"standard"|"deep";setRevisionTier(tier);if(revisionFile)void calculateHumanRevisionQuote(revisionFile,tier);}} className="mt-2 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal"><option value="essential">Correction essentielle</option><option value="standard">Révision standard</option><option value="deep">Révision approfondie</option></select><span className="mt-1 block text-xs font-normal text-slate-500">{revisionTier==="essential"?"Orthographe, grammaire, ponctuation et typographie.":revisionTier==="standard"?"Correction essentielle, reformulation, fluidité et réduction des répétitions.":"Révision standard, restructuration ciblée et contrôle de cohérence méthodologique."}</span></label><div className="rounded-xl border border-[#DCE3F0] bg-[#F8FAFC] p-4"><div className="font-inter text-sm font-semibold text-[#172554]">Estimation de votre révision</div>{revisionQuoteLoading?<p className="mt-2 text-sm text-slate-600">Analyse du document et calcul du devis…</p>:revisionQuote?<div className="mt-3 grid gap-2 text-sm text-slate-700"><div className="flex justify-between gap-3"><span>Nombre de pages estimé</span><strong>{revisionPages}</strong></div><div className="flex justify-between gap-3"><span>Tarif par page</span><strong>{revisionQuote.unitPrice.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3 border-t border-slate-200 pt-2"><span>Coût estimé</span><strong className="text-lg text-[#172554]">{revisionQuote.estimatedAmount.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3"><span>Délai de livraison estimé</span><strong>{revisionQuote.deliveryLabel}</strong></div></div>:<p className="mt-2 text-sm text-slate-600">Joignez votre document Word pour afficher le volume, le tarif et le délai de livraison.</p>}</div></div><label className="block font-inter text-sm font-semibold text-[#172554]">Corrections demandées<textarea required minLength={10} value={revisionInstructions} onChange={e=>setRevisionInstructions(e.target.value)} rows={5} placeholder="Précisez les passages à corriger et les consignes à respecter…" className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:border-[#006443]"/></label><div className="rounded-xl border border-[#DCE3F0] bg-[#F8FAFC] p-3 text-sm text-slate-600"><label className="block font-inter text-sm font-semibold text-[#172554]">Document Word exporté depuis Trimémo<input type="file" required accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={e=>{const file=e.target.files?.[0]||null;setRevisionFile(file);setRevisionQuote(null);setRevisionPages(0);if(file)void calculateHumanRevisionQuote(file,revisionTier);else setRevisionError("");}} className="mt-2 block w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal file:mr-3 file:rounded-full file:border-0 file:bg-[#EAF0FF] file:px-3 file:py-2 file:text-xs file:font-semibold"/></label><span className="mt-2 block text-xs">Exportez d’abord le document Word final depuis votre projet, puis joignez-le ici. Format accepté : .docx. Taille maximale : 3 Mo.</span>{revisionFile&&<span className="mt-2 block text-xs font-semibold text-emerald-700">Fichier sélectionné : {revisionFile.name}</span>}</div>{revisionError&&<p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{revisionError}</p>}{revisionMessage&&<p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{revisionMessage}</p>}<div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-5 py-3 text-sm">Annuler</button><button type="submit" disabled={revisionSubmitting} className="rounded-full bg-[#005b3f] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{revisionSubmitting?"Envoi en cours…":"Envoyer la demande"}</button></div></form></div>}
           </div>
         </section>
       )}
       {view !== "dashboard" && (<>
       {view === "home" && (
         <>
-          <section className="px-6 pb-24 pt-20 lg:px-8 lg:pt-28">
-            <div className="mx-auto max-w-[820px] text-center">
-              <div className="font-inter text-[11px] uppercase tracking-[0.22em] text-[#D4A23A]">Plateforme académique francophone internationale</div>
-              <h1 className="mt-5 font-playfair text-5xl font-bold leading-[0.98] tracking-[-0.02em] lg:text-6xl">Une rédaction guidée par votre sujet réel.</h1>
-              <p className="mx-auto mt-7 max-w-[690px] font-inter text-[16px] leading-[1.75] text-[#172554]/75">
-                Vos consignes, votre contexte, vos documents et vos exigences commandent la génération. Aucun contenu académique préécrit n’est utilisé comme source de remplacement.
-              </p>
-              <div className="mt-9 flex justify-center">
-                <button onClick={goToProject} className="inline-flex h-13 items-center gap-3 rounded-full bg-[#1D78C1] px-7 font-inter text-sm font-medium text-white">
-                  Créer mon projet <ArrowRight className="h-4 w-4 text-[#D4A23A]" />
-                </button>
-              </div>
-              <div className="mt-7 font-inter text-xs text-[#172554]/75">1 page = {WORDS_PER_PAGE} mots · Aperçu avant paiement · Coût calculé dès l’analyse</div>
-            </div>
-          </section>
+          <MarketingHome onStart={goToProject} onRevision={() => { setClientDashboardTab("documents"); setView("dashboard"); void loadClientProjects(); }} />
 
-          <section id="fonctionnement" className="border-y border-[#172554]/5 bg-[#EAF7EE] px-6 py-20 lg:px-8 lg:py-24">
-            <div className="mx-auto max-w-[1280px]">
-              <div className="max-w-[650px]">
-                <div className="font-inter text-[11px] uppercase tracking-[0.22em] text-[#D4A23A]">Fonctionnement</div>
-                <h2 className="mt-4 font-playfair text-4xl leading-tight">Un flux qui sépare aperçu, validation et rédaction complète.</h2>
-              </div>
-              <div className="mt-12 grid gap-5 md:grid-cols-4">
-                {[
-                  ["01", "Votre formule", "Vous choisissez la formule qui correspond à votre niveau ou à votre besoin."],
-                  ["02", "Votre dossier", "Sujet, contexte, consignes et documents sont transmis au moteur de génération."],
-                  ["03", "Choix et validation", "Générez jusqu’à trois problématiques, améliorez-les ou proposez-en d’autres, puis comparez jusqu’à trois plans avant de choisir."],
-                  ["04", "Aperçu rédactionnel puis accès complet", "Après validation de la problématique et du plan, rédigez jusqu’à 2 500 mots pour examiner le document en cours. Ces mots sont inclus dans le prix global du document : ils ne sont ni gratuits ni facturés une seconde fois. Le paiement permet de poursuivre la rédaction et d’exporter le document complet."],
-                ].map(([n, title, text]) => (
-                  <div key={n} className="rounded-[20px] border border-[#172554]/5 bg-white p-6">
-                    <div className="font-inter text-[11px] tracking-[0.2em] text-[#D4A23A]">{n}</div>
-                    <div className="mt-3 font-playfair text-xl">{title}</div>
-                    <div className="mt-2 font-inter text-[13px] leading-[1.6] text-[#172554]/70">{text}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section
-            id="formules"
-            className="border-y border-[#172554]/5 bg-[#EAF7EE] px-6 py-20 lg:px-8 lg:py-24"
-          >
-            <div className="mx-auto max-w-[1280px]">
-              <div>
-                <div className="font-inter text-[11px] uppercase tracking-[0.22em] text-[#D4A23A]">
-                  Tarifs Trimémo
-                </div>
-                <h2 className="mt-4 font-playfair text-4xl">
-                  Tarification personnalisée
-                </h2>
-                <p className="mt-3 max-w-[760px] font-inter text-sm leading-[1.7] text-[#172554]/70">
-                  Un coût estimé après analyse du pays, du type de document, du volume, du niveau et des exigences du guide.
-                  La correction humaine est proposée en option et facturée séparément.
-                </p>
-              </div>
-
-              <div className="mt-10 grid gap-5 lg:grid-cols-3">
-                {pricing.individual.map((item) => (
-                  <div
-                    key={item.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      setFormula(item.id as FormulaId);
-                      setProject((current) => ({
-                        ...current,
-                        formula: item.id as FormulaId,
-                      }));
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setFormula(item.id as FormulaId);
-                        setProject((current) => ({
-                          ...current,
-                          formula: item.id as FormulaId,
-                        }));
-                      }
-                    }}
-                    className={`rounded-[24px] border p-7 text-left transition ${
-                      formula === item.id
-                        ? "border-[#172554] bg-[#172554] text-white"
-                        : "border-[#172554]/10 bg-white hover:border-[#172554]/25"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="font-playfair text-2xl">{item.title}</div>
-                      {item.id === "MASTER" && (
-                        <span className="rounded-full bg-[#D4A23A] px-2.5 py-1 font-inter text-[10px] font-semibold text-[#172554]">
-                          {item.badge}
-                        </span>
-                      )}
-                    </div>
-
-                    <div
-                      className={`mt-2 font-inter text-xs ${
-                        formula === item.id ? "text-white/55" : "text-[#172554]/75"
-                      }`}
-                    >
-                      {item.pages}
-                    </div>
-
-                    <div className="mt-6 flex flex-wrap items-end gap-x-3 gap-y-1">
-                      <span className="font-playfair text-3xl">{item.eur}</span>
-                      <span
-                        className={`pb-1 font-inter text-xs ${
-                          formula === item.id ? "text-white/55" : "text-[#172554]/75"
-                        }`}
-                      >
-                        {item.fcfa}
-                      </span>
-                    </div>
-
-                    <div
-                      className={`mt-4 font-inter text-xs leading-[1.6] ${
-                        formula === item.id ? "text-white/70" : "text-[#172554]/60"
-                      }`}
-                    >
-                      {item.details}
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between gap-3">
-                      <span className="font-inter text-xs font-semibold">
-                        {formula === item.id ? "Formule sélectionnée" : "Sélectionner cette formule →"}
-                      </span>
-                      {formula === item.id && (
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            goToProject();
-                          }}
-                          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#D4A23A] px-5 font-inter text-xs font-semibold text-[#172554] transition hover:brightness-95"
-                        >
-                          Commencer <ArrowRight className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-10 rounded-[22px] border border-[#172554]/10 bg-white p-6">
-                <div className="font-playfair text-xl">
-                  Inclus dans votre projet
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {pricingInclusions.map((item) => (
-                    <span
-                      key={item}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#EAF7EE] px-3 py-2 font-inter text-xs text-[#172554]/70"
-                    >
-                      <Check className="h-3.5 w-3.5 text-[#D4A23A]" />
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
         </>
       )}
 
@@ -4232,9 +4273,9 @@ export default function App() {
               <div className="flex items-start gap-3">
                 {(
                   <button
-                    onClick={() => { if (clientProjectFlow) { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); } else { setView("home"); } }}
+                    onClick={() => { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); }}
                     className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#172554]/10 bg-white"
-                    aria-label="Retour à l'accueil"
+                    aria-label="Retour au tableau de bord"
                   >
                     <ArrowRight className="h-4 w-4 rotate-180" />
                   </button>
@@ -4273,18 +4314,18 @@ export default function App() {
                   </div>
                   {!estimate.countryDetected && <p className="mt-4 rounded-xl bg-[#FFF8E7] p-3 font-inter text-xs leading-[1.6] text-[#6B4B08]">Le pays n'a pas pu être détecté automatiquement. Le prix utilise provisoirement le marché international. Vérifiez le pays avant le paiement si ce tarif ne correspond pas à votre situation.</p>}
                 </article>
-                <aside className="h-fit rounded-[24px] bg-[#172554] p-7 text-white lg:sticky lg:top-[98px]">
+                <aside className="h-fit rounded-[24px] bg-[#005b3f] p-7 text-white lg:sticky lg:top-[98px]">
                   <div className="font-inter text-[11px] uppercase tracking-[0.18em] text-[#D4A23A]">{estimate.marketLabel}</div>
                   <div className="mt-5 font-inter text-xs text-white/65">Coût approximatif du projet</div>
                   <div className="mt-2 font-playfair text-4xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"}</div>
                   <div className="mt-3 font-inter text-xs leading-[1.7] text-white/65">Tarif de base {estimate.baseRate} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"} par page × coefficient de niveau {estimate.levelCoefficient} × coefficient de complexité {estimate.complexityCoefficient}.</div>
                   {estimate.currency === "XOF" && <div className="mt-3 rounded-xl bg-white/10 p-3 font-inter text-xs leading-[1.6] text-white/80">Si vous payez par PayPal, le montant sera converti en euros selon la parité fixe FCFA/euro : environ {estimate.checkoutAmount} €.</div>}
                   <div className="mt-5 rounded-xl border border-white/15 p-3 font-inter text-xs leading-[1.7] text-white/75">Le montant affiché couvre le document complet. Les mots de l’aperçu sont inclus dans ce prix global : ils ne sont pas gratuits et ne seront pas facturés une seconde fois.</div>
-                  <button onClick={() => void generatePublicProblematics()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-50">
+                  <button onClick={() => void generatePublicProblematics()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white font-inter text-sm font-semibold text-[#005b3f] disabled:opacity-50">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                     Commencer les problématiques
                   </button>
-                  <button onClick={() => { setProject((current) => ({ ...current, projectId: createProjectId(), pricingQuoteToken: undefined })); setEstimate(null); setPremium(null); setPreview(null); setSelectedProblematic(null); setSelectedPlan(null); setBlocks([]); setProblematicGenerationCount(0); setPlanGenerationCount(0); setView("project"); }} className="mt-3 w-full rounded-full border border-white/20 px-4 py-3 font-inter text-xs font-semibold text-white">Modifier les informations</button>
+                  <button onClick={() => void reviseProjectInputs()} className="mt-3 w-full rounded-full border border-white/20 px-4 py-3 font-inter text-xs font-semibold text-white">Modifier les informations</button>
                 </aside>
               </section>
             )}
@@ -4355,10 +4396,6 @@ export default function App() {
                   <div className="font-playfair text-xl">Paramètres du projet</div>
                   <div className="mt-6 space-y-5">
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Formule</label>
-                      <div className="mt-2 rounded-[12px] bg-[#172554] px-4 py-3 font-inter text-sm text-white">{formulaOptions.find((item) => item.id === project.formula)?.title || "À sélectionner"}</div>
-                    </div>
-                    <div>
                       <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#172554]/75">Niveau *</label>
                       <select value={project.niveau} onChange={(e) => setProject({ ...project, niveau: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#172554]/10 bg-white px-4 font-inter text-sm">
                         <option value="">Sélectionnez un niveau</option>
@@ -4389,7 +4426,7 @@ export default function App() {
                       <div className="mt-2 font-inter text-[11px] text-[#172554]/75">Objectif de rédaction : {targetWords.toLocaleString("fr-FR")} mots</div>
                     </div>
                   </div>
-                  <button onClick={() => void analyzeProject()} disabled={loading} className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1D78C1] font-inter text-sm font-medium text-white disabled:opacity-50">
+                  <button onClick={() => void analyzeProject()} disabled={loading} className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#005b3f] font-inter text-sm font-medium text-white disabled:opacity-50">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#D4A23A]" />}
                     Analyser le projet et estimer le coût
                   </button>
@@ -4457,7 +4494,7 @@ export default function App() {
             </section>
           )}
             {view === "preview" && preview && (
-              <section className="mx-auto mt-6 max-w-[900px] rounded-[24px] bg-[#172554] p-6 text-white sm:p-8">
+              <section className="mx-auto mt-6 max-w-[900px] rounded-[24px] bg-[#005b3f] p-6 text-white sm:p-8">
                 <div className="text-center">
                   <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Poursuivre le document</div>
                   <h3 className="mt-2 font-playfair text-2xl sm:text-3xl">Votre aperçu est terminé</h3>
@@ -4541,7 +4578,7 @@ export default function App() {
                           <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#172554]/10 bg-white px-4 py-3 font-inter text-sm" />
                           <div className="flex flex-wrap gap-2">
                             <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("improve", item, problematicImprovementComments[item.id] || "")} className="rounded-full border border-[#172554]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#172554] disabled:opacity-50">Améliorer cette problématique</button>
-                            <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("alternative", item)} className="rounded-full border border-[#1D78C1]/30 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#1D78C1] disabled:opacity-50">Proposer une autre</button>
+                            <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("alternative", item)} className="rounded-full border border-[#006443]/30 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#006443] disabled:opacity-50">Proposer une autre</button>
                           </div>
                           <div className="font-inter text-[11px] text-[#172554]/55">{problematicGenerationCount}/3 propositions utilisées</div>
                         </div>
@@ -4549,7 +4586,7 @@ export default function App() {
                           type="button"
                           disabled={loading}
                           onClick={() => void generatePlansForProblematic(item, ownerSessionValid)}
-                          className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          className="mt-7 rounded-full bg-[#005b3f] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {loading && selectedProblematic?.id === item.id ? "Génération du plan..." : "Générer un plan"}
                         </button>
@@ -4606,7 +4643,7 @@ export default function App() {
                           />
                           <div className="flex flex-wrap gap-2">
                             <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554] disabled:opacity-50">Demander une amélioration</button>
-                            <button type="button" disabled={loading || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#1D78C1]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#1D78C1] disabled:opacity-50">Générer un autre plan</button>
+                            <button type="button" disabled={loading || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#006443]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#006443] disabled:opacity-50">Générer un autre plan</button>
                             <button type="button" disabled={loading} onClick={() => {
                               const problematic = selectedProblematic || premium.problematics[0];
                               if (!problematic) return;
@@ -4616,7 +4653,7 @@ export default function App() {
                               setView("writing");
                               setPremiumSection("writing");
                               pushToast("success", "Plan retenu. Les blocs de rédaction sont prêts.");
-                            }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
+                            }} className="rounded-full bg-[#005b3f] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
                           </div>
                           {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#2F6B45]">Plan retenu</div>}
                           <div className="font-inter text-[11px] text-[#172554]/55">{planGenerationCount}/3 génération(s) de plan utilisée(s)</div>
@@ -4639,7 +4676,7 @@ export default function App() {
                 <nav className="mt-4 space-y-2">
                   <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">1. Problématique</button>
                   <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">2. Plan validé</button>
-                  <button type="button" onClick={() => { const p = selectedPlan || premium?.plans?.[0]; const q = selectedProblematic || premium?.problematics?.[0]; if (p && q) selectPremiumPlan(q, p); }} className="w-full rounded-xl bg-[#172554] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
+                  <button type="button" onClick={() => { const p = selectedPlan || premium?.plans?.[0]; const q = selectedProblematic || premium?.problematics?.[0]; if (p && q) selectPremiumPlan(q, p); }} className="w-full rounded-xl bg-[#005b3f] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
                 </nav>
               </aside>
               <div className="rounded-2xl border border-amber-200 bg-white p-6 font-inter text-sm leading-6 text-[#172554]/75">
@@ -4657,11 +4694,11 @@ export default function App() {
                     <nav className="mt-4 space-y-2">
                       <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); setWritingTab("problematic"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">1. Problématique</button>
                       <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); setWritingTab("plan"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#EAF7EE]">2. Plan validé</button>
-                      <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#172554] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
+                      <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#005b3f] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
                       {ownerRoute || window.sessionStorage.getItem("trimemo_premium_token") ? (
                         <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#172554]/15 px-4 py-3 text-left font-inter text-sm text-[#172554] hover:bg-[#F7FAF8]">Exporter le document</button>
                       ) : isPreviewReady(blocks, previewLimit) ? (
-                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl bg-[#D4A23A] px-4 py-3 text-left font-inter text-sm font-semibold text-[#172554] hover:bg-[#e0b24f]">Voir l’aperçu</button>
+                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl bg-[#005b3f] px-4 py-3 text-left font-inter text-sm font-semibold text-white hover:bg-[#004832]">Voir l’aperçu</button>
                       ) : (
                         <div className="rounded-xl border border-[#172554]/10 px-4 py-3 font-inter text-xs leading-5 text-[#172554]/60">L’aperçu se débloque à {previewLimit.toLocaleString("fr-FR")} mots au maximum.</div>
                       )}
@@ -4669,7 +4706,7 @@ export default function App() {
                     <div className="mt-5 rounded-xl bg-[#F7FAF8] p-3">
                       <div className="font-inter text-[11px] text-[#172554]/60">Progression rédactionnelle</div>
                       <div className="mt-1 font-inter text-sm font-semibold">{totalDoneWords.toLocaleString("fr-FR")} mots rédigés</div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E5E7EB]"><div className="h-full rounded-full bg-[#1D78C1]" style={{ width: `${previewLimit ? Math.min(100, Math.round(totalDoneWords / previewLimit * 100)) : 0}%` }} /></div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E5E7EB]"><div className="h-full rounded-full bg-[#005b3f]" style={{ width: `${previewLimit ? Math.min(100, Math.round(totalDoneWords / previewLimit * 100)) : 0}%` }} /></div>
                       <div className="mt-1 font-inter text-[10px] text-[#172554]/55">Aperçu indicatif : {previewLimit.toLocaleString("fr-FR")} mots maximum</div>
                     </div>
                   </aside>
@@ -4683,7 +4720,7 @@ export default function App() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
+                    <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#005b3f] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
                       {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                     </button>
 
@@ -4712,7 +4749,7 @@ export default function App() {
                                 setSelectedWritingBlockId(block.id);
                                 void generateBlock(block.id);
                               }}
-                              className="rounded-full bg-[#172554] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-full bg-[#005b3f] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {isGenerating ? "Rédaction en cours…" : block.status === "done" ? "Régénérer ce bloc" : "Rédiger ce bloc"}
                             </button>
@@ -4760,7 +4797,7 @@ export default function App() {
                                     setSelectedWritingBlockId(block.id);
                                     void generateBlock(block.id);
                                   }}
-                                  className="mt-5 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
+                                  className="mt-5 rounded-full bg-[#005b3f] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
                                 >
                                   {isGenerating ? "Rédaction en cours…" : "Rédiger ce bloc"}
                                 </button>
