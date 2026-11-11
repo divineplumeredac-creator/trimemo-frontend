@@ -2093,7 +2093,9 @@ export default function App() {
       const activeSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
       if (!session.userId || activeSession?.userId !== session.userId) throw new Error("Le compte a changé pendant l’ouverture du projet.");
       if (latestProject.current !== previousProject || latestBlocks.current !== previousBlocks) throw new Error("Le projet affiché a changé pendant l’ouverture. Réessayez sans fermer votre travail.");
-      if (String(previousProject.projectId || "") !== projectId) archiveCurrentDraft();
+      // Even the same project may have local edits that have not reached the
+      // server yet. Preserve them before replacing the in-memory state.
+      archiveCurrentDraft();
       activeOwnedProject.current = { projectId, userId: session.userId };
       const saved = data.state;
       // Recheck against the latest server state after the second request, so
