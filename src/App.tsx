@@ -224,6 +224,10 @@ function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
 }
 
+function isWritingProtected(owner: boolean, token: string | null, tokenProjectId: string | null, projectId: string) {
+  return !owner && !(token && projectId && tokenProjectId === projectId);
+}
+
 function isPreviewReady(blocks: Block[]) {
   const finished = blocks.filter(block => block.status === "done" && block.content.trim());
   if (!finished.length) return false;
@@ -579,6 +583,7 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ownerRoute] = useState(() => typeof window !== "undefined" && window.location.pathname === "/owner");
+  const protectWriting = isWritingProtected(ownerRoute, window.sessionStorage.getItem("trimemo_premium_token"), window.sessionStorage.getItem("trimemo_premium_project_id"), String(project.projectId || ""));
   const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : "trimemo_state_v5_public";
   const [ownerSessionValid, setOwnerSessionValid] = useState(false);
   const [ownerShowWriter, setOwnerShowWriter] = useState(false);
@@ -3600,7 +3605,12 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="min-h-[720px] bg-white px-10 py-14 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#111] md:px-[2.5cm] md:py-[2.5cm]">
+                        <div
+                          className="min-h-[720px] bg-white px-10 py-14 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#111] md:px-[2.5cm] md:py-[2.5cm]"
+                          style={protectWriting ? { userSelect: "none", WebkitUserSelect: "none" } : undefined}
+                          onCopy={protectWriting ? (event) => event.preventDefault() : undefined}
+                          onCut={protectWriting ? (event) => event.preventDefault() : undefined}
+                        >
                           {block.error && (
                             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
                               <strong>Erreur de rédaction :</strong> {block.error}
@@ -4626,7 +4636,12 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="min-h-[720px] bg-white px-10 py-14 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#111] md:px-[2.5cm] md:py-[2.5cm]">
+                        <div
+                          className="min-h-[720px] bg-white px-10 py-14 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#111] md:px-[2.5cm] md:py-[2.5cm]"
+                          style={protectWriting ? { userSelect: "none", WebkitUserSelect: "none" } : undefined}
+                          onCopy={protectWriting ? (event) => event.preventDefault() : undefined}
+                          onCut={protectWriting ? (event) => event.preventDefault() : undefined}
+                        >
                           {block.error && (
                             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 font-inter text-xs leading-5 text-red-700">
                               <strong>Erreur de rédaction :</strong> {block.error}
