@@ -1034,7 +1034,21 @@ export default function App() {
         window.sessionStorage.removeItem("trimemo_pending_paypal_order");
         window.sessionStorage.removeItem("trimemo_pending_fedapay_order");
         pushToast("info", "Paiement annulé. Votre projet est conservé ; vous pouvez reprendre le paiement.");
-        window.history.replaceState({}, document.title, window.location.pathname);
+        let session: any = null;
+        try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+        const destination = session?.token ? "preview" : "account";
+        if (session?.token) {
+          setClientEmailDisplay(String(session.email || ""));
+          setClientNameDisplay(String(session.fullName || "Mon compte"));
+        } else {
+          setClientAuthMode("login");
+          setClientAuthNotice("Reconnectez-vous pour retrouver votre projet après l’annulation du paiement.");
+        }
+        setView(destination);
+        const returnUrl = new URL(window.location.href);
+        for (const key of ["payment", "token", "PayerID", "order_id", "transaction_id", "id"]) returnUrl.searchParams.delete(key);
+        returnUrl.searchParams.set("view", destination);
+        window.history.replaceState({}, document.title, returnUrl.pathname + returnUrl.search);
       }
       return;
     }
