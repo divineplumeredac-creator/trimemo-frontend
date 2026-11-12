@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://trimemo-api-git-feat-fedapay-sandbox-divineplumeredac-4026.vercel.app/api/:path*"
+      "destination": "/api/sandbox-bridge?__route=:path*"
     },
     {
       "source": "/(.*)",
