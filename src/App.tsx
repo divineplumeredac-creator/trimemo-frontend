@@ -2399,7 +2399,7 @@ export default function App() {
 
     const introductionConfig = plan.introductionGeneral || { title: "Introduction générale", wordCount: 900 };
     const conclusionConfig = plan.conclusionGeneral || { title: "Conclusion générale", wordCount: 600 };
-    const introductionWords = Math.min(1000, Math.max(100, Math.round(Number(introductionConfig.wordCount || 900))));
+    const introductionWords = Math.max(100, Math.round(Number(introductionConfig.wordCount || 900)));
     const introductionBlock: Block = {
       id: `${plan.id}-introduction-generale`,
       title: introductionConfig.title || "Introduction générale",
@@ -2511,7 +2511,7 @@ export default function App() {
           return {
             id: `${chapter.id}-bloc-${groupIndex + 1}`,
             title,
-            expectedWords: Math.min(1000, Math.max(100, groupWords || 900)),
+            expectedWords: Math.max(100, groupWords || 900),
             content: "",
             wordCount: 0,
             status: "pending" as const,
@@ -2527,7 +2527,7 @@ export default function App() {
     const conclusionBlock: Block = {
       id: `${plan.id}-conclusion-generale`,
       title: conclusionConfig.title || "Conclusion générale",
-      expectedWords: Math.min(1500, Math.max(300, Math.round(Number(conclusionConfig.wordCount || 600)))),
+      expectedWords: Math.max(300, Math.round(Number(conclusionConfig.wordCount || 600))),
       content: "",
       wordCount: 0,
       status: "pending",
@@ -2644,7 +2644,7 @@ export default function App() {
         setView("project");
         return;
       }
-      // Un clic ne rédige qu'un seul bloc, avec une cible maximale de 1 000 mots.
+      // Un clic rédige un bloc, dans la limite des mots restants de l’aperçu.
       setActiveBlockId(blockId);
       setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "generating", error: undefined } : item));
       try {
@@ -2661,11 +2661,11 @@ export default function App() {
             project: projectPayloadWithoutFiles(project),
             problematic: selectedProblematic,
             plan: selectedPlan,
-            block: { id: block.id, title: block.title, expectedWords: Math.min(block.expectedWords || 900, 1000), structure: block.structure, kind: block.kind },
+            block: { id: block.id, title: block.title, expectedWords: block.expectedWords || 900, structure: block.structure, kind: block.kind },
             blockTitle: block.title,
             structure: block.structure,
             kind: block.kind,
-            targetWords: Math.min(block.expectedWords || 900, 1000, previewLimit - completedWords),
+            targetWords: Math.min(block.expectedWords || 900, previewLimit - completedWords),
             preceding,
             previewBlocks: completedBlocks.map((item) => ({ id: item.id, title: item.title, content: item.content })),
             previewMode: true,
@@ -2676,7 +2676,7 @@ export default function App() {
         const content = String(data.content || data.block?.content || data.text || "").trim();
         if (!content) throw new Error("Le serveur n’a retourné aucun contenu pour ce bloc.");
         const remainingWords = Math.max(0, previewLimit - completedWords);
-        const limitedContent = trimToWordsPreservingLayout(content, Math.min(1000, remainingWords));
+        const limitedContent = trimToWordsPreservingLayout(content, remainingWords);
         if (!limitedContent) throw new Error("La première phrase du bloc dépasse la limite de l’aperçu. Réessayez la rédaction de ce bloc.");
         const finalCount = countWords(limitedContent);
         setBlocks((current) => current.map((item) => item.id === blockId ? {
