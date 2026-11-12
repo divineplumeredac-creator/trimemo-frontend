@@ -17,3 +17,10 @@ test('préserve les parcours de reprise et les retours particuliers', () => {
   assert.equal(restore('/owner', '', '', true), true);
   assert.equal(restore('/', '', '#access_token=example', false), true);
 });
+
+test('une actualisation conserve la vue et un nouveau lien principal ouvre l’accueil',()=>{
+ assert.equal(restore('/', '', '', false, true),true);
+ assert.equal(restore('/', '?view=writing', '', false),true);
+ assert.equal(restore('/', '?view=dashboard', '', false),true);
+ assert.equal(restore('/', '', '', false, false),false);
+});

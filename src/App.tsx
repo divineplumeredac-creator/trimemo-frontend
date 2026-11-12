@@ -259,10 +259,10 @@ function isPreviewReady(blocks: Block[], limit = 2500) {
     (blocks.length > 0 && blocks.every(block => block.status === "done" && block.content.trim()));
 }
 
-function shouldRestoreSavedView(pathname: string, search: string, hash: string, ownerRoute: boolean) {
+function shouldRestoreSavedView(pathname: string, search: string, hash: string, ownerRoute: boolean, reloading = false) {
   if (ownerRoute || pathname !== "/") return true;
   const params = new URLSearchParams(search);
-  return Boolean(params.get("payment") || params.get("account") || params.get("reset-password") || params.get("project") || hash);
+  return Boolean(reloading || params.get("view") || params.get("payment") || params.get("account") || params.get("reset-password") || params.get("project") || hash);
 }
 
 function trimToWordsPreservingLayout(value: string, limit: number) {
@@ -569,7 +569,7 @@ export default function App() {
   latestProject.current = project;
   latestBlocks.current = blocks;
   const [clientProjectFlow, setClientProjectFlow] = useState(false);
-  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return ["signup", "confirmed"].includes(params.get("account") || "") || params.get("reset-password") === "1" ? "account" : "home"; });
+  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return ["signup", "confirmed"].includes(params.get("account") || "") || params.get("reset-password") === "1" ? "account" : ["home", "project", "estimate", "preview", "premium", "writing", "account", "dashboard"].includes(params.get("view") || "") ? params.get("view") as "home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" : "home"; });
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
@@ -753,7 +753,7 @@ export default function App() {
       if (saved?.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
       if (saved?.selectedPlan) setSelectedPlan(saved.selectedPlan);
       if (Array.isArray(saved?.blocks)) setBlocks(saved.blocks);
-      if (saved?.view && new URLSearchParams(window.location.search).get("account") !== "confirmed" && !new URLSearchParams(window.location.search).get("payment") && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute)) setView(saved.view);
+      if (saved?.view && new URLSearchParams(window.location.search).get("account") !== "confirmed" && !new URLSearchParams(window.location.search).get("payment") && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute, performance.getEntriesByType("navigation").some(entry => (entry as PerformanceNavigationTiming).type === "reload"))) setView(saved.view);
       if (saved?.previewTab) setPreviewTab(saved.previewTab);
       if (saved?.premiumNav) setPremiumNav(saved.premiumNav);
       if (saved?.premiumSection === "problematic" || saved?.premiumSection === "plan" || saved?.premiumSection === "writing") setPremiumSection(saved.premiumSection);
@@ -921,6 +921,16 @@ export default function App() {
     }, 900);
     return () => { if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current); };
   }, [ownerRoute, ownerSessionValid, project, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks, view, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount]);
+
+  // Keep navigation explicit so a refresh opens the same screen.
+  useEffect(() => {
+    if (!filesHydrated.current || ownerRoute) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("payment") || url.searchParams.has("account") || url.searchParams.has("reset-password") || url.hash) return;
+    if (view === "home") url.searchParams.delete("view");
+    else url.searchParams.set("view", view);
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, [view, ownerRoute]);
 
   // Évite d'afficher une page de rédaction vide lorsqu'aucun plan n'a été restauré.
   // On attend la fin de l'hydratation distante avant de décider où renvoyer l'utilisateur.

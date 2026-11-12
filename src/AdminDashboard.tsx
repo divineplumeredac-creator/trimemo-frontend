@@ -36,18 +36,18 @@ const shortId = (value: unknown) => { const s=String(value||""); return s.length
 
 function Button({children,onClick,disabled=false,variant="primary",type="button"}:any) {
   const common="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
-  const variants:any={primary:"bg-[#1D78C1] text-white hover:bg-[#1768a9]",secondary:"border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",danger:"bg-red-50 text-red-700 hover:bg-red-100",gold:"bg-[#D4A23A] text-[#172554] hover:bg-[#e3b34a]"};
+  const variants:any={primary:"bg-[#087c5a] text-white hover:bg-[#005b3f]",secondary:"border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",danger:"bg-red-50 text-red-700 hover:bg-red-100",gold:"bg-[#D4A23A] text-[#163a30] hover:bg-[#e3b34a]"};
   return <button type={type} onClick={onClick} disabled={disabled} className={common+" "+variants[variant]}>{children}</button>;
 }
 function Status({children,tone="neutral"}:any) {
-  const style:any={neutral:"bg-slate-100 text-slate-600",green:"bg-emerald-50 text-emerald-700",red:"bg-red-50 text-red-700",amber:"bg-amber-50 text-amber-800",blue:"bg-blue-50 text-blue-700"};
+  const style:any={neutral:"bg-slate-100 text-slate-600",green:"bg-emerald-50 text-emerald-700",red:"bg-red-50 text-red-700",amber:"bg-amber-50 text-amber-800",blue:"bg-emerald-50 text-emerald-700"};
   return <span className={"inline-flex rounded-full px-2.5 py-1 text-xs font-semibold "+style[tone]}>{children}</span>;
 }
 function Card({title,value,sub,icon:Icon,tone="blue"}:any) {
-  const backgrounds:any={blue:"bg-blue-50 text-blue-700",gold:"bg-amber-50 text-amber-700",green:"bg-emerald-50 text-emerald-700",red:"bg-red-50 text-red-700"};
+  const backgrounds:any={blue:"bg-emerald-50 text-emerald-700",gold:"bg-amber-50 text-amber-700",green:"bg-emerald-50 text-emerald-700",red:"bg-red-50 text-red-700"};
   return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3"><div className="text-sm font-medium text-slate-500">{title}</div><span className={"rounded-xl p-2 "+backgrounds[tone]}><Icon size={19}/></span></div>
-    <div className="mt-3 break-words text-2xl font-bold tracking-tight text-[#172554]">{value ?? "—"}</div>
+    <div className="mt-3 break-words text-2xl font-bold tracking-tight text-[#163a30]">{value ?? "—"}</div>
     {sub && <div className="mt-2 text-xs leading-5 text-slate-500">{sub}</div>}
   </div>;
 }
@@ -55,10 +55,10 @@ function Empty({children="Aucune donnée à afficher."}:any) { return <div class
 function TableWrap({children}:any) { return <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full min-w-[760px] border-collapse text-left text-sm">{children}</table></div>; }
 function Th({children}:any) { return <th className="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{children}</th>; }
 function Td({children,className=""}:any) { return <td className={"border-b border-slate-100 px-4 py-3 align-top text-slate-700 "+className}>{children}</td>; }
-function Progress({value}: {value:number}) { const percent=Math.max(0,Math.min(100,Number(value)||0)); return <div className="min-w-[130px]"><div className="mb-1 flex justify-between gap-2 text-xs text-slate-500"><span>Progression</span><strong className="text-slate-700">{percent}%</strong></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#1D78C1]" style={{width:percent+"%"}}/></div></div>; }
+function Progress({value}: {value:number}) { const percent=Math.max(0,Math.min(100,Number(value)||0)); return <div className="min-w-[130px]"><div className="mb-1 flex justify-between gap-2 text-xs text-slate-500"><span>Progression</span><strong className="text-slate-700">{percent}%</strong></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#087c5a]" style={{width:percent+"%"}}/></div></div>; }
 
 export default function AdminDashboard({ token, email, onLogout, onOpenWriter }: Props) {
-  const [tab,setTab]=useState<Tab>("overview");
+  const [tab,setTab]=useState<Tab>(() => { const saved = new URLSearchParams(window.location.search).get("adminTab"); return tabs.some(item => item.id === saved) ? saved as Tab : "overview"; });
   const [revisionFilter,setRevisionFilter]=useState<"pending"|"in_progress"|"completed">("pending");
   const [loading,setLoading]=useState(false);
   const [saving,setSaving]=useState(false);
@@ -117,14 +117,14 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
     } finally { if(!quiet) setLoading(false); }
   },[api,tab]);
 
-  useEffect(()=>{void refresh("overview"); void refresh("revisions",true);},[api]);
+  useEffect(()=>{void refresh(tab); if(tab!=="revisions") void refresh("revisions",true);},[api]);
   // Vérifie régulièrement les nouvelles demandes, même lorsque l’administrateur consulte un autre onglet.
   useEffect(()=>{
     const timer=window.setInterval(()=>{void refresh("revisions",true);},20000);
     return ()=>window.clearInterval(timer);
   },[refresh]);
 
-  function selectTab(next:Tab) { setTab(next); setSearch(""); setNotice(""); if(next==="revisions") setNewRevisionIds([]); void refresh(next); }
+  function selectTab(next:Tab) { const url = new URL(window.location.href); url.searchParams.set("adminTab", next); window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash); setTab(next); setSearch(""); setNotice(""); if(next==="revisions") setNewRevisionIds([]); void refresh(next); }
   async function updateClient(client:any) {
     const next=client.access==="suspended"?"active":"suspended";
     const question=next==="suspended"?"Suspendre ce compte client ?":"Rétablir l’accès de ce client ?";
@@ -188,12 +188,12 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   const filteredOrders=filterRows(orders,["order_id","subject","customer_email","status","currency"]);
   const filteredLogs=logs.filter(row=>(logSeverity==="all"||row.severity===logSeverity)&&filterRows([row],["message","action","category","request_path","actor"] ).length);
 
-  return <div className="min-h-screen bg-[#F4F7FB] font-inter text-[#172554]">
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#172554] text-white shadow-sm">
+  return <div className="min-h-screen bg-[#f2f7f4] font-inter text-[#163a30]">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#005b3f] text-white shadow-sm">
       <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10"><ShieldCheck size={22} className="text-[#D4A23A]"/></div>
-          <div className="min-w-0"><div className="truncate text-lg font-bold">Trimémo <span className="font-medium text-[#D4A23A]">Admin</span></div><div className="truncate text-xs text-white/60">Console de gestion sécurisée</div></div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10"><ShieldCheck size={22} className="text-[#b5dfc4]"/></div>
+          <div className="min-w-0"><div className="truncate text-lg font-bold">Trimémo <span className="font-medium text-[#b5dfc4]">Admin</span></div><div className="truncate text-xs text-white/60">Console de gestion sécurisée</div></div>
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden max-w-[240px] truncate text-xs text-white/70 md:block">Administrateur</span>
@@ -206,16 +206,16 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-2 shadow-sm lg:sticky lg:top-[88px]">
         <div className="hidden px-3 pb-3 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:block">Administration</div>
         <nav className="flex gap-1 overflow-x-auto lg:flex-col">
-          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#172554] text-white shadow-sm":"text-slate-600 hover:bg-slate-50 hover:text-[#172554]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span>{item.id==="revisions"&&<span className={"ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold "+(revisions.some((r:any)=>r.status==="pending")?"bg-amber-100 text-amber-800":"bg-slate-100 text-slate-500")}>{revisions.filter((r:any)=>r.status==="pending").length}</span>}{item.id==="revisions"&&newRevisionIds.length>0&&<span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">Nouveau</span>}</button>;})}
+          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#005b3f] text-white shadow-sm":"text-slate-600 hover:bg-slate-50 hover:text-[#163a30]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span>{item.id==="revisions"&&<span className={"ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold "+(revisions.some((r:any)=>r.status==="pending")?"bg-amber-100 text-amber-800":"bg-slate-100 text-slate-500")}>{revisions.filter((r:any)=>r.status==="pending").length}</span>}{item.id==="revisions"&&newRevisionIds.length>0&&<span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">Nouveau</span>}</button>;})}
         </nav>
-        <div className="mt-4 hidden rounded-xl bg-[#F6F8FC] p-3 text-xs leading-5 text-slate-500 lg:block">
+        <div className="mt-4 hidden rounded-xl bg-[#edf5ef] p-3 text-xs leading-5 text-slate-500 lg:block">
           Les données clients, paiements et journaux sont chargés depuis le serveur sécurisé. Les secrets PayPal et Claude ne sont jamais transmis à l’interface.
         </div>
       </aside>
 
       <main className="min-w-0 space-y-5">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-          <div><div className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A23A]">Centre de contrôle</div><h1 className="mt-1 text-2xl font-bold sm:text-3xl">{tabs.find(item=>item.id===tab)?.label}</h1><p className="mt-2 text-sm text-slate-500">Données issues du backend Trimémo et de Supabase.</p></div>
+          <div><div className="text-xs font-bold uppercase tracking-[0.18em] text-[#167454]">Centre de contrôle</div><h1 className="mt-1 text-2xl font-bold sm:text-3xl">{tabs.find(item=>item.id===tab)?.label}</h1><p className="mt-2 text-sm text-slate-500">Pilotez vos clients, vos projets et les paiements Trimémo.</p></div>
           <Button variant="secondary" disabled={loading} onClick={()=>void refresh(tab)}><RefreshCcw size={16} className={loading?"animate-spin":""}/> Actualiser</Button>
         </div>
 
@@ -231,19 +231,19 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
             <Card title="Erreurs journalisées" value={fmtNumber(summary.errorLogs)} sub={fmtNumber(summary.usage?.errors)+" échec(s) d’appel Claude dans le journal d’usage"} icon={AlertTriangle} tone="red"/>
           </div>
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2"><CircleDollarSign className="text-[#D4A23A]" size={20}/><h2 className="text-lg font-bold">Revenus de la plateforme</h2></div>
+            <div className="flex items-center gap-2"><CircleDollarSign className="text-[#167454]" size={20}/><h2 className="text-lg font-bold">Revenus de la plateforme</h2></div>
             <p className="mt-1 text-sm text-slate-500">Montants séparés par devise pour éviter d’additionner des monnaies différentes. Le revenu net affiché tient compte des remboursements enregistrés, avant déduction des commissions du prestataire de paiement.</p>
             {summary.revenue?.by_currency?.length?<div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{summary.revenue.by_currency.map((row:any)=><div key={row.currency} className="rounded-xl border border-slate-200 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{row.currency}</div><div className="mt-2 text-2xl font-bold">{fmtMoney(row.net,row.currency)}</div><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">Encaissements bruts</div><strong>{fmtMoney(row.gross,row.currency)}</strong></div><div><div className="text-slate-500">Remboursements</div><strong>{fmtMoney(row.refunds,row.currency)}</strong></div></div><div className="mt-3 text-xs text-slate-500">{row.paid_orders} commande(s) payée(s) • {row.refunded_orders} remboursée(s)</div></div>)}</div>:<Empty>Aucun revenu enregistré pour le moment.</Empty>}
           </section>
           <div className="grid gap-5 xl:grid-cols-2">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Consommation Claude</h2><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-blue-50 p-4"><div className="text-xs text-blue-700">Total tokens</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.total_tokens)}</div></div><div className="rounded-xl bg-amber-50 p-4"><div className="text-xs text-amber-800">Appels enregistrés</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.requests)}</div></div></div><p className="mt-3 text-xs leading-5 text-slate-500">{summary.usage?.cost_coverage ? fmtNumber(summary.usage.cost_coverage)+" appel(s) avec coût estimé renseigné." : "Les prochains appels afficheront leur coût estimé, avec le cache et les recherches web. Les anciens appels restent inchangés."}</p></section>
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Consommation Claude</h2><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-emerald-50 p-4"><div className="text-xs text-emerald-700">Total tokens</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.total_tokens)}</div></div><div className="rounded-xl bg-amber-50 p-4"><div className="text-xs text-amber-800">Appels enregistrés</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.requests)}</div></div></div><p className="mt-3 text-xs leading-5 text-slate-500">{summary.usage?.cost_coverage ? fmtNumber(summary.usage.cost_coverage)+" appel(s) avec coût estimé renseigné." : "Les prochains appels afficheront leur coût estimé, avec le cache et les recherches web. Les anciens appels restent inchangés."}</p></section>
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Dernières commandes</h2>{summary.recentOrders?.length?<div className="mt-3 divide-y divide-slate-100">{summary.recentOrders.slice(0,6).map((o:any)=><div key={o.order_id} className="flex items-center justify-between gap-3 py-3"><div className="min-w-0"><div className="truncate text-sm font-semibold">{o.subject||shortId(o.order_id)}</div><div className="mt-1 text-xs text-slate-500">{fmtDate(o.paid_at||o.created_at)}</div></div><div className="shrink-0 text-right"><div className="font-semibold">{fmtMoney(o.amount,o.currency)}</div><Status tone={o.status==="refunded"?"red":o.status==="pending"?"amber":"green"}>{o.status}</Status></div></div>)}</div>:<Empty>Aucune commande récente.</Empty>}</section>
           </div>
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Projets récemment mis à jour</h2>{summary.recentProjects?.length?<TableWrap><thead><tr><Th>Projet</Th><Th>Client</Th><Th>Progression</Th><Th>Mis à jour</Th></tr></thead><tbody>{summary.recentProjects.map((p:any)=><tr key={p.project_id}><Td><div className="max-w-[300px] font-semibold">{p.subject}</div><div className="mt-1 text-xs text-slate-500">{p.domain||"Domaine non renseigné"}</div></Td><Td>{p.email||"—"}</Td><Td><Progress value={p.progress_percent}/></Td><Td>{fmtDate(p.updated_at||p.created_at)}</Td></tr>)}</tbody></TableWrap>:<Empty>Aucun projet trouvé.</Empty>}</section>
         </div>}
 
         {tab==="clients"&&<section className="space-y-4">
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-bold">Comptes et droits d’accès</h2><p className="mt-1 text-xs text-slate-500">La suspension bloque l’authentification et l’accès aux opérations du compte.</p></div><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un client…" className="h-10 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-[#1D78C1] sm:w-72"/></div>
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-bold">Comptes et droits d’accès</h2><p className="mt-1 text-xs text-slate-500">La suspension bloque l’authentification et l’accès aux opérations du compte.</p></div><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un client…" className="h-10 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-[#087c5a] sm:w-72"/></div>
           {filteredClients.length?<TableWrap><thead><tr><Th>Client</Th><Th>Inscription</Th><Th>Dernière connexion</Th><Th>Projets</Th><Th>Accès</Th><Th>Action</Th></tr></thead><tbody>{filteredClients.map(client=><tr key={client.id}><Td><div className="font-semibold">{client.email||"E-mail non renseigné"}</div><div className="mt-1 text-xs text-slate-500">{client.display_name||shortId(client.id)}</div></Td><Td>{fmtDate(client.created_at)}</Td><Td>{fmtDate(client.last_sign_in_at)}</Td><Td>{fmtNumber(client.project_count)}</Td><Td><Status tone={client.access==="suspended"?"red":"green"}>{client.access==="suspended"?"Suspendu":"Actif"}</Status></Td><Td><Button variant={client.access==="suspended"?"primary":"danger"} onClick={()=>void updateClient(client)}>{client.access==="suspended"?"Rétablir":"Suspendre"}</Button></Td></tr>)}</tbody></TableWrap>:<Empty>{loading?"Chargement des comptes…":"Aucun compte client ne correspond à la recherche."}</Empty>}
         </section>}
 
@@ -260,12 +260,12 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
 
         {tab==="pricing"&&settings&&<form onSubmit={saveSettings} className="space-y-5">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Grilles tarifaires</h2><p className="mt-1 text-sm text-slate-500">Les taux servent au calcul des devis. Les prix restent exprimés dans la devise définie pour chaque marché.</p>
-            <div className="mt-5 grid gap-4 xl:grid-cols-2">{Object.keys(settings.pricing_config.markets).map(market=><div key={market} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-bold">{MARKET_LABELS[market]||market}</h3><select value={settings.pricing_config.markets[market].currency} onChange={e=>setSettings((s:any)=>({...s,pricing_config:{...s.pricing_config,markets:{...s.pricing_config.markets,[market]:{...s.pricing_config.markets[market],currency:e.target.value}}}}))} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs"><option value="XOF">XOF / FCFA</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="CAD">CAD</option></select></div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{DOC_TYPES.map(([type,label])=><label key={type} className="text-xs font-medium text-slate-500">{label}<input type="number" min="0" step="0.01" required value={settings.pricing_config.markets[market].rates[type]} onChange={e=>updateRate(market,type,e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm font-semibold text-[#172554]"/></label>)}</div></div>)}</div>
+            <div className="mt-5 grid gap-4 xl:grid-cols-2">{Object.keys(settings.pricing_config.markets).map(market=><div key={market} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-bold">{MARKET_LABELS[market]||market}</h3><select value={settings.pricing_config.markets[market].currency} onChange={e=>setSettings((s:any)=>({...s,pricing_config:{...s.pricing_config,markets:{...s.pricing_config.markets,[market]:{...s.pricing_config.markets[market],currency:e.target.value}}}}))} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs"><option value="XOF">XOF / FCFA</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="CAD">CAD</option></select></div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{DOC_TYPES.map(([type,label])=><label key={type} className="text-xs font-medium text-slate-500">{label}<input type="number" min="0" step="0.01" required value={settings.pricing_config.markets[market].rates[type]} onChange={e=>updateRate(market,type,e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm font-semibold text-[#163a30]"/></label>)}</div></div>)}</div>
           </section>
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Quotas et limites</h2><p className="mt-1 text-sm text-slate-500">Ces paramètres sont vérifiés par le serveur. Les plafonds de sécurité restent actifs indépendamment de la valeur choisie.</p><div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {[["maxProblematicGenerations","Générations de problématique / projet",1,10],["maxPlanGenerations","Générations de plan / projet",1,10],["freePreviewWords","Mots de l’aperçu gratuit",0,2500],["maxPages","Pages maximales par projet",1,300]].map(([key,label,min,max]:any)=><label key={key} className="text-xs font-semibold text-slate-500">{label}<input type="number" min={min} max={max} required value={settings.quotas[key]} onChange={e=>updateQuota(key,e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#172554]"/></label>)}
+            {[["maxProblematicGenerations","Générations de problématique / projet",1,10],["maxPlanGenerations","Générations de plan / projet",1,10],["freePreviewWords","Mots de l’aperçu gratuit",0,2500],["maxPages","Pages maximales par projet",1,300]].map(([key,label,min,max]:any)=><label key={key} className="text-xs font-semibold text-slate-500">{label}<input type="number" min={min} max={max} required value={settings.quotas[key]} onChange={e=>updateQuota(key,e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#163a30]"/></label>)}
           </div><p className="mt-3 text-xs leading-5 text-slate-500">Le nombre de mots par page académique reste fixé à 320 dans les règles actuelles du moteur.</p></section>
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Estimation des coûts Claude</h2><p className="mt-1 text-sm text-slate-500">Les tarifs Claude connus sont appliqués par modèle, avec le cache et les recherches web. Ces champs permettent de définir vos propres tarifs d’entrée et de sortie.</p><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-xs font-semibold text-slate-500">Entrée (USD / 1 M tokens)<input type="number" min="0" step="0.0001" value={settings.usage_costs.inputUsdPerMillion??""} onChange={e=>updateCost("inputUsdPerMillion",e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#172554]"/></label><label className="text-xs font-semibold text-slate-500">Sortie (USD / 1 M tokens)<input type="number" min="0" step="0.0001" value={settings.usage_costs.outputUsdPerMillion??""} onChange={e=>updateCost("outputUsdPerMillion",e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#172554]"/></label></div></section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Estimation des coûts Claude</h2><p className="mt-1 text-sm text-slate-500">Les tarifs Claude connus sont appliqués par modèle, avec le cache et les recherches web. Ces champs permettent de définir vos propres tarifs d’entrée et de sortie.</p><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-xs font-semibold text-slate-500">Entrée (USD / 1 M tokens)<input type="number" min="0" step="0.0001" value={settings.usage_costs.inputUsdPerMillion??""} onChange={e=>updateCost("inputUsdPerMillion",e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#163a30]"/></label><label className="text-xs font-semibold text-slate-500">Sortie (USD / 1 M tokens)<input type="number" min="0" step="0.0001" value={settings.usage_costs.outputUsdPerMillion??""} onChange={e=>updateCost("outputUsdPerMillion",e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-[#163a30]"/></label></div></section>
           <div className="flex flex-wrap items-center gap-3"><Button type="submit" disabled={saving}>{saving?"Enregistrement…":"Enregistrer les tarifs et quotas"}</Button><span className="text-xs text-slate-500">Dernière mise à jour : {fmtDate(settings.updated_at)}</span></div>
         </form>}
 
@@ -288,7 +288,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
             <button type="button" onClick={()=>setRevisionFilter("pending")} aria-pressed={revisionFilter==="pending"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#D4A23A] "+(revisionFilter==="pending"?"ring-2 ring-[#D4A23A]":"hover:-translate-y-0.5")}>
               <Card title="En attente" value={revisions.filter(r=>r.status==="pending").length} icon={AlertTriangle} tone="gold"/>
             </button>
-            <button type="button" onClick={()=>setRevisionFilter("in_progress")} aria-pressed={revisionFilter==="in_progress"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#1D78C1] "+(revisionFilter==="in_progress"?"ring-2 ring-[#1D78C1]":"hover:-translate-y-0.5")}>
+            <button type="button" onClick={()=>setRevisionFilter("in_progress")} aria-pressed={revisionFilter==="in_progress"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#087c5a] "+(revisionFilter==="in_progress"?"ring-2 ring-[#087c5a]":"hover:-translate-y-0.5")}>
               <Card title="En cours" value={revisions.filter(r=>r.status==="in_progress").length} icon={Activity} tone="blue"/>
             </button>
             <button type="button" onClick={()=>setRevisionFilter("completed")} aria-pressed={revisionFilter==="completed"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-emerald-500 "+(revisionFilter==="completed"?"ring-2 ring-emerald-500":"hover:-translate-y-0.5")}>
@@ -296,7 +296,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
             </button>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg font-bold text-[#172554]">{revisionFilter==="pending"?"Demandes en attente":revisionFilter==="in_progress"?"Demandes en cours de traitement":"Demandes terminées et livrées"}</h2>
+            <h2 className="text-lg font-bold text-[#163a30]">{revisionFilter==="pending"?"Demandes en attente":revisionFilter==="in_progress"?"Demandes en cours de traitement":"Demandes terminées et livrées"}</h2>
             <span className="text-sm text-slate-500">{revisions.filter(r=>r.status===revisionFilter).length} demande(s)</span>
           </div>
           {revisions.filter(r=>r.status===revisionFilter).length?revisions.filter(r=>r.status===revisionFilter).map(row=><article key={row.id} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
