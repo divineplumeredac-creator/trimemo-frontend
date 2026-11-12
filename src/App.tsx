@@ -20,7 +20,6 @@ import {
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "" : "https://trimemo-api.vercel.app")).replace(/\/$/, "");
 const API_URL = `${API_BASE_URL}/api/academic`;
-const FEDAPAY_SANDBOX_API = `${API_BASE_URL}/api/fedapay-sandbox`;
 const FEDAPAY_SANDBOX_ENABLED = String(import.meta.env.VITE_FEDAPAY_SANDBOX_ENABLED || "").toLowerCase() === "true";
 const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
 const PLANS_API = `${API_BASE_URL}/api/generate-plans`;
@@ -1030,7 +1029,7 @@ export default function App() {
       return;
     }
     if (!id) {
-      pushToast("error", "Le retour de paiement ne contient pas la référence PayPal. Votre projet est conservé ; relancez le paiement ou contactez le support.");
+      pushToast("error", "Le retour de paiement ne contient pas la référence de transaction. Votre projet est conservé ; relancez le paiement ou contactez le support.");
       return;
     }
 
@@ -1045,7 +1044,7 @@ export default function App() {
           setView("account");
           throw new Error("Connectez-vous au compte associé au projet pour reprendre la vérification du paiement.");
         }
-        const verify = (token: string) => fetch(payment === "fedapay" ? FEDAPAY_SANDBOX_API : `${API_URL}?action=${action}`, {
+        const verify = (token: string) => fetch(`${API_URL}?action=${action}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ id, action: "verify", project: loadPendingProject(stateStorageKey) }),
@@ -2289,7 +2288,7 @@ export default function App() {
       const fullName=[firstName,lastName].filter(Boolean).join(" ").trim();
       const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id), fullName };
       setShowConfirmationResend(false);
-      const returningFromPayment = new URLSearchParams(window.location.search).get("payment") === "paypal";
+      const returningFromPayment = ["paypal", "fedapay"].includes(new URLSearchParams(window.location.search).get("payment") || "");
       if (!returningFromPayment) archiveCurrentDraft();
       activeOwnedProject.current = null;
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
@@ -2399,7 +2398,7 @@ export default function App() {
         pushToast("info", "Espace de stockage du navigateur insuffisant : vos documents joints devront peut-être être rattachés à nouveau après le paiement.");
       }
       const useFedaSandbox = method === "mobile-money" && FEDAPAY_SANDBOX_ENABLED;
-      const response = await fetch(useFedaSandbox ? FEDAPAY_SANDBOX_API : `${API_URL}?action=${method === "paypal" ? "create-paypal-order" : "create-mobile-money"}`, {
+      const response = await fetch(`${API_URL}?action=${method === "paypal" ? "create-paypal-order" : "create-mobile-money"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + clientSession.token },
         body: JSON.stringify({ action: "create", project: projectPayloadWithoutFiles(paymentProject, true) }),
@@ -4255,7 +4254,7 @@ export default function App() {
           <div className="mx-auto max-w-xl rounded-3xl border border-[#172554]/10 bg-white p-6 shadow-sm sm:p-9">
             <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Compte client Trimémo</div>
             <h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
-            <p className="mt-3 font-inter text-sm leading-6 text-[#172554]/70">{clientAuthMode === "signup" ? "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture de PayPal." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
+            <p className="mt-3 font-inter text-sm leading-6 text-[#172554]/70">{clientAuthMode === "signup" ? "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture du paiement." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
             <form className="mt-7 space-y-4" onSubmit={(event) => { event.preventDefault(); void submitClientAuth(); }}>
               {clientAuthMode === "signup" && (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -4583,7 +4582,7 @@ export default function App() {
                     </div>
                   )}
                   <div className="mx-auto mt-5 grid max-w-[420px] gap-3">
-                    {!FEDAPAY_SANDBOX_ENABLED && String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
+                    {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
                       <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-60">
                         {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
                         Payer pour continuer
