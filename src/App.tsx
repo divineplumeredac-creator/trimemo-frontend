@@ -284,6 +284,12 @@ function restorePreviewRemainder(block: Block): Block {
   return { ...block, content, wordCount: countWords(content), previewRemainder: undefined, previewLimitReached: undefined };
 }
 
+function restoreServerContinuation(block: Block, continuationId: string, visible: string, remainder: string, footnotes: string[]): Block {
+  if (block.continuationId !== continuationId || block.content !== visible) return block;
+  const content = visible + remainder;
+  return { ...block, content, wordCount: countWords(content), footnotes, continuationId: undefined, previewLimitReached: undefined };
+}
+
 function wordsToPages(words: number) {
   return words / WORDS_PER_PAGE;
 }
@@ -672,12 +678,15 @@ export default function App() {
           const result = await response.json().catch(() => ({}));
           if (!response.ok || typeof result.visible !== "string" || typeof result.remainder !== "string") throw new Error("La suite du document n’a pas pu être récupérée. Rouvrez le projet pour réessayer ; ne régénérez pas ce bloc.");
           if (block.content !== result.visible) throw new Error("Le bloc enregistré diffère de sa sauvegarde sécurisée. Contactez le support ; votre texte reste conservé.");
+          let currentSession: any = null;
+          try { currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+          if (currentSession?.userId !== session.userId || activeOwnedProject.current?.projectId !== projectId || activeOwnedProject.current?.userId !== session.userId) throw new Error("Le compte ou le projet a changé. Rouvrez le projet pour reprendre la récupération.");
           setBlocks(current => current.map(item => {
-            if (item.id !== block.id || item.continuationId !== continuationId || item.content !== result.visible) return item;
-            const content = result.visible + result.remainder;
-            return { ...item, content, wordCount: countWords(content), continuationId: undefined, previewLimitReached: undefined };
+            if (item.id !== block.id) return item;
+            return restoreServerContinuation(item, continuationId, result.visible, result.remainder, Array.isArray(result.footnotes) ? result.footnotes : item.footnotes);
           }));
         } catch (error) {
+          recoveringContinuations.current.delete(continuationId);
           pushToast("error", error instanceof Error ? error.message : "Impossible de récupérer la suite du document.");
         }
       })();
