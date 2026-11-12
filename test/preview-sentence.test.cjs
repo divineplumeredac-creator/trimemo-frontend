@@ -29,3 +29,8 @@ test('la reprise restitue exactement le texte conservé et reste idempotente', (
   assert.equal(restored.previewRemainder, undefined);
   assert.equal(restore(restored), restored);
 });
+test('un aperçu de plus de 1 000 mots ne tronque pas un bloc qui tient dans le quota', () => {
+  const content = Array.from({length: 120}, (_, i) => `La phrase ${i} comprend plusieurs mots pour vérifier correctement cette limite.`).join(' ');
+  assert.ok(content.split(/\s+/).length > 1000);
+  assert.equal(trim(content, 2000), content);
+});
