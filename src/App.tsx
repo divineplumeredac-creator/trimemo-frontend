@@ -26,6 +26,7 @@ const FREE_PREVIEW_API = `${API_BASE_URL}/api/generate-free-preview`;
 const ESTIMATE_API = `${API_BASE_URL}/api/estimate-project`;
 const PROJECT_STATE_API = `${API_BASE_URL}/api/project-state`;
 const BLOCK_API = `${API_BASE_URL}/api/generate-block`;
+const PREVIEW_CONTINUATION_API = `${API_BASE_URL}/api/preview-continuation`;
 const WORDS_PER_PAGE = 320;
 const LOGO_SRC = "/trimemo-logo.webp";
 const OWNER_AUTH_API = `${API_BASE_URL}/api/owner-auth`;
@@ -193,6 +194,7 @@ type Block = {
   kind: "introduction" | "chapter" | "section" | "conclusion";
   error?: string;
   previewRemainder?: string;
+  continuationId?: string;
   previewLimitReached?: boolean;
 };
 
@@ -637,6 +639,7 @@ export default function App() {
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cloudSaveQueue = useRef<Promise<void>>(Promise.resolve());
   const [cloudSaveStatus, setCloudSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const recoveringContinuations = useRef(new Set<string>());
 
   const totalDoneWords = useMemo(
     () => blocks.filter((b) => b.status === "done").reduce((sum, b) => sum + b.wordCount, 0),
@@ -648,6 +651,38 @@ export default function App() {
     if (!projectId || !blocks.some(block => block.previewRemainder) || !window.sessionStorage.getItem("trimemo_premium_token") || window.sessionStorage.getItem("trimemo_premium_project_id") !== projectId) return;
     setBlocks(current => current.map(restorePreviewRemainder));
   }, [blocks, project.projectId]);
+  useEffect(() => {
+    const projectId = String(project.projectId || "");
+    const token = window.sessionStorage.getItem("trimemo_premium_token");
+    if (!projectId || !token || window.sessionStorage.getItem("trimemo_premium_project_id") !== projectId) return;
+    let session: any = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token || !session?.userId || activeOwnedProject.current?.projectId !== projectId || activeOwnedProject.current?.userId !== session.userId) return;
+    for (const block of blocks) {
+      const continuationId = block.continuationId;
+      if (!continuationId || recoveringContinuations.current.has(continuationId)) continue;
+      recoveringContinuations.current.add(continuationId);
+      void (async () => {
+        try {
+          const response = await fetch(PREVIEW_CONTINUATION_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Trimemo-Client-Token": String(session.token), "X-Trimemo-Premium-Token": token },
+            body: JSON.stringify({ project: projectPayloadWithoutFiles(project), blockId: block.id, continuationId }),
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || typeof result.visible !== "string" || typeof result.remainder !== "string") throw new Error("La suite du document n’a pas pu être récupérée. Rouvrez le projet pour réessayer ; ne régénérez pas ce bloc.");
+          if (block.content !== result.visible) throw new Error("Le bloc enregistré diffère de sa sauvegarde sécurisée. Contactez le support ; votre texte reste conservé.");
+          setBlocks(current => current.map(item => {
+            if (item.id !== block.id || item.continuationId !== continuationId || item.content !== result.visible) return item;
+            const content = result.visible + result.remainder;
+            return { ...item, content, wordCount: countWords(content), continuationId: undefined, previewLimitReached: undefined };
+          }));
+        } catch (error) {
+          pushToast("error", error instanceof Error ? error.message : "Impossible de récupérer la suite du document.");
+        }
+      })();
+    }
+  }, [blocks, project]);
   const targetWords = blocks.length
     ? blocks.reduce((sum, block) => sum + block.expectedWords, 0)
     : project.pages * WORDS_PER_PAGE;
@@ -2674,6 +2709,16 @@ export default function App() {
         }, 240000);
         const data = await readApiResponse(response);
         const content = String(data.content || data.block?.content || data.text || "").trim();
+        if (!content && data.continuationId && data.previewLimitReached) {
+          const lastCompletedId = completedBlocks[completedBlocks.length - 1]?.id;
+          setBlocks(current => current.map(item => item.id === blockId
+            ? { ...item, content: "", wordCount: 0, status: "done", continuationId: String(data.continuationId), previewLimitReached: true }
+            : item.id === lastCompletedId ? { ...item, previewLimitReached: true } : item));
+          pushToast("info", lastCompletedId
+            ? "La phrase suivante est conservée pour la suite. Votre aperçu est disponible."
+            : "La première phrase dépasse l’aperçu disponible. Le texte est conservé ; contactez le support pour le récupérer.");
+          return;
+        }
         if (!content) throw new Error("Le serveur n’a retourné aucun contenu pour ce bloc.");
         const remainingWords = Math.max(0, previewLimit - completedWords);
         const limitedContent = trimToWordsPreservingLayout(content, remainingWords);
@@ -2682,8 +2727,9 @@ export default function App() {
         setBlocks((current) => current.map((item) => item.id === blockId ? {
           ...item, ...data, id: item.id, title: item.title, kind: item.kind, structure: item.structure,
           content: limitedContent, wordCount: finalCount, status: "done", error: undefined,
-          previewRemainder: content.slice(limitedContent.length) || undefined,
-          previewLimitReached: countWords(content) > remainingWords || undefined,
+          previewRemainder: data.continuationId ? undefined : content.slice(limitedContent.length) || undefined,
+          continuationId: data.continuationId || undefined,
+          previewLimitReached: Boolean(data.previewLimitReached || countWords(content) > remainingWords) || undefined,
         } : item));
         pushToast("success", finalCount + " mots rédigés dans ce bloc. " + (completedWords + finalCount >= previewLimit || countWords(content) > remainingWords ? "L’aperçu académique est disponible." : "Passez au bloc suivant."));
         if (Array.isArray(data.warnings)) data.warnings.forEach((warning: unknown) => pushToast("info", String(warning)));
@@ -2985,6 +3031,10 @@ export default function App() {
   }
 
   async function exportDocument() {
+    if (!ownerRoute && window.sessionStorage.getItem("trimemo_premium_token") && blocks.some(block => block.continuationId)) {
+      pushToast("info", "La récupération de la suite est nécessaire avant l’export. Si elle ne se termine pas, rouvrez le projet ou contactez le support.");
+      return;
+    }
     if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
       const done = blocks.filter((block) => block.status === "done" && block.content.trim());
       const combined = done.map((block) => block.content).join("\n\n");
