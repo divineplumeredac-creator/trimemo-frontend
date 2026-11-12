@@ -1,7 +1,7 @@
 import { getVercelOidcToken } from '@vercel/oidc';
 
 const UPSTREAM = 'https://trimemo-api-git-feat-fedapay-sandbox-divineplumeredac-4026.vercel.app';
-const ROUTES = new Set(['academic','client-account','estimate-project','export','fedapay-sandbox','generate-block','generate-free-preview','generate-plans','generate-problematics','preview-continuation','project-state']);
+const ROUTES = new Set(['academic','client-account','estimate-project','export','fedapay-sandbox','fedapay-sandbox-health','generate-block','generate-free-preview','generate-plans','generate-problematics','preview-continuation','project-state']);
 
 export function makeSandboxBridge({getToken=getVercelOidcToken,send=fetch}={}) {
   return async function handler(req,res) {
