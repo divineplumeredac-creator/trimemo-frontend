@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 
-const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "" : "https://trimemo-api.vercel.app")).replace(/\/$/, "");
+const API_BASE_URL = import.meta.env.PROD ? "" : String(import.meta.env.VITE_API_BASE_URL || "https://trimemo-api.vercel.app").replace(/\/$/, "");
 const API_URL = `${API_BASE_URL}/api/academic`;
 const FEDAPAY_SANDBOX_ENABLED = String(import.meta.env.VITE_FEDAPAY_SANDBOX_ENABLED || "").toLowerCase() === "true";
 const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
@@ -4595,12 +4595,12 @@ export default function App() {
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
                       <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#D4A23A] font-inter text-sm font-semibold text-[#172554] disabled:opacity-60">
                         {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                        Payer pour continuer
+                        <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-[#003087]">Pay</span><span className="text-[#0070E0]">Pal</span></span><span>Payer avec PayPal</span>
                       </button>
                     ) : (
                       <button type="button" disabled className="flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-full bg-[#D4A23A]/50 font-inter text-sm font-semibold text-[#172554]" title="Le prestataire de paiement doit être activé dans la configuration de Trimémo.">
                         <LockKeyhole className="h-4 w-4" />
-                        Payer pour continuer
+                        <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-[#003087]">Pay</span><span className="text-[#0070E0]">Pal</span></span><span>Payer avec PayPal</span>
                       </button>
                     )}
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() !== "true" && String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() !== "true" && (
@@ -4609,9 +4609,10 @@ export default function App() {
                     {(FEDAPAY_SANDBOX_ENABLED || String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true") && (
                       <button onClick={() => void startPayment("mobile-money")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 font-inter text-sm font-semibold text-white disabled:opacity-60">
                         {paymentLoading === "mobile-money" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                        {FEDAPAY_SANDBOX_ENABLED ? "Tester le paiement FedaPay (Mobile Money)" : "Payer pour continuer par Mobile Money"}
+                        Payer par Mobile Money
                       </button>
                     )}
+                    <p className="text-center font-inter text-xs leading-5 text-white/80">Mobile Money via FedaPay : MTN MoMo, Moov Money, Celtiis Cash et autres réseaux selon votre pays. Le choix du réseau se fait sur la page sécurisée FedaPay.</p>
                   </div>
                 </div>
               </section>
