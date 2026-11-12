@@ -20,6 +20,7 @@ import {
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "" : "https://trimemo-api.vercel.app")).replace(/\/$/, "");
 const API_URL = `${API_BASE_URL}/api/academic`;
+const FEDAPAY_SANDBOX_ENABLED = String(import.meta.env.VITE_FEDAPAY_SANDBOX_ENABLED || "").toLowerCase() === "true";
 const PROBLEMATICS_API = `${API_BASE_URL}/api/generate-problematics`;
 const PLANS_API = `${API_BASE_URL}/api/generate-plans`;
 const FREE_PREVIEW_API = `${API_BASE_URL}/api/generate-free-preview`;
@@ -1014,20 +1015,21 @@ export default function App() {
 
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
-    const queryOrderId = params.get("order_id") || params.get("token") || params.get("transaction_id");
+    const queryOrderId = params.get("order_id") || params.get("token") || params.get("transaction_id") || (payment === "fedapay" ? params.get("id") : null);
     // Certains retours PayPal intégrés ne transmettent pas immédiatement le token dans l'URL.
     // La référence de commande est sauvegardée avant la redirection et sert de reprise sécurisée.
-    const id = queryOrderId || (payment === "paypal" ? window.sessionStorage.getItem("trimemo_pending_paypal_order") : null);
-    if (!payment || payment === "paypal_cancelled") {
+    const id = queryOrderId || (payment === "paypal" ? window.sessionStorage.getItem("trimemo_pending_paypal_order") : payment === "fedapay" && FEDAPAY_SANDBOX_ENABLED ? window.sessionStorage.getItem("trimemo_pending_fedapay_order") : null);
+    if (!payment || payment === "paypal_cancelled" || (payment === "fedapay" && !FEDAPAY_SANDBOX_ENABLED)) {
       if (payment === "paypal_cancelled") {
         window.sessionStorage.removeItem("trimemo_pending_paypal_order");
+        window.sessionStorage.removeItem("trimemo_pending_fedapay_order");
         pushToast("info", "Paiement annulé. Votre projet est conservé ; vous pouvez reprendre le paiement.");
         window.history.replaceState({}, document.title, window.location.pathname);
       }
       return;
     }
     if (!id) {
-      pushToast("error", "Le retour de paiement ne contient pas la référence PayPal. Votre projet est conservé ; relancez le paiement ou contactez le support.");
+      pushToast("error", "Le retour de paiement ne contient pas la référence de transaction. Votre projet est conservé ; relancez le paiement ou contactez le support.");
       return;
     }
 
@@ -1037,7 +1039,7 @@ export default function App() {
         const action = payment === "paypal" ? "verify-paypal" : "verify-mobile-money";
         let verificationSession: any = null;
         try { verificationSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
-        if (payment === "paypal" && !verificationSession?.token) {
+        if ((payment === "paypal" || payment === "fedapay") && !verificationSession?.token) {
           setClientAuthMode("login");
           setView("account");
           throw new Error("Connectez-vous au compte associé au projet pour reprendre la vérification du paiement.");
@@ -1045,10 +1047,10 @@ export default function App() {
         const verify = (token: string) => fetch(`${API_URL}?action=${action}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          body: JSON.stringify({ id, project: loadPendingProject(stateStorageKey) }),
+          body: JSON.stringify({ id, action: "verify", project: loadPendingProject(stateStorageKey) }),
         });
         let response = await verify(String(verificationSession?.token || ""));
-        if (payment === "paypal" && response.status === 401 && verificationSession?.refreshToken) {
+        if ((payment === "paypal" || payment === "fedapay") && response.status === 401 && verificationSession?.refreshToken) {
           const refresh = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refreshToken: verificationSession.refreshToken }) });
           const renewed = await refresh.json().catch(() => ({}));
           if (refresh.ok && renewed.token && renewed.user?.id === verificationSession.userId) {
@@ -1059,7 +1061,7 @@ export default function App() {
             response = await verify(verificationSession.token);
           }
         }
-        if (payment === "paypal" && response.status === 401) { setClientAuthMode("login"); setView("account"); }
+        if ((payment === "paypal" || payment === "fedapay") && response.status === 401) { setClientAuthMode("login"); setView("account"); }
         const data = await readApiResponse(response);
         if (data.status !== "PAID") {
           throw new Error(data.error || "Le paiement n’a pas été confirmé.");
@@ -1071,7 +1073,7 @@ export default function App() {
         const saved = data.project || loadPendingProject(stateStorageKey) || null;
         if (saved?.projectId) window.sessionStorage.setItem("trimemo_premium_project_id", String(saved.projectId));
         if (!saved) throw new Error("Le paiement est confirmé, mais les données du projet n'ont pas pu être restaurées. Contactez le support avec la référence de commande.");
-        if (payment === "paypal") {
+        if (payment === "paypal" || payment === "fedapay") {
           const activeSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
           if (!verificationSession?.userId || activeSession?.userId !== verificationSession.userId) throw new Error("Le compte a changé. Reconnectez-vous au compte associé au projet.");
           activeOwnedProject.current = { projectId: String(saved.projectId || ""), userId: verificationSession.userId };
@@ -1231,7 +1233,7 @@ export default function App() {
         }
         const linkPaidProject = (token: string) => fetch(CLIENT_ACCOUNT_API, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "link", token, projectId: saved.projectId, subject: saved.sujet || "Projet académique", orderId: id }),
+          body: JSON.stringify({ action: "link", token, projectId: saved.projectId, subject: saved.sujet || "Projet académique", orderId: data.order_id || id }),
         });
         let linkResponse = await linkPaidProject(clientSession.token);
         if (linkResponse.status === 401 && clientSession.refreshToken) {
@@ -1249,6 +1251,7 @@ export default function App() {
         const linkData = await readApiResponse(linkResponse);
         if (!linkData.success) throw new Error("Paiement confirmé, mais le mémoire n’a pas encore été rattaché. Vos données sont conservées; reconnectez-vous pour reprendre.");
         window.sessionStorage.removeItem("trimemo_pending_paypal_order");
+        window.sessionStorage.removeItem("trimemo_pending_fedapay_order");
         window.localStorage.removeItem("trimemo_project_pending");
         window.localStorage.removeItem("trimemo_preview_pending");
         window.sessionStorage.removeItem("trimemo_preview_pending");
@@ -2285,7 +2288,7 @@ export default function App() {
       const fullName=[firstName,lastName].filter(Boolean).join(" ").trim();
       const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id), fullName };
       setShowConfirmationResend(false);
-      const returningFromPayment = new URLSearchParams(window.location.search).get("payment") === "paypal";
+      const returningFromPayment = ["paypal", "fedapay"].includes(new URLSearchParams(window.location.search).get("payment") || "");
       if (!returningFromPayment) archiveCurrentDraft();
       activeOwnedProject.current = null;
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
@@ -2394,16 +2397,18 @@ export default function App() {
       if (!savePendingProject(paymentProject) && paymentProject.files.length) {
         pushToast("info", "Espace de stockage du navigateur insuffisant : vos documents joints devront peut-être être rattachés à nouveau après le paiement.");
       }
+      const useFedaSandbox = method === "mobile-money" && FEDAPAY_SANDBOX_ENABLED;
       const response = await fetch(`${API_URL}?action=${method === "paypal" ? "create-paypal-order" : "create-mobile-money"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + clientSession.token },
-        body: JSON.stringify({ project: projectPayloadWithoutFiles(paymentProject, true) }),
+        body: JSON.stringify({ action: "create", project: projectPayloadWithoutFiles(paymentProject, true) }),
       });
       const data = await readApiResponse(response);
       if (!data.url) throw new Error("Aucune URL de paiement n’a été retournée.");
       if (method === "paypal" && data.id) {
         window.sessionStorage.setItem("trimemo_pending_paypal_order", String(data.id));
       }
+      if (useFedaSandbox && data.id) window.sessionStorage.setItem("trimemo_pending_fedapay_order", String(data.id));
       // Forcer une sauvegarde locale immédiatement avant de quitter la plateforme.
       try {
         const state = {
@@ -4249,7 +4254,7 @@ export default function App() {
           <div className="mx-auto max-w-xl rounded-3xl border border-[#172554]/10 bg-white p-6 shadow-sm sm:p-9">
             <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#D4A23A]">Compte client Trimémo</div>
             <h1 className="mt-3 font-playfair text-3xl font-bold text-[#172554]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
-            <p className="mt-3 font-inter text-sm leading-6 text-[#172554]/70">{clientAuthMode === "signup" ? "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture de PayPal." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
+            <p className="mt-3 font-inter text-sm leading-6 text-[#172554]/70">{clientAuthMode === "signup" ? "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture du paiement." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
             <form className="mt-7 space-y-4" onSubmit={(event) => { event.preventDefault(); void submitClientAuth(); }}>
               {clientAuthMode === "signup" && (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -4591,10 +4596,10 @@ export default function App() {
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() !== "true" && String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() !== "true" && (
                       <p className="text-center font-inter text-xs leading-5 text-white/70">Le paiement n’est pas encore activé. La configuration du prestataire est nécessaire pour encaisser les paiements.</p>
                     )}
-                    {String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true" && (
+                    {(FEDAPAY_SANDBOX_ENABLED || String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true") && (
                       <button onClick={() => void startPayment("mobile-money")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 font-inter text-sm font-semibold text-white disabled:opacity-60">
                         {paymentLoading === "mobile-money" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                        Payer pour continuer par Mobile Money
+                        {FEDAPAY_SANDBOX_ENABLED ? "Tester le paiement FedaPay (Mobile Money)" : "Payer pour continuer par Mobile Money"}
                       </button>
                     )}
                   </div>
