@@ -7,7 +7,7 @@ const start = src.indexOf('function trimToWordsPreservingLayout(');
 const end = src.indexOf('\nfunction wordsToPages(', start);
 assert.ok(start >= 0 && end > start);
 const js = ts.transpileModule(src.slice(start, end), {compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
-const {trim, restore} = new Function('countWords', js + '\nreturn {trim: trimToWordsPreservingLayout, restore: restorePreviewRemainder};')((v) => v.trim().split(/\s+/).length);
+const {trim, restore, restoreServer} = new Function('countWords', js + '\nreturn {trim: trimToWordsPreservingLayout, restore: restorePreviewRemainder, restoreServer: restoreServerContinuation};')((v) => v.trim().split(/\s+/).length);
 test('ne coupe pas une phrase et permet de récupérer tous les caractères', () => {
   const content = 'Cette traduction transforme une remarque en exigence interne. Un exemple permet de mieux comprendre.';
   const shown = trim(content, 9);
@@ -28,4 +28,18 @@ test('la reprise restitue exactement le texte conservé et reste idempotente', (
   assert.equal(restored.content, original);
   assert.equal(restored.previewRemainder, undefined);
   assert.equal(restore(restored), restored);
+});
+test('un aperçu de plus de 1 000 mots ne tronque pas un bloc qui tient dans le quota', () => {
+  const content = Array.from({length: 120}, (_, i) => `La phrase ${i} comprend plusieurs mots pour vérifier correctement cette limite.`).join(' ');
+  assert.ok(content.split(/\s+/).length > 1000);
+  assert.equal(trim(content, 2000), content);
+});
+test('la suite serveur est ajoutée une seule fois et ne remplace pas un bloc modifié', () => {
+  const block = {content:'Phrase complète.', continuationId:'test', footnotes:[]};
+  const recovered = restoreServer(block,'test','Phrase complète.','\nSuite exacte.',['Note.']);
+  assert.equal(recovered.content,'Phrase complète.\nSuite exacte.');
+  assert.deepEqual(recovered.footnotes,['Note.']);
+  assert.equal(restoreServer(recovered,'test','Phrase complète.','\nSuite exacte.',['Note.']),recovered);
+  const modified = {...block,content:'Contenu modifié.'};
+  assert.equal(restoreServer(modified,'test','Phrase complète.','\nSuite exacte.',[]),modified);
 });
