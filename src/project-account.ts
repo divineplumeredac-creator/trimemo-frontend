@@ -1,4 +1,11 @@
-export type AccountSession = { token: string; userId: string };
+export type AccountSession = {
+  token: string;
+  userId: string;
+  refreshToken?: string;
+  expiresAt?: number | string | null;
+  email?: string;
+  fullName?: string;
+};
 
 function canonical(value: unknown): string {
   const sort = (item: any): any => Array.isArray(item) ? item.map(sort) : item && typeof item === 'object' ? Object.fromEntries(Object.keys(item).sort().filter(key => item[key] !== undefined).map(key => [key, sort(item[key])])) : item;
@@ -28,6 +35,7 @@ export function recoverMatchingAttachments(draft: any, remote: any, sessionFiles
 }
 
 // Registration happens before the blank project is displayed or used for AI.
+// A stale access token is refreshed once. Never claim a project for a different user.
 export async function registerOwnedProject(
   apiUrl: string,
   session: AccountSession,
@@ -36,14 +44,60 @@ export async function registerOwnedProject(
   request: typeof fetch = fetch,
 ) {
   if (!session?.token || !session?.userId || !project?.projectId) throw new Error('Connectez-vous avant de créer un projet.');
+  const expectedUserId = session.userId;
+  const sessionChanged = () => new Error('Le compte a changé pendant la création du projet. Ouvrez le projet depuis son compte.');
+  const sessionExpired = () => new Error('Votre session a expiré. Connectez-vous à nouveau.');
+  const activeAtStart = currentSession();
+  if (!activeAtStart?.token || activeAtStart.userId !== expectedUserId) throw sessionChanged();
+
   const state = { schemaVersion: 2, project, blocks: [], view: 'project' };
-  const response = await request(apiUrl, {
+  const link = (token: string) => request(apiUrl, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'link', token: session.token, projectId: project.projectId, subject: project.sujet || 'Projet académique', state }),
+    body: JSON.stringify({ action: 'link', token, projectId: project.projectId, subject: project.sujet || 'Projet académique', state }),
   });
+
+  let response = await link(activeAtStart.token);
+  if (response.status === 401) {
+    const active = currentSession();
+    if (!active?.token || active.userId !== expectedUserId) throw sessionChanged();
+
+    // Another request may already have refreshed this account's token.
+    if (active.token !== activeAtStart.token) response = await link(active.token);
+
+    if (response.status === 401 && active.refreshToken) {
+      const refreshResponse = await request(apiUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'refresh', refreshToken: active.refreshToken }),
+      });
+      const refreshed = await refreshResponse.json().catch(() => ({}));
+      if (refreshResponse.ok && refreshed?.token && refreshed?.user?.id) {
+        if (String(refreshed.user.id) !== expectedUserId) throw sessionChanged();
+        const latest = currentSession();
+        if (!latest?.token || latest.userId !== expectedUserId) throw sessionChanged();
+
+        if (latest.token !== active.token) {
+          response = await link(latest.token);
+        } else {
+          const renewed: AccountSession = {
+            ...latest,
+            token: String(refreshed.token),
+            refreshToken: String(refreshed.refresh_token || latest.refreshToken || ''),
+            expiresAt: refreshed.expires_at || null,
+          };
+          // Persist only after the server has confirmed the same user ID.
+          window.localStorage.setItem('trimemo_client_session', JSON.stringify(renewed));
+          response = await link(renewed.token);
+        }
+      } else if (refreshResponse.status >= 500) {
+        throw new Error('Le renouvellement de session est momentanément indisponible. Réessayez sans supprimer votre projet.');
+      }
+    }
+  }
+
+  if (response.status === 401) throw sessionExpired();
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data.success) throw new Error(String(data.error || 'Le projet ne peut pas être créé dans votre compte.'));
-  const active = currentSession();
-  if (!active?.token || active.userId !== session.userId) throw new Error('Le compte a changé pendant la création du projet. Ouvrez le projet depuis son compte.');
+  const current = currentSession();
+  if (!current?.token || current.userId !== expectedUserId) throw sessionChanged();
   return project;
 }
