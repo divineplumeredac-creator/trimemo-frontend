@@ -28,40 +28,26 @@ export default function MarketingHome({ onStart, onRevision }: { onStart: () => 
       </div>
       <p className="mx-auto mt-10 text-center font-inter text-sm text-[#23334d] sm:text-base">Licence　·　Master　·　Doctorat　　|　　Mémoire　·　Rapport　·　Article　·　Thèse</p>
     </section>
+    <section aria-labelledby="difference-trimemo" className="bg-[#f3f7f8] px-5 py-10 sm:px-8">
+      <div className="mx-auto max-w-[1420px]">
+        <h2 id="difference-trimemo" className="text-center font-inter text-3xl font-bold text-[#0b1321] sm:text-4xl">Pourquoi Trimémo est différent d’une IA généraliste</h2>
+        <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-base leading-relaxed text-[#23334d]">Trimémo utilise l’intelligence artificielle avec un parcours et des prompts conçus à partir de l’expérience réelle de son promoteur dans la rédaction académique.</p>
+        <div className="mx-auto mt-7 grid max-w-4xl gap-4 md:grid-cols-2">
+          <article className="rounded-xl border border-slate-200 bg-white p-6">
+            <h3 className="font-inter text-lg font-bold text-[#0b1321]">Avec une IA généraliste</h3>
+            <p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Vous dialoguez librement avec l’IA et organisez vous-même les consignes, les étapes et la structure de votre travail.</p>
+          </article>
+          <article className="rounded-xl border border-[#b9d7cb] bg-white p-6">
+            <h3 className="font-inter text-lg font-bold text-[#006443]">Avec Trimémo</h3>
+            <p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Vous suivez une méthode guidée : problématique, plan, aperçu avant paiement, rédaction et export Word, selon votre sujet et vos consignes.</p>
+          </article>
+        </div>
+        <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-xs leading-relaxed text-[#526174]">Le contenu produit avec l’IA doit toujours être relu, vérifié et adapté aux exigences de votre établissement.</p>
+      </div>
+    </section>
     <section id="fonctionnement" className="px-5 py-12 sm:px-8"><div className="mx-auto max-w-[1420px]"><h2 className="text-center font-inter text-3xl font-bold text-[#0b1321] sm:text-4xl">Un parcours clair, du début à la fin</h2><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{steps.map(({icon:Icon,title,description},i)=><article key={title} className="rounded-xl border border-slate-200 bg-white p-6"><div className="flex items-center justify-between text-[#006443]"><Icon size={34}/><span className="rounded-full bg-[#e8f4ef] px-3 py-1 text-sm font-bold">{i+1}</span></div><h3 className="mt-4 font-inter text-lg font-bold text-[#0b1321]">{i+1}. {title}</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">{description}</p></article>)}</div>
       <div id="revision-humaine" className="mt-7 flex flex-wrap items-center gap-5 rounded-2xl bg-[#e8f4ef] p-6"><Users className="text-[#006443]" size={38}/><div className="flex-1"><h3 className="font-inter text-xl font-bold text-[#0b1321]">Besoin d’un regard humain ?</h3><p className="mt-1 font-inter text-sm text-[#23334d]">Demandez une révision adaptée à votre document.</p></div><button onClick={onRevision} className="rounded-xl bg-[#005b3f] px-6 py-3 font-inter text-sm font-semibold text-white hover:bg-[#004832]">Découvrir la révision</button></div>
     </div></section>
 
-    <section aria-labelledby="avantages-trimemo" className="bg-[#f3f7f8] px-5 py-12 sm:px-8">
-      <div className="mx-auto max-w-[1420px]">
-        <h2 id="avantages-trimemo" className="font-inter text-3xl font-bold text-[#0b1321] sm:text-4xl">Un assistant IA pour préparer votre mémoire étape par étape</h2>
-        <p className="mt-4 max-w-4xl font-inter text-base leading-relaxed text-[#23334d]">Trimémo vous aide à organiser un projet de rédaction académique en respectant votre sujet, votre niveau d’études et vos consignes. Vous gardez la main sur les choix importants avant de passer à la rédaction.</p>
-        <div className="mt-7 grid gap-4 md:grid-cols-3">
-          <article className="rounded-xl border border-slate-200 bg-white p-6">
-            <h3 className="font-inter text-xl font-bold text-[#0b1321]">Formuler une problématique de mémoire</h3>
-            <p className="mt-3 font-inter text-sm leading-relaxed text-[#23334d]">À partir de votre sujet et de son contexte, explorez plusieurs angles de recherche, affinez vos questions et sélectionnez une direction de travail.</p>
-          </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-6">
-            <h3 className="font-inter text-xl font-bold text-[#0b1321]">Construire un plan académique</h3>
-            <p className="mt-3 font-inter text-sm leading-relaxed text-[#23334d]">Élaborez un plan de mémoire, rapport ou thèse, puis ajustez sa structure selon les exigences de votre établissement et vos documents méthodologiques.</p>
-          </article>
-          <article className="rounded-xl border border-slate-200 bg-white p-6">
-            <h3 className="font-inter text-xl font-bold text-[#0b1321]">Rédiger, relire et exporter en Word</h3>
-            <p className="mt-3 font-inter text-sm leading-relaxed text-[#23334d]">Consultez un aperçu avant paiement, poursuivez votre rédaction et récupérez un document Word à relire, corriger et mettre en conformité.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-    <section aria-labelledby="questions-trimemo" className="px-5 py-12 sm:px-8">
-      <div className="mx-auto max-w-[1420px]">
-        <h2 id="questions-trimemo" className="font-inter text-3xl font-bold text-[#0b1321] sm:text-4xl">Questions fréquentes sur Trimémo</h2>
-        <div className="mt-7 grid gap-5 md:grid-cols-2">
-          <article><h3 className="font-inter text-lg font-bold text-[#0b1321]">Faut-il payer avant de voir le document ?</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Non. Après la préparation de votre projet, vous découvrez un aperçu proportionnel à sa taille, sans dépasser 2 500 mots. Le paiement intervient avant la rédaction complète.</p></article>
-          <article><h3 className="font-inter text-lg font-bold text-[#0b1321]">Quels types de travaux peut-on préparer ?</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Trimémo accompagne la structuration et la rédaction de mémoires, rapports, articles et thèses, notamment aux niveaux Licence, Master et Doctorat.</p></article>
-          <article><h3 className="font-inter text-lg font-bold text-[#0b1321]">Peut-on transmettre un guide méthodologique ?</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Oui. Vous pouvez joindre des consignes et des documents de référence pour préciser le cadre attendu de votre rédaction.</p></article>
-          <article><h3 className="font-inter text-lg font-bold text-[#0b1321]">Le contenu doit-il être vérifié ?</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Oui. Vérifiez toujours les références, les analyses, l'originalité et la conformité de votre travail aux règles de votre établissement avant toute utilisation.</p></article>
-        </div>
-      </div>
-    </section>
   </>;
 }
