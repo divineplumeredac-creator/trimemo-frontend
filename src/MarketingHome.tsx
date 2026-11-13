@@ -30,24 +30,66 @@ export default function MarketingHome({ onStart, onRevision }: { onStart: () => 
     </section>
     <section aria-labelledby="difference-trimemo" className="bg-[#f3f7f8] px-5 py-10 sm:px-8">
       <div className="mx-auto max-w-[1420px]">
-        <h2 id="difference-trimemo" className="text-center font-inter text-3xl font-bold text-[#0b1321] sm:text-4xl">Pourquoi Trimémo est différent d’une IA généraliste</h2>
-        <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-base leading-relaxed text-[#23334d]">Trimémo utilise l’intelligence artificielle avec un parcours et des prompts conçus à partir de l’expérience réelle de son promoteur dans la rédaction académique.</p>
+        <h2 id="difference-trimemo" className="text-center font-inter text-3xl font-bold text-[#0b1321] sm:text-4xl">Pourquoi choisir Trimémo plutôt qu’une IA généraliste ?</h2>
+        <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-base leading-relaxed text-[#23334d]">Une IA généraliste peut vous aider à rédiger, mais obtenir un mémoire bien structuré demande souvent de maîtriser les prompts. <strong>Trimémo intègre déjà des prompts spécialisés, élaborés par un expert en méthodologie académique à partir de son expérience réelle de la rédaction.</strong></p>
         <div className="mx-auto mt-7 grid max-w-4xl gap-4 md:grid-cols-2">
           <article className="rounded-xl border border-slate-200 bg-white p-6">
             <h3 className="font-inter text-lg font-bold text-[#0b1321]">Avec une IA généraliste</h3>
-            <p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Vous dialoguez librement avec l’IA et organisez vous-même les consignes, les étapes et la structure de votre travail.</p>
+            <p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Pour cadrer une rédaction académique, vous devez souvent imaginer des prompts précis, les ajuster et organiser vous-même les étapes de travail.</p>
           </article>
           <article className="rounded-xl border border-[#b9d7cb] bg-white p-6">
-            <h3 className="font-inter text-lg font-bold text-[#006443]">Avec Trimémo</h3>
-            <p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Vous suivez une méthode guidée : problématique, plan, aperçu avant paiement, rédaction et export Word, selon votre sujet et vos consignes.</p>
+            <h3 className="font-inter text-lg font-bold text-[#006443]">Avec Trimémo, les prompts sont déjà intégrés</h3>
+            <p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">Décrivez votre projet et vos consignes. Trimémo vous guide avec une méthode spécialisée : problématique, plan, aperçu, rédaction et export Word. <strong>Pas besoin de savoir prompter.</strong></p>
           </article>
         </div>
-        <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-xs leading-relaxed text-[#526174]">Le contenu produit avec l’IA doit toujours être relu, vérifié et adapté aux exigences de votre établissement.</p>
+        <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-xs leading-relaxed text-[#526174]">Trimémo assiste la rédaction : les sources, les analyses et la conformité académique restent à vérifier.</p>
       </div>
     </section>
     <section id="fonctionnement" className="px-5 py-12 sm:px-8"><div className="mx-auto max-w-[1420px]"><h2 className="text-center font-inter text-3xl font-bold text-[#0b1321] sm:text-4xl">Un parcours clair, du début à la fin</h2><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{steps.map(({icon:Icon,title,description},i)=><article key={title} className="rounded-xl border border-slate-200 bg-white p-6"><div className="flex items-center justify-between text-[#006443]"><Icon size={34}/><span className="rounded-full bg-[#e8f4ef] px-3 py-1 text-sm font-bold">{i+1}</span></div><h3 className="mt-4 font-inter text-lg font-bold text-[#0b1321]">{i+1}. {title}</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#23334d]">{description}</p></article>)}</div>
-      <div id="revision-humaine" className="mt-7 flex flex-wrap items-center gap-5 rounded-2xl bg-[#e8f4ef] p-6"><Users className="text-[#006443]" size={38}/><div className="flex-1"><h3 className="font-inter text-xl font-bold text-[#0b1321]">Besoin d’un regard humain ?</h3><p className="mt-1 font-inter text-sm text-[#23334d]">Demandez une révision adaptée à votre document.</p></div><button onClick={onRevision} className="rounded-xl bg-[#005b3f] px-6 py-3 font-inter text-sm font-semibold text-white hover:bg-[#004832]">Découvrir la révision</button></div>
+      <div id="revision-humaine" className="mt-7 flex flex-wrap items-center gap-5 rounded-2xl bg-[#e8f4ef] p-6"><Users className="text-[#006443]" size={38}/><div className="flex-1"><h3 className="font-inter text-xl font-bold text-[#0b1321]">Besoin d’un regard humain ?</h3><p className="mt-1 font-inter text-sm text-[#23334d]">Faites relire votre document par un professionnel : révision humaine facultative et payante.</p></div><button onClick={onRevision} className="rounded-xl bg-[#005b3f] px-6 py-3 font-inter text-sm font-semibold text-white hover:bg-[#004832]">Découvrir la révision</button></div>
     </div></section>
+    <section aria-labelledby="faq-trimemo" className="bg-[#f3f7f8] px-5 py-12 sm:px-8">
+      <div className="mx-auto max-w-[920px]">
+        <h2 id="faq-trimemo" className="text-center font-inter text-3xl font-bold text-[#0b1321] sm:text-4xl">Questions fréquentes</h2>
+        <p className="mt-3 text-center font-inter text-sm text-[#23334d]">Les réponses essentielles avant de commencer votre projet.</p>
+        <div className="mt-7 space-y-3">
+          {[
+            {
+              question: 'Faut-il savoir écrire des prompts pour utiliser Trimémo ?',
+              answer: 'Non. Les prompts méthodologiques sont déjà intégrés. Vous décrivez votre sujet, votre niveau et vos consignes ; Trimémo vous guide à chaque étape.'
+            },
+            {
+              question: 'Puis-je voir un aperçu avant de payer ?',
+              answer: 'Oui. Vous consultez un aperçu adapté à la taille de votre projet, sans dépasser 2 500 mots. Le paiement intervient avant la rédaction complète.'
+            },
+            {
+              question: 'Puis-je bénéficier d’une révision humaine de mon document ?',
+              answer: 'Oui. Trimémo propose une révision humaine en option, après rédaction. Cette prestation est payante : son tarif dépend du document et du niveau de révision demandé.'
+            },
+            {
+              question: 'Puis-je fournir mon guide méthodologique et mes consignes ?',
+              answer: 'Oui. Vous pouvez transmettre vos consignes et vos documents de référence pour orienter la problématique, le plan et la rédaction.'
+            },
+            {
+              question: 'Puis-je télécharger mon travail en Word ?',
+              answer: 'Oui. Après le paiement et la rédaction complète, vous pouvez exporter votre document au format Word pour le relire et le corriger.'
+            },
+            {
+              question: 'Trimémo garantit-il la validation de mon mémoire ?',
+              answer: 'Non. Trimémo est un assistant de rédaction. Il est important de vérifier les sources, les analyses et la conformité du document aux exigences de votre établissement.'
+            }
+          ].map(({ question, answer }) => (
+            <details key={question} className="group rounded-xl border border-slate-200 bg-white px-5 py-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-inter text-sm font-semibold text-[#0b1321] sm:text-base">
+                <span>{question}</span>
+                <span aria-hidden="true" className="shrink-0 text-2xl font-normal text-[#006443] transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <p className="mt-3 pr-6 font-inter text-sm leading-relaxed text-[#23334d]">{answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
 
   </>;
 }
