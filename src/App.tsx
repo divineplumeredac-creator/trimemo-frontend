@@ -1028,9 +1028,9 @@ export default function App() {
     const queryOrderId = params.get("order_id") || params.get("token") || params.get("transaction_id") || (payment === "fedapay" ? params.get("id") : null);
     // Certains retours PayPal intégrés ne transmettent pas immédiatement le token dans l'URL.
     // La référence de commande est sauvegardée avant la redirection et sert de reprise sécurisée.
-    const id = queryOrderId || (payment === "paypal" ? window.sessionStorage.getItem("trimemo_pending_paypal_order") : payment === "fedapay" && FEDAPAY_SANDBOX_ENABLED ? window.sessionStorage.getItem("trimemo_pending_fedapay_order") : null);
-    if (!payment || payment === "paypal_cancelled" || (payment === "fedapay" && !FEDAPAY_SANDBOX_ENABLED)) {
-      if (payment === "paypal_cancelled") {
+    const id = queryOrderId || (payment === "paypal" ? window.sessionStorage.getItem("trimemo_pending_paypal_order") : payment === "fedapay" ? window.sessionStorage.getItem("trimemo_pending_fedapay_order") : null);
+    if (!payment || payment === "paypal_cancelled" || payment === "fedapay_cancelled") {
+      if (payment === "paypal_cancelled" || payment === "fedapay_cancelled") {
         window.sessionStorage.removeItem("trimemo_pending_paypal_order");
         window.sessionStorage.removeItem("trimemo_pending_fedapay_order");
         pushToast("info", "Paiement annulé. Votre projet est conservé ; vous pouvez reprendre le paiement.");
@@ -1087,6 +1087,29 @@ export default function App() {
         }
         if ((payment === "paypal" || payment === "fedapay") && response.status === 401) { setClientAuthMode("login"); setView("account"); }
         const data = await readApiResponse(response);
+        if (payment === "fedapay" && data.status === "CANCELLED") {
+          // FedaPay has verified that this attempt cannot be paid. Keep the
+          // existing preview and draft; never grant premium access.
+          window.sessionStorage.removeItem("trimemo_pending_fedapay_order");
+          pushToast("info", "Paiement annulé ou refusé. Votre projet et son aperçu sont conservés ; vous pouvez réessayer.");
+          let currentSession: any = null;
+          try { currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+          const destination = currentSession?.token ? "preview" : "account";
+          if (!currentSession?.token) {
+            setClientAuthMode("login");
+            setClientAuthNotice("Reconnectez-vous pour retrouver votre projet et réessayer le paiement.");
+          }
+          setView(destination);
+          const returnUrl = new URL(window.location.href);
+          for (const key of ["payment", "token", "PayerID", "order_id", "transaction_id", "id", "status"]) returnUrl.searchParams.delete(key);
+          returnUrl.searchParams.set("view", destination);
+          window.history.replaceState({}, document.title, returnUrl.pathname + returnUrl.search);
+          return;
+        }
+        if (data.status === "PENDING") {
+          pushToast("info", "Paiement en cours de confirmation. Aucun montant n'est considéré encaissé avant validation FedaPay.");
+          return;
+        }
         if (data.status !== "PAID") {
           throw new Error(data.error || "Le paiement n’a pas été confirmé.");
         }
@@ -2453,7 +2476,7 @@ export default function App() {
       if (method === "paypal" && data.id) {
         window.sessionStorage.setItem("trimemo_pending_paypal_order", String(data.id));
       }
-      if (useFedaSandbox && data.id) window.sessionStorage.setItem("trimemo_pending_fedapay_order", String(data.id));
+      if (method === "mobile-money" && data.id) window.sessionStorage.setItem("trimemo_pending_fedapay_order", String(data.id));
       // Forcer une sauvegarde locale immédiatement avant de quitter la plateforme.
       try {
         const state = {
