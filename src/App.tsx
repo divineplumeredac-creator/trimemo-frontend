@@ -1318,7 +1318,16 @@ export default function App() {
       if (latestProject.current !== project || latestBlocks.current !== blocks) throw new Error("Le projet affiché a changé pendant la création. Votre travail est conservé ; ouvrez le nouveau projet depuis votre compte.");
       activeOwnedProject.current = { projectId: next.projectId, userId: session.userId };
     } catch (error) {
-      pushToast("error", error instanceof Error ? error.message : "Impossible de créer le projet dans votre compte.");
+      const message = error instanceof Error ? error.message : "Impossible de créer le projet dans votre compte.";
+      if (/session a expiré|session ne peut plus être renouvelée|connectez-vous à nouveau|session doit être renouvelée/i.test(message)) {
+        authIntent.current = "project";
+        setClientAuthMode("login");
+        setClientAuthError("");
+        setClientAuthNotice("Votre session a expiré. Connectez-vous à nouveau pour commencer votre projet.");
+        setView("account");
+      } else {
+        pushToast("error", message);
+      }
       return;
     } finally { creatingProject.current = false; }
     // Le formulaire s’ouvre dans le parcours client, sans retour à l’accueil.
@@ -1472,7 +1481,19 @@ export default function App() {
         });
         if (latestProject.current !== project || latestBlocks.current !== blocks) throw new Error("Le projet affiché a changé. Votre travail est conservé ; ouvrez le nouveau projet depuis votre compte.");
         activeOwnedProject.current = { projectId: next.projectId, userId: session.userId };
-      } catch (error) { pushToast("error", error instanceof Error ? error.message : "Impossible de préparer le projet."); return; }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Impossible de préparer le projet.";
+        if (/session a expiré|session ne peut plus être renouvelée|connectez-vous à nouveau|session doit être renouvelée/i.test(message)) {
+          authIntent.current = "dashboard";
+          setClientAuthMode("login");
+          setClientAuthError("");
+          setClientAuthNotice("Votre session a expiré. Connectez-vous à nouveau pour reprendre vos projets.");
+          setView("account");
+        } else {
+          pushToast("error", message);
+        }
+        return;
+      }
       finally { creatingProject.current = false; }
     }
     window.sessionStorage.removeItem("trimemo_premium_token"); window.sessionStorage.removeItem("trimemo_premium_project_id");
