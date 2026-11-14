@@ -10,7 +10,7 @@ function sessionToken():string {
  try{return String(JSON.parse(window.localStorage.getItem("trimemo_client_session")||"null")?.token||"");}catch{return "";}
 }
 
-export default function AmbassadorProgram({onBack,onLogin}:{onBack:()=>void;onLogin:()=>void}){
+export default function AmbassadorProgram({onBack,onLogin,onSignup}:{onBack:()=>void;onLogin:()=>void;onSignup:()=>void}){
  const [token,setToken]=useState(sessionToken);
  const [profile,setProfile]=useState<Profile|null>(null);
  const [busy,setBusy]=useState(false);
@@ -81,7 +81,7 @@ export default function AmbassadorProgram({onBack,onLogin}:{onBack:()=>void;onLo
    </div>
    <div className="rounded-3xl border border-[#1B4D3E]/15 bg-white p-6 shadow-sm sm:p-9">
     <h2 className="text-2xl font-bold">Mon espace ambassadeur</h2>
-    {!token?<div className="mt-4"><p className="max-w-2xl text-sm leading-7">Connectez-vous ou créez votre compte pour rejoindre le programme.</p><button onClick={onLogin} className="mt-5 rounded-xl bg-[#1B4D3E] px-6 py-3 font-semibold text-white">Se connecter ou créer un compte</button></div>
+    {!token?<div className="mt-4"><p className="max-w-2xl text-sm leading-7">Vous avez déjà un compte Trimémo ? Utilisez-le pour rejoindre le programme Ambassadeurs. Il n’est pas nécessaire de vous inscrire une deuxième fois.</p><div className="mt-5 flex flex-wrap gap-3"><button onClick={onLogin} className="rounded-xl bg-[#1B4D3E] px-6 py-3 font-semibold text-white">Se connecter</button><button onClick={onSignup} className="rounded-xl border border-[#1B4D3E] bg-white px-6 py-3 font-semibold text-[#1B4D3E]">Créer un compte</button></div></div>
     :busy&&!profile?<p className="mt-4 text-sm">Chargement de votre candidature…</p>
     :!me?<form onSubmit={submit} className="mt-5 grid gap-4">
       <p className="text-sm leading-6">Renseignez ces informations pour proposer votre candidature.</p>

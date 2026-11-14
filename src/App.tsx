@@ -4340,9 +4340,9 @@ export default function App() {
       {view === "account" && (
         <section className="min-h-[72vh] bg-gradient-to-b from-[#1B4D3E]/10 via-white to-[#1B4D3E]/10 px-4 py-8 sm:px-6 sm:py-12">
           <div className="mx-auto max-w-xl rounded-3xl border border-[#1B4D3E]/10 bg-white p-6 shadow-sm sm:p-9">
-            <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#1B4D3E]">Compte client Trimémo</div>
+            <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#1B4D3E]">{authIntent.current === "ambassador" ? "Programme Ambassadeurs Trimémo" : "Compte client Trimémo"}</div>
             <h1 className="mt-3 font-playfair text-3xl font-bold text-[#1B4D3E]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
-            <p className="mt-3 font-inter text-sm leading-6 text-[#1B4D3E]/85">{clientAuthMode === "signup" ? "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture du paiement." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
+            <p className="mt-3 font-inter text-sm leading-6 text-[#1B4D3E]/85">{clientAuthMode === "signup" ? authIntent.current === "ambassador" ? "Si vous avez déjà un compte Trimémo, connectez-vous plutôt : un seul compte suffit pour participer au programme." : "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture du paiement." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
             <form className="mt-7 space-y-4" onSubmit={(event) => { event.preventDefault(); void submitClientAuth(); }}>
               {clientAuthMode === "signup" && (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -4363,7 +4363,7 @@ export default function App() {
               {clientAuthError && <div role="alert" className="rounded-xl bg-[#B42318]/10 p-3 font-inter text-sm text-[#B42318]">{clientAuthError}</div>}
               {clientAuthNotice && <div role="status" className="rounded-xl bg-[#1B4D3E]/10 p-3 font-inter text-sm text-[#1B4D3E]">{clientAuthNotice}</div>}
               <button type="submit" disabled={clientAuthBusy || (clientAuthMode === "reset" && !clientRecoveryToken)} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B4D3E] px-5 py-3 font-inter text-sm font-semibold text-white disabled:opacity-60">
-                {clientAuthBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : clientAuthMode === "signup" ? "Créer mon compte et continuer" : clientAuthMode === "login" ? "Se connecter" : clientAuthMode === "forgot" ? "Envoyer le lien de réinitialisation" : "Modifier mon mot de passe"}
+                {clientAuthBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : clientAuthMode === "signup" ? (authIntent.current === "ambassador" ? "Créer mon compte" : "Créer mon compte et continuer") : clientAuthMode === "login" ? "Se connecter" : clientAuthMode === "forgot" ? "Envoyer le lien de réinitialisation" : "Modifier mon mot de passe"}
               </button>
               {clientAuthMode === "reset" && !clientRecoveryToken && <p className="font-inter text-sm text-[#1B4D3E]">Ce lien est invalide ou incomplet. Demandez un nouveau lien de réinitialisation.</p>}
             </form>
@@ -4421,7 +4421,7 @@ export default function App() {
         </section>
       )}
       {view !== "dashboard" && (<>
-      {view === "ambassadors" && <AmbassadorProgram onBack={() => setView("home")} onLogin={() => { authIntent.current="ambassador"; window.sessionStorage.setItem("trimemo_auth_intent","ambassador"); setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} />}
+      {view === "ambassadors" && <AmbassadorProgram onBack={() => setView("home")} onLogin={() => { authIntent.current="ambassador"; window.sessionStorage.setItem("trimemo_auth_intent","ambassador"); setClientAuthMode("login"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} onSignup={() => { authIntent.current="ambassador"; window.sessionStorage.setItem("trimemo_auth_intent","ambassador"); setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} />}
       {view === "home" && (
         <>
           <MarketingHome onStart={goToProject} onRevision={() => { setClientDashboardTab("documents"); setView("dashboard"); void loadClientProjects(); }} onAmbassadors={() => { setView("ambassadors"); window.scrollTo({top:0,behavior:"smooth"}); }} />
