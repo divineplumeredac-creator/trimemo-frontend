@@ -3794,7 +3794,7 @@ export default function App() {
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Sparkles className="h-4 w-4 text-[#87464B]" />
+                    <Sparkles className="h-4 w-4 text-white" />
                   )}
                   Générer les problématiques
                 </button>
@@ -4184,7 +4184,7 @@ export default function App() {
             ))}
           </div>
           <button onClick={() => void generateOwnerPremium()} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-xs font-semibold text-white disabled:opacity-50">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#87464B]" />}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-white" />}
             Générer les problématiques
           </button>
           <button onClick={() => simulateOwnerPayment()} className="mt-2 flex h-10 w-full items-center justify-center rounded-full border border-[#87464B]/10 font-inter text-xs font-semibold text-[#87464B]">
@@ -4476,7 +4476,7 @@ export default function App() {
                   {!estimate.countryDetected && <p className="mt-4 rounded-xl bg-[#C08081]/10 p-3 font-inter text-xs leading-[1.6] text-[#87464B]">Le pays n'a pas pu être détecté automatiquement. Le prix utilise provisoirement le marché international. Vérifiez le pays avant le paiement si ce tarif ne correspond pas à votre situation.</p>}
                 </article>
                 <aside className="h-fit rounded-[24px] bg-[#87464B] p-7 text-white lg:sticky lg:top-[98px]">
-                  <div className="font-inter text-[11px] uppercase tracking-[0.18em] text-[#87464B]">{estimate.marketLabel}</div>
+                  <div className="font-inter text-[11px] uppercase tracking-[0.18em] text-white">{estimate.marketLabel}</div>
                   <div className="mt-5 font-inter text-xs text-white/90">Coût approximatif du projet</div>
                   <div className="mt-2 font-playfair text-4xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"}</div>
                   <div className="mt-3 font-inter text-xs leading-[1.7] text-white/90">Tarif de base {estimate.baseRate} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : "US$"} par page × coefficient de niveau {estimate.levelCoefficient} × coefficient de complexité {estimate.complexityCoefficient}.</div>
@@ -4588,7 +4588,7 @@ export default function App() {
                     </div>
                   </div>
                   <button onClick={() => void analyzeProject()} disabled={loading} className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-sm font-medium text-white disabled:opacity-50">
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#87464B]" />}
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-white" />}
                     Analyser le projet et estimer le coût
                   </button>
                 </aside>
@@ -4657,7 +4657,7 @@ export default function App() {
             {view === "preview" && preview && (
               <section className="mx-auto mt-6 max-w-[900px] rounded-[24px] bg-[#87464B] p-6 text-white sm:p-8">
                 <div className="text-center">
-                  <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#87464B]">Poursuivre le document</div>
+                  <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-white">Poursuivre le document</div>
                   <h3 className="mt-2 font-playfair text-2xl sm:text-3xl">Votre aperçu est terminé</h3>
                   <p className="mx-auto mt-3 max-w-[650px] font-inter text-sm leading-6 text-white/90">Le paiement débloque la suite de la rédaction au point d’arrêt, en conservant la problématique et le plan choisis.</p>
                   {estimate && (
@@ -4680,14 +4680,14 @@ export default function App() {
                   )}
                   <div className="mx-auto mt-5 grid max-w-[420px] gap-3">
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
-                      <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-sm font-semibold text-white disabled:opacity-60">
+                      <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-white font-inter text-sm font-semibold text-[#87464B] hover:bg-[#C08081]/10 disabled:opacity-60">
                         {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
                         <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-[#87464B]">Pay</span><span className="text-[#87464B]">Pal</span></span><span>Payer avec PayPal</span>
                       </button>
                     ) : (
-                      <button type="button" disabled className="flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-full bg-[#C08081]/50 font-inter text-sm font-semibold text-[#87464B]" title="Le prestataire de paiement doit être activé dans la configuration de Trimémo.">
+                      <button type="button" disabled className="flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-full bg-white/20 font-inter text-sm font-semibold text-white" title="Le prestataire de paiement doit être activé dans la configuration de Trimémo.">
                         <LockKeyhole className="h-4 w-4" />
-                        <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-[#87464B]">Pay</span><span className="text-[#87464B]">Pal</span></span><span>Payer avec PayPal</span>
+                        <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-white">Pay</span><span className="text-white">Pal</span></span><span>Payer avec PayPal</span>
                       </button>
                     )}
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() !== "true" && String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() !== "true" && (

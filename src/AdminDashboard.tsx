@@ -40,11 +40,11 @@ function Button({children,onClick,disabled=false,variant="primary",type="button"
   return <button type={type} onClick={onClick} disabled={disabled} className={common+" "+variants[variant]}>{children}</button>;
 }
 function Status({children,tone="neutral"}:any) {
-  const style:any={neutral:"bg-[#C08081]/5 text-[#87464B]/85",green:"bg-[#87464B]/10 text-white",red:"bg-[#C08081]/15 text-[#87464B]",amber:"bg-[#C08081]/15 text-[#87464B]",blue:"bg-[#87464B]/10 text-white"};
+  const style:any={neutral:"bg-[#C08081]/5 text-[#87464B]/85",green:"bg-[#87464B]/10 text-[#87464B]",red:"bg-[#C08081]/15 text-[#87464B]",amber:"bg-[#C08081]/15 text-[#87464B]",blue:"bg-[#87464B]/10 text-[#87464B]"};
   return <span className={"inline-flex rounded-full px-2.5 py-1 text-xs font-semibold "+style[tone]}>{children}</span>;
 }
 function Card({title,value,sub,icon:Icon,tone="blue"}:any) {
-  const backgrounds:any={blue:"bg-[#87464B]/10 text-white",gold:"bg-[#C08081]/15 text-[#87464B]",green:"bg-[#87464B]/10 text-white",red:"bg-[#C08081]/15 text-[#87464B]"};
+  const backgrounds:any={blue:"bg-[#87464B]/10 text-[#87464B]",gold:"bg-[#C08081]/15 text-[#87464B]",green:"bg-[#87464B]/10 text-[#87464B]",red:"bg-[#C08081]/15 text-[#87464B]"};
   return <div className="rounded-2xl border border-[#87464B]/20 bg-white p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3"><div className="text-sm font-medium text-[#87464B]/85">{title}</div><span className={"rounded-xl p-2 "+backgrounds[tone]}><Icon size={19}/></span></div>
     <div className="mt-3 break-words text-2xl font-bold tracking-tight text-[#87464B]">{value ?? "—"}</div>
@@ -206,7 +206,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       <aside className="h-fit rounded-2xl border border-[#87464B]/20 bg-white p-2 shadow-sm lg:sticky lg:top-[88px]">
         <div className="hidden px-3 pb-3 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#87464B]/85 lg:block">Administration</div>
         <nav className="flex gap-1 overflow-x-auto lg:flex-col">
-          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#87464B] text-white shadow-sm":"text-[#87464B]/85 hover:bg-[#C08081]/5 hover:text-[#87464B]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span>{item.id==="revisions"&&<span className={"ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold "+(revisions.some((r:any)=>r.status==="pending")?"bg-[#C08081]/15 text-[#87464B]":"bg-[#C08081]/5 text-[#87464B]/85")}>{revisions.filter((r:any)=>r.status==="pending").length}</span>}{item.id==="revisions"&&newRevisionIds.length>0&&<span className="rounded-full bg-[#87464B] px-2 py-0.5 text-[10px] font-bold text-white">Nouveau</span>}</button>;})}
+          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#87464B] text-white shadow-sm":"text-[#87464B]/85 hover:bg-[#C08081]/5 hover:text-[#87464B]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span>{item.id==="revisions"&&<span className={"ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold "+(tab===item.id?"bg-white/20 text-white":revisions.some((r:any)=>r.status==="pending")?"bg-[#C08081]/15 text-[#87464B]":"bg-[#C08081]/5 text-[#87464B]/85")}>{revisions.filter((r:any)=>r.status==="pending").length}</span>}{item.id==="revisions"&&newRevisionIds.length>0&&<span className={"rounded-full px-2 py-0.5 text-[10px] font-bold "+(tab===item.id?"bg-white/20 text-white":"bg-[#87464B] text-white")}>Nouveau</span>}</button>;})}
         </nav>
         <div className="mt-4 hidden rounded-xl bg-[#C08081]/10 p-3 text-xs leading-5 text-[#87464B]/85 lg:block">
           Les données clients, paiements et journaux sont chargés depuis le serveur sécurisé. Les secrets PayPal et Claude ne sont jamais transmis à l’interface.
