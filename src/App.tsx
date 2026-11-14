@@ -4374,6 +4374,16 @@ export default function App() {
                 <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>
               </div>
             </div>
+            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[#d9e8e0] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+              <div>
+                <h2 className="font-inter text-base font-bold text-[#172554]">Besoin d’aide ?</h2>
+                <p className="mt-1 font-inter text-sm text-[#526174]">Une question sur votre projet, votre paiement ou votre document ? Contactez-nous directement.</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#006443] px-5 py-2.5 font-inter text-sm font-semibold text-white hover:bg-[#004b32] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006443]">Contacter sur WhatsApp</a>
+                <a href="mailto:redacmemo78@gmail.com?subject=Assistance%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#006443] bg-white px-5 py-2.5 font-inter text-sm font-semibold text-[#006443] hover:bg-[#e8f4ef] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006443]">Envoyer un e-mail</a>
+              </div>
+            </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
               <button type="button" onClick={() => setClientDashboardTab("documents")} className={`rounded-2xl border border-[#D7E1F7] bg-white p-4 text-left shadow-sm hover:bg-[#EAF0FF] sm:p-5 ${clientDashboardTab==="documents"?"ring-2 ring-[#006443] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#344A83] sm:text-sm">Mes projets</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#172554]">{clientProjects.length}</span><span className="mt-1 block font-inter text-[11px] text-[#53658C]">Projets enregistrés</span></button>
               <button type="button" onClick={() => setClientDashboardTab("in_progress")} className={`rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-4 text-left shadow-sm hover:bg-[#DBEAFE] sm:p-5 ${clientDashboardTab==="in_progress"?"ring-2 ring-[#2563EB] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#1D4ED8] sm:text-sm">Révisions en cours</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#1D4ED8]">{clientRevisions.filter((r:any)=>r.status==="in_progress").length}</span><span className="mt-1 block font-inter text-[11px] text-[#1D4ED8]/75">Traitement en cours</span></button>
