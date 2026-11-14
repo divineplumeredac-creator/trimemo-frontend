@@ -2,10 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Identité Trimémo : rose foncé, vert anglais et blanc sur tous les écrans. */
+/* Identité Trimémo : vert anglais, vert clair et blanc sur tous les écrans. */
 :root {
-  --trimemo-rose-fonce: #87464B;
-  --trimemo-vert-anglais: #1B4D3E;
+  --trimemo-vert-principal: #1B4D3E;
+  --trimemo-vert-clair: #E7F1EC;
   --trimemo-blanc: #FFFFFF;
   color-scheme: light;
 }
@@ -13,9 +13,9 @@ html { scroll-behavior: smooth; }
 body {
   font-family: Inter, sans-serif;
   background-color: var(--trimemo-blanc);
-  color: var(--trimemo-rose-fonce);
+  color: var(--trimemo-vert-principal);
 }
-input, textarea, select { caret-color: var(--trimemo-rose-fonce); }
-input::placeholder, textarea::placeholder { color: #87464B99; }
-::selection { background: var(--trimemo-vert-anglais); color: var(--trimemo-blanc); }
-:focus-visible { outline-color: var(--trimemo-rose-fonce); }
+input, textarea, select { caret-color: var(--trimemo-vert-principal); }
+input::placeholder, textarea::placeholder { color: #1B4D3E99; }
+::selection { background: var(--trimemo-vert-principal); color: var(--trimemo-blanc); }
+:focus-visible { outline-color: var(--trimemo-vert-principal); }
