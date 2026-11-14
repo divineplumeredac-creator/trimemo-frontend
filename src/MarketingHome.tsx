@@ -91,5 +91,16 @@ export default function MarketingHome({ onStart, onRevision }: { onStart: () => 
       </div>
     </section>
 
+
+    <section id="contact" aria-labelledby="contact-trimemo" className="bg-white px-5 py-14 sm:px-8">
+      <div className="mx-auto max-w-[920px] rounded-2xl border border-[#d9e8e0] bg-[#f3f8f5] px-6 py-10 text-center shadow-sm sm:px-10">
+        <h2 id="contact-trimemo" className="font-inter text-3xl font-bold text-[#0b1321]">Une question ? Contactez-nous</h2>
+        <p className="mx-auto mt-3 max-w-xl font-inter text-sm leading-relaxed text-[#23334d] sm:text-base">Besoin d’une information sur Trimémo, votre projet ou nos services ? Notre équipe est à votre écoute.</p>
+        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp (nouvel onglet)" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#006443] px-6 py-3 font-inter text-sm font-semibold text-white transition hover:bg-[#004b32] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006443] sm:w-auto">Contacter sur WhatsApp</a>
+          <a href="mailto:redacmemo78@gmail.com?subject=Contact%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#006443] bg-white px-6 py-3 font-inter text-sm font-semibold text-[#006443] transition hover:bg-[#e8f4ef] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006443] sm:w-auto">Envoyer un e-mail</a>
+        </div>
+      </div>
+    </section>
   </>;
 }
