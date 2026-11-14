@@ -4370,7 +4370,7 @@ export default function App() {
           <div className="mx-auto max-w-7xl">
             <div className="rounded-3xl bg-[#005b3f] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <div><div className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A23A]">ESPACE CLIENT SÉCURISÉ</div><h1 className="mt-2 font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientNameDisplay || "Mon compte"}</p></div>
+                <div><h1 className="font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/75">{clientNameDisplay && clientNameDisplay !== "Mon compte" ? `Bienvenue, ${clientNameDisplay}. Retrouvez vos projets et suivez leur avancement.` : "Retrouvez vos projets et suivez leur avancement."}</p></div>
                 <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>
               </div>
             </div>
