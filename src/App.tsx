@@ -1399,8 +1399,12 @@ export default function App() {
       activeOwnedProject.current = { projectId: next.projectId, userId: session.userId };
       // Attribution facultative : un problème de parrainage n'interrompt
       // jamais la création du projet et ne modifie pas son prix.
-      try { await attributeReferralToProject(next.projectId,String(session.token),window.localStorage); }
-      catch { console.warn("TRIMEMO_AMBASSADOR_ATTRIBUTION_UNAVAILABLE"); }
+      try {
+        const activeReferralSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+        if (activeReferralSession?.userId === session.userId && activeReferralSession?.token) {
+          await attributeReferralToProject(next.projectId, String(activeReferralSession.token), window.localStorage);
+        }
+      } catch { console.warn("TRIMEMO_AMBASSADOR_ATTRIBUTION_UNAVAILABLE"); }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de créer le projet dans votre compte.";
       if (/session a expiré|session ne peut plus être renouvelée|connectez-vous à nouveau|session doit être renouvelée/i.test(message)) {
