@@ -1716,18 +1716,21 @@ export default function App() {
     setShowOwnerPassword(false);
   }
 
-  function startOwnerTest(formulaId: FormulaId) {
-    const ownerProject: ProjectData = {
-      ...project,
-      formula: formulaId,
-      email: project.email || "owner@trimemo.local",
-      sujet: project.sujet || "Sujet de test académique à préciser",
-      pages: project.pages,
-    };
-    setProject(ownerProject);
-    setFormula(formulaId);
-    setView("project");
-    pushToast("info", `Mode propriétaire : test ${formulaId} sans paiement.`);
+  function startNewOwnerProject() {
+    if (!ownerSessionValid || loading) return;
+    setProject({
+      projectId: createProjectId(), formula: "MASTER", sujet: "", domaine: "", contexte: "",
+      problematiquePersonnelle: "", planPersonnel: "", consignes: "", niveau: "",
+      typeDoc: "Mémoire", pages: 0, email: "owner@trimemo.local", files: [],
+    });
+    setFormula("MASTER");
+    setEstimate(null); setPreview(null); setPremium(null);
+    setSelectedProblematic(null); setSelectedPlan(null); setBlocks([]);
+    setSelectedWritingBlockId(null); setActiveBlockId(null);
+    setProblematicGenerationCount(0); setPlanGenerationCount(0);
+    setProblematicImprovementComments({}); setPlanImprovementComments({});
+    setGenerationError(""); setPremiumNav("problematic-0");
+    setPremiumSection("problematic"); setOwnerShowWriter(true); setView("project");
   }
 
   async function generatePublicProblematics(estimateOverride?: ProjectEstimate, projectOverride?: ProjectData) {
@@ -1755,8 +1758,11 @@ export default function App() {
       } else {
         const response = await fetchWithTimeout(PROBLEMATICS_API, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify({ project: projectPayloadWithoutFiles(requestProject), count: 1, problematicAction: "new" }),
+          headers: { "Content-Type": "application/json", Accept: "application/json", ...(ownerRoute ? ownerAuthHeaders() : {}) },
+          body: JSON.stringify({
+            project: ownerRoute ? requestProject : projectPayloadWithoutFiles(requestProject),
+            count: 1, problematicAction: "new", ownerMode: ownerRoute,
+          }),
         }, 280000);
         const data = await readApiResponse(response);
         const rawList = data.problematiques || data.problematics || data.data || [];
@@ -1783,91 +1789,6 @@ export default function App() {
     }
   }
 
-  async function generateOwnerPremium() {
-    if (!ownerSessionValid) {
-      pushToast("error", "Connectez-vous à l’espace administrateur.");
-      return;
-    }
-    if (!project.sujet.trim()) {
-      pushToast("error", "Le sujet est obligatoire.");
-      setView("project");
-      return;
-    }
-
-    const ownerProject: ProjectData = {
-      ...project,
-      email: project.email || "owner@trimemo.local",
-    };
-
-    const personalQuestion = String(ownerProject.problematiquePersonnelle || ownerProject.problematique || "").trim();
-    if (personalQuestion) {
-      const personalProblematic: Problematic = {
-        id: "personal-problematic",
-        title: "Problématique fournie par l'administrateur",
-        question: personalQuestion,
-        rationale: "Problématique saisie par l'administrateur et conservée telle quelle.",
-        angle: "Approche définie par l'utilisateur",
-      };
-      setProject(ownerProject);
-      setPremium({ problematics: [personalProblematic], plans: [] });
-      setPremiumNav("plan-0");
-      setPremiumSection("problematic");
-      setSelectedProblematic(personalProblematic);
-      setSelectedPlan(null);
-      setBlocks([]);
-      setView("premium");
-      pushToast("info", "Problématique fournie détectée. Passage direct à la génération des trois plans.");
-      await generatePlansForProblematic(personalProblematic, true, ownerProject);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetchWithTimeout(PROBLEMATICS_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", ...ownerAuthHeaders() },
-        body: JSON.stringify({ project: ownerProject, count: 3, ownerMode: true }),
-      }, 280000);
-      const data = await readApiResponse(response);
-      window.sessionStorage.setItem("trimemo_owner_last_activity", String(Date.now()));
-      const rawList = data.problematiques || data.problematics || data.data || [];
-      if (!Array.isArray(rawList) || rawList.length === 0) {
-        throw new Error("Aucune problématique n’a été générée.");
-      }
-
-      const generatedProblematics = Array.isArray(rawList)
-        ? rawList.slice(0, 3).map((item: any, index: number) => normalizeProblematic(item, index))
-        : [];
-      const personalProblematic = ownerProject.problematiquePersonnelle.trim()
-        ? [{
-            id: "personal-problematic",
-            title: "Problématique personnelle fournie",
-            question: ownerProject.problematiquePersonnelle.trim(),
-            rationale: "Proposition saisie par l’administrateur. Elle doit être vérifiée avant validation.",
-            angle: "Problématique imposée par l’utilisateur",
-          } as Problematic]
-        : [];
-      const problematics = [...personalProblematic, ...generatedProblematics];
-      if (!problematics.length) {
-        throw new Error("Aucune problématique n’a été générée et aucune problématique personnelle n’a été fournie.");
-      }
-
-      setProject(ownerProject);
-      setPremium({ problematics, plans: [] });
-      setProblematicGenerationCount(Math.min(3, problematics.length));
-      setPlanGenerationCount(0);
-      setPremiumNav("problematic-0");
-      setSelectedProblematic(null);
-      setSelectedPlan(null);
-      setBlocks([]);
-      setView("premium");
-      pushToast("success", "Les problématiques ont été générées. Sélectionnez-en une pour générer les plans.");
-    } catch (error) {
-      pushToast("error", error instanceof Error ? error.message : "Impossible de générer les problématiques.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function generateProblematicVariant(action: "alternative" | "improve", currentProblematic: Problematic, comments = "") {
     const existing = premium?.problematics || [];
@@ -1877,8 +1798,13 @@ export default function App() {
     setLoading(true); setGenerationError("");
     try {
       const response = await fetchWithTimeout(PROBLEMATICS_API, {
-        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ project: projectPayloadWithoutFiles({ ...project, pricingQuoteToken: project.pricingQuoteToken }), count: 1, problematicAction: action, currentProblematic, improvementComments: comments, rejectedProblematics: existing.filter((item) => item.id !== currentProblematic.id) }),
+        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", ...(ownerRoute ? ownerAuthHeaders() : {}) },
+        body: JSON.stringify({
+          project: ownerRoute ? project : projectPayloadWithoutFiles({ ...project, pricingQuoteToken: project.pricingQuoteToken }),
+          count: 1, problematicAction: action, currentProblematic, improvementComments: comments,
+          rejectedProblematics: existing.filter((item) => item.id !== currentProblematic.id),
+          ownerMode: ownerRoute,
+        }),
       }, 280000);
       const data = await readApiResponse(response);
       const raw = (data.problematiques || data.problematics || data.data || [])[0];
@@ -3429,18 +3355,10 @@ export default function App() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setView("project");
-                  setPremium(null);
-                  setPremiumNav("problematic-0");
-                  setPremiumSection("problematic");
-                  setSelectedProblematic(null);
-                  setSelectedPlan(null);
-                  setBlocks([]);
-                }}
+                onClick={startNewOwnerProject}
                 className="rounded-full border border-white/20 px-4 py-2 font-inter text-xs font-semibold"
               >
-                Nouveau test
+                Nouveau projet
               </button>
               <button
                 type="button"
@@ -3636,29 +3554,8 @@ export default function App() {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="font-inter text-xs font-semibold text-[#87464B]/85">
-                      Formule
-                    </label>
-                    <select
-                      value={project.formula}
-                      onChange={(event) =>
-                        setProject((current) => ({
-                          ...current,
-                          formula: event.target.value as FormulaId,
-                        }))
-                      }
-                      className="mt-2 h-11 w-full rounded-xl border border-[#87464B]/10 bg-white px-4 font-inter text-sm"
-                    >
-                      {formulaOptions.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <div>
+<div>
                     <label className="font-inter text-xs font-semibold text-[#87464B]/85">
                       Nombre de pages
                     </label>
@@ -3704,7 +3601,7 @@ export default function App() {
                         setProject((current) => ({ ...current, problematiquePersonnelle: event.target.value }))
                       }
                       rows={3}
-                      placeholder="Ajoutez votre propre problématique. Elle sera proposée comme option distincte des trois générées."
+                      placeholder="Si vous avez déjà une problématique, saisissez-la ici. Sinon, une première proposition pourra être améliorée ou remplacée."
                       className="mt-2 w-full rounded-2xl border border-[#87464B]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
@@ -3719,7 +3616,7 @@ export default function App() {
                         setProject((current) => ({ ...current, planPersonnel: event.target.value }))
                       }
                       rows={5}
-                      placeholder="Ajoutez votre propre plan. Il sera proposé comme option supplémentaire et contrôlé avant rédaction."
+                      placeholder="Si vous avez déjà un plan, indiquez-le ici. Il guidera la création du plan à valider."
                       className="mt-2 w-full rounded-2xl border border-[#87464B]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
@@ -3788,7 +3685,7 @@ export default function App() {
                 <button
                   type="button"
                   disabled={loading}
-                  onClick={() => void generateOwnerPremium()}
+                  onClick={() => void analyzeProject()}
                   className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {loading ? (
@@ -3796,7 +3693,7 @@ export default function App() {
                   ) : (
                     <Sparkles className="h-4 w-4 text-white" />
                   )}
-                  Générer les problématiques
+                  Analyser le projet et proposer une problématique
                 </button>
               </div>
 
@@ -3806,16 +3703,16 @@ export default function App() {
                 </div>
                 <div className="mt-4 space-y-3 font-inter text-sm">
                   <div className="rounded-2xl bg-[#C08081]/10 p-4">
-                    <strong>01.</strong> Problématiques
+                    <strong>01.</strong> Analyse du projet
                   </div>
                   <div className="rounded-2xl bg-[#C08081]/10 p-4">
-                    <strong>02.</strong> Plans détaillés
+                    <strong>02.</strong> Problématique générée une à une, amélioration ou alternative
                   </div>
                   <div className="rounded-2xl bg-[#C08081]/10 p-4">
-                    <strong>03.</strong> Sélection d’un plan
+                    <strong>03.</strong> Plan généré un à un, amélioration et validation
                   </div>
                   <div className="rounded-2xl bg-[#C08081]/10 p-4">
-                    <strong>04.</strong> Rédaction
+                    <strong>04.</strong> Rédaction par blocs et export Word sans paiement
                   </div>
                 </div>
               </aside>
@@ -3834,7 +3731,7 @@ export default function App() {
                   {premiumSection === "problematic"
                     ? "Problématique"
                     : premiumSection === "plan"
-                      ? "Plans détaillés"
+                      ? "Plan à valider"
                       : "Rédaction"}
                 </h1>
 
@@ -3939,8 +3836,8 @@ export default function App() {
                           className="w-full rounded-xl border border-[#87464B]/10 bg-white px-4 py-3 font-inter text-sm"
                         />
                         <div className="flex flex-wrap gap-2">
-                          <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#87464B]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#87464B] disabled:opacity-50">Demander une amélioration</button>
-                          <button type="button" disabled={loading || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#87464B]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#87464B] disabled:opacity-50">Générer un autre plan</button>
+                          <button type="button" disabled={loading || planGenerationCount >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#87464B]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#87464B] disabled:opacity-50">Demander une amélioration</button>
+                          <button type="button" disabled={loading || planGenerationCount >= 3 || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#87464B]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#87464B] disabled:opacity-50">Générer un autre plan</button>
                           <button type="button" disabled={loading} onClick={() => {
                             const problematic = selectedProblematic || premium.problematics[0];
                             if (!problematic) return;
@@ -4176,16 +4073,10 @@ export default function App() {
             </div>
             <button onClick={handleOwnerLogout} className="rounded-full border border-[#87464B]/10 px-3 py-1.5 font-inter text-[11px]">Quitter</button>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            {(["LICENCE", "MASTER", "DOCTORAT"] as FormulaId[]).map((item) => (
-              <button key={item} onClick={() => startOwnerTest(item)} className="rounded-xl bg-[#C08081]/10 px-2 py-3 font-inter text-[10px] font-semibold text-[#87464B]">
-                {item === "DOCTORAT" ? "Thèse" : item === "MASTER" ? "Master" : "Licence"}
-              </button>
-            ))}
-          </div>
-          <button onClick={() => void generateOwnerPremium()} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-xs font-semibold text-white disabled:opacity-50">
+          <button type="button" onClick={startNewOwnerProject} className="mt-4 w-full rounded-xl bg-[#C08081]/10 px-3 py-3 font-inter text-xs font-semibold text-[#87464B]">Nouveau projet de test</button>
+          <button onClick={() => void analyzeProject()} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-xs font-semibold text-white disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-white" />}
-            Générer les problématiques
+            Analyser et proposer une problématique
           </button>
           <button onClick={() => simulateOwnerPayment()} className="mt-2 flex h-10 w-full items-center justify-center rounded-full border border-[#87464B]/10 font-inter text-xs font-semibold text-[#87464B]">
             Simuler un paiement
@@ -4804,8 +4695,8 @@ export default function App() {
                             className="w-full rounded-xl border border-[#87464B]/10 bg-white px-4 py-3 font-inter text-sm"
                           />
                           <div className="flex flex-wrap gap-2">
-                            <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#87464B]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#87464B] disabled:opacity-50">Demander une amélioration</button>
-                            <button type="button" disabled={loading || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#87464B]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#87464B] disabled:opacity-50">Générer un autre plan</button>
+                            <button type="button" disabled={loading || planGenerationCount >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#87464B]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#87464B] disabled:opacity-50">Demander une amélioration</button>
+                            <button type="button" disabled={loading || planGenerationCount >= 3 || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#87464B]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#87464B] disabled:opacity-50">Générer un autre plan</button>
                             <button type="button" disabled={loading} onClick={() => {
                               const problematic = selectedProblematic || premium.problematics[0];
                               if (!problematic) return;
