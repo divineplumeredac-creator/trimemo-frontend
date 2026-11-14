@@ -665,6 +665,19 @@ export default function App() {
   const cloudLoadStarted = useRef(false);
   const creatingProject = useRef(false);
   const activeOwnedProject = useRef<{projectId:string; userId:string} | null>(null);
+  // Un aperçu local ne prouve jamais l'appartenance du document au compte :
+  // seul un projet ouvert après vérification du serveur peut être affiché.
+  const canViewClientPreview = (() => {
+    if (ownerRoute) return true;
+    try {
+      const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      return Boolean(
+        session?.token && session?.userId &&
+        activeOwnedProject.current?.userId === session.userId &&
+        activeOwnedProject.current?.projectId === project.projectId
+      );
+    } catch { return false; }
+  })();
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cloudSaveQueue = useRef<Promise<void>>(Promise.resolve());
   const [cloudSaveStatus, setCloudSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -953,6 +966,23 @@ export default function App() {
     else url.searchParams.set("view", view);
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
   }, [view, ownerRoute]);
+
+  // Refuser les aperçus issus d'une ancienne session, d'une URL directe
+  // (?view=preview) ou d'un état local non vérifié côté serveur.
+  useEffect(() => {
+    if (view !== "preview" || canViewClientPreview) return;
+    setPendingPaymentMethod(null);
+    let hasSession = false;
+    try {
+      const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      hasSession = Boolean(session?.token && session?.userId);
+    } catch {}
+    if (!hasSession) {
+      setClientAuthMode("login");
+      setClientAuthNotice("Connectez-vous pour retrouver votre projet depuis votre espace client.");
+    }
+    setView(hasSession ? "dashboard" : "account");
+  }, [view, canViewClientPreview]);
 
   // Évite d'afficher une page de rédaction vide lorsqu'aucun plan n'a été restauré.
   // On attend la fin de l'hydratation distante avant de décider où renvoyer l'utilisateur.
@@ -4215,7 +4245,7 @@ export default function App() {
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon compte client</button>
             <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button></>}
-            {view === "preview" && preview && (
+            {view === "preview" && preview && canViewClientPreview && (
               <>
                 <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#87464B]">Aperçu</div>
                 {(["problematic","plan","introduction"] as const).map((tab) => (
@@ -4280,7 +4310,7 @@ export default function App() {
             {clientAuthMode !== "reset" && <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : clientAuthMode === "login" ? "signup" : "login"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#87464B]">
               {clientAuthMode === "signup" ? "J’ai déjà un compte : me connecter" : clientAuthMode === "login" ? "Je n’ai pas encore de compte : m’inscrire" : "Retour à la connexion"}
             </button>}
-            <button type="button" onClick={() => { setPendingPaymentMethod(null); setView("preview"); }} className="mt-4 w-full font-inter text-xs text-[#87464B]/85">Retour à mon aperçu</button>
+            <button type="button" onClick={() => { setPendingPaymentMethod(null); setClientAuthError(""); setClientAuthNotice(""); setView("home"); }} className="mt-4 w-full font-inter text-xs text-[#87464B]/85">Retour à l’accueil</button>
           </div>
         </section>
       )}
@@ -4504,7 +4534,7 @@ export default function App() {
               </div>
             )}
 
-            {view === "preview" && preview && !ownerRoute && (
+            {view === "preview" && preview && !ownerRoute && canViewClientPreview && (
             <section
               className="mb-7 mx-auto max-w-[900px] select-none rounded-lg border border-[#87464B]/10 bg-[#C08081]/10 p-3 sm:p-8"
               onCopy={(event) => event.preventDefault()}
@@ -4563,7 +4593,7 @@ export default function App() {
               </div>
             </section>
           )}
-            {view === "preview" && preview && (
+            {view === "preview" && preview && canViewClientPreview && (
               <section className="mx-auto mt-6 max-w-[900px] rounded-[24px] bg-[#87464B] p-6 text-white sm:p-8">
                 <div className="text-center">
                   <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-white">Poursuivre le document</div>
