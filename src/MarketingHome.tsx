@@ -1,7 +1,7 @@
 import React from 'react';
 import { Check, CheckCircle2, ClipboardList, Eye, FileText, FileUp, Users } from 'lucide-react';
 
-export default function MarketingHome({ onStart, onRevision }: { onStart: () => void; onRevision: () => void }) {
+export default function MarketingHome({ onStart, onRevision, onAmbassadors }: { onStart: () => void; onRevision: () => void; onAmbassadors: () => void }) {
   const steps = [
     { icon: FileText, title: 'Présentez votre projet', description: 'Sujet, niveau d’études, consignes et documents de référence.' },
     { icon: ClipboardList, title: 'Validez votre direction', description: 'Choisissez votre problématique et validez votre plan.' },
@@ -48,6 +48,15 @@ export default function MarketingHome({ onStart, onRevision }: { onStart: () => 
     <section id="fonctionnement" className="px-5 py-12 sm:px-8"><div className="mx-auto max-w-[1420px]"><h2 className="text-center font-inter text-3xl font-bold text-[#1B4D3E] sm:text-4xl">Un parcours clair, du début à la fin</h2><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{steps.map(({icon:Icon,title,description},i)=><article key={title} className="rounded-xl border border-[#1B4D3E]/20 bg-white p-6"><div className="flex items-center justify-between text-[#1B4D3E]"><Icon size={34}/><span className="rounded-full bg-[#1B4D3E]/10 px-3 py-1 text-sm font-bold">{i+1}</span></div><h3 className="mt-4 font-inter text-lg font-bold text-[#1B4D3E]">{i+1}. {title}</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#1B4D3E]">{description}</p></article>)}</div>
       <div id="revision-humaine" className="mt-7 flex flex-wrap items-center gap-5 rounded-2xl bg-[#1B4D3E]/10 p-6"><Users className="text-[#1B4D3E]" size={38}/><div className="flex-1"><h3 className="font-inter text-xl font-bold text-[#1B4D3E]">Besoin d’un regard humain ?</h3><p className="mt-1 font-inter text-sm text-[#1B4D3E]">Faites relire votre document par un professionnel : révision humaine facultative et payante.</p></div><button onClick={onRevision} className="rounded-xl bg-[#1B4D3E] px-6 py-3 font-inter text-sm font-semibold text-white hover:bg-[#1B4D3E]/90">Découvrir la révision</button></div>
     </div></section>
+    <section id="ambassadeurs" className="bg-white px-5 py-12 sm:px-8">
+      <div className="mx-auto flex max-w-[1420px] flex-col gap-5 rounded-3xl border border-[#1B4D3E]/15 bg-[#E7F1EC] p-7 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+        <div className="max-w-2xl"><span className="text-xs font-bold uppercase tracking-widest text-[#1B4D3E]/80">Phase pilote • 10 places</span>
+          <h2 className="mt-2 text-2xl font-bold text-[#1B4D3E] sm:text-3xl">Devenez ambassadeur Trimémo</h2>
+          <p className="mt-3 text-sm leading-7 text-[#1B4D3E]">Vous êtes étudiant ? Faites connaître Trimémo dans votre université et recevez 10 % des ventes admissibles réalisées grâce à votre lien personnel.</p>
+        </div>
+        <button onClick={onAmbassadors} className="shrink-0 rounded-xl bg-[#1B4D3E] px-6 py-3 text-sm font-semibold text-white hover:bg-[#1B4D3E]/90">Découvrir le programme</button>
+      </div>
+    </section>
     <section aria-labelledby="faq-trimemo" className="bg-[#1B4D3E]/10 px-5 py-12 sm:px-8">
       <div className="mx-auto max-w-[920px]">
         <h2 id="faq-trimemo" className="text-center font-inter text-3xl font-bold text-[#1B4D3E] sm:text-4xl">Questions fréquentes</h2>

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AdminDashboard from "./AdminDashboard";
 import MarketingHome from "./MarketingHome";
+import AmbassadorProgram from "./AmbassadorProgram";
+import {rememberReferralFromUrl,attributeReferralToProject} from "./ambassador-referral";
 import { registerOwnedProject, recoverMatchingAttachments } from "./project-account";
 import {
   ArrowRight,
@@ -591,7 +593,7 @@ export default function App() {
   latestProject.current = project;
   latestBlocks.current = blocks;
   const [clientProjectFlow, setClientProjectFlow] = useState(false);
-  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard">(() => { const params = new URLSearchParams(window.location.search); return ["signup", "confirmed"].includes(params.get("account") || "") || params.get("reset-password") === "1" ? "account" : ["home", "project", "estimate", "preview", "premium", "writing", "account", "dashboard"].includes(params.get("view") || "") ? params.get("view") as "home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" : "home"; });
+  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" | "ambassadors">(() => { const params = new URLSearchParams(window.location.search); return ["signup", "confirmed"].includes(params.get("account") || "") || params.get("reset-password") === "1" ? "account" : ["home", "project", "estimate", "preview", "premium", "writing", "account", "dashboard", "ambassadors"].includes(params.get("view") || "") ? params.get("view") as "home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" | "ambassadors" : "home"; });
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
@@ -644,6 +646,9 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ownerRoute] = useState(() => typeof window !== "undefined" && window.location.pathname === "/owner");
+  // Le lien de parrainage n'accorde aucun droit : il est vérifié par le serveur
+  // au moment de rattacher un nouveau projet au compte client.
+  useEffect(() => { if (!ownerRoute) rememberReferralFromUrl(window.location.search,window.localStorage); }, [ownerRoute]);
   const protectWriting = isWritingProtected(ownerRoute, window.sessionStorage.getItem("trimemo_premium_token"), window.sessionStorage.getItem("trimemo_premium_project_id"), String(project.projectId || ""));
   const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : "trimemo_state_v5_public";
   const [ownerSessionValid, setOwnerSessionValid] = useState(false);
@@ -788,7 +793,7 @@ export default function App() {
       if (saved?.selectedProblematic) setSelectedProblematic(saved.selectedProblematic);
       if (saved?.selectedPlan) setSelectedPlan(saved.selectedPlan);
       if (Array.isArray(saved?.blocks)) setBlocks(saved.blocks);
-      if (saved?.view && new URLSearchParams(window.location.search).get("account") !== "confirmed" && !new URLSearchParams(window.location.search).get("payment") && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute, performance.getEntriesByType("navigation").some(entry => (entry as PerformanceNavigationTiming).type === "reload"))) setView(saved.view);
+      if (saved?.view && new URLSearchParams(window.location.search).get("account") !== "confirmed" && !new URLSearchParams(window.location.search).get("payment") && new URLSearchParams(window.location.search).get("view") !== "ambassadors" && shouldRestoreSavedView(window.location.pathname, window.location.search, window.location.hash, ownerRoute, performance.getEntriesByType("navigation").some(entry => (entry as PerformanceNavigationTiming).type === "reload"))) setView(saved.view);
       if (saved?.previewTab) setPreviewTab(saved.previewTab);
       if (saved?.premiumNav) setPremiumNav(saved.premiumNav);
       if (saved?.premiumSection === "problematic" || saved?.premiumSection === "plan" || saved?.premiumSection === "writing") setPremiumSection(saved.premiumSection);
@@ -1392,6 +1397,10 @@ export default function App() {
       });
       if (latestProject.current !== project || latestBlocks.current !== blocks) throw new Error("Le projet affiché a changé pendant la création. Votre travail est conservé ; ouvrez le nouveau projet depuis votre compte.");
       activeOwnedProject.current = { projectId: next.projectId, userId: session.userId };
+      // Attribution facultative : un problème de parrainage n'interrompt
+      // jamais la création du projet et ne modifie pas son prix.
+      try { await attributeReferralToProject(next.projectId,String(session.token),window.localStorage); }
+      catch { console.warn("TRIMEMO_AMBASSADOR_ATTRIBUTION_UNAVAILABLE"); }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de créer le projet dans votre compte.";
       if (/session a expiré|session ne peut plus être renouvelée|connectez-vous à nouveau|session doit être renouvelée/i.test(message)) {
@@ -2396,6 +2405,11 @@ export default function App() {
       // A browser draft is never attached just because someone signed in.
       // It remains in local storage until the user explicitly chooses recovery.
       pushToast("success", "Connexion réussie. Vos projets enregistrés sont disponibles dans votre espace client.");
+      if (authIntent.current === "ambassador") {
+        authIntent.current = "dashboard";
+        setView("ambassadors");
+        return;
+      }
       if (pendingPaymentMethod) {
         setPendingPaymentMethod(null);
         setView("dashboard");
@@ -4199,6 +4213,7 @@ export default function App() {
           <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">
             <button className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
             <button className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4" onClick={() => navigateToSection("revision-humaine")}>Révision humaine</button>
+            <button className="text-white hover:underline" onClick={() => setView("ambassadors")}>Ambassadeurs</button>
             {view !== "home" && <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -4242,6 +4257,7 @@ export default function App() {
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
             {view === "home" && <><button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
             <button onClick={() => navigateToSection("revision-humaine")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Révision humaine</button>
+            <button onClick={() => {setMobileMenuOpen(false);setView("ambassadors");}} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Devenir ambassadeur</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon compte client</button>
             <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button></>}
@@ -4359,9 +4375,10 @@ export default function App() {
         </section>
       )}
       {view !== "dashboard" && (<>
+      {view === "ambassadors" && <AmbassadorProgram onBack={() => setView("home")} onLogin={() => { authIntent.current="ambassador"; setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} />}
       {view === "home" && (
         <>
-          <MarketingHome onStart={goToProject} onRevision={() => { setClientDashboardTab("documents"); setView("dashboard"); void loadClientProjects(); }} />
+          <MarketingHome onStart={goToProject} onRevision={() => { setClientDashboardTab("documents"); setView("dashboard"); void loadClientProjects(); }} onAmbassadors={() => { setView("ambassadors"); window.scrollTo({top:0,behavior:"smooth"}); }} />
 
         </>
       )}
