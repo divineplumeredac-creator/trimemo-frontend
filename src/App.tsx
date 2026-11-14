@@ -1730,7 +1730,8 @@ export default function App() {
     setProblematicGenerationCount(0); setPlanGenerationCount(0);
     setProblematicImprovementComments({}); setPlanImprovementComments({});
     setGenerationError(""); setPremiumNav("problematic-0");
-    setPremiumSection("problematic"); setOwnerShowWriter(true); setView("project");
+    setPremiumSection("problematic"); setMobileMenuOpen(false);
+    setOwnerShowWriter(true); setView("project");
   }
 
   async function generatePublicProblematics(estimateOverride?: ProjectEstimate, projectOverride?: ProjectData) {
@@ -3315,7 +3316,7 @@ export default function App() {
       return <AdminDashboard
         token={ownerToken}
         email={ownerEmail || "Propriétaire Trimémo"}
-        onOpenWriter={() => { setOwnerShowWriter(true); setView("project"); }}
+        onOpenWriter={startNewOwnerProject}
         onLogout={() => { handleOwnerLogout(); window.location.href = "/"; }}
       />;
     }
@@ -3383,7 +3384,7 @@ export default function App() {
         {mobileMenuOpen && (
           <div className="border-b border-[#87464B]/10 bg-white px-5 py-4 lg:hidden">
             <div className="mx-auto flex max-w-[1280px] flex-col gap-2 font-inter text-sm">
-              <button type="button" onClick={() => { setMobileMenuOpen(false); setView("project"); }} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#C08081]/20">Nouveau projet</button>
+              <button type="button" onClick={startNewOwnerProject} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#C08081]/20">Nouveau projet</button>
               {premium && (
                 <>
                   <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#C08081]/20">Problématique</button>
@@ -3405,10 +3406,7 @@ export default function App() {
             <nav className="mt-5 space-y-2">
               <button
                 type="button"
-                onClick={() => {
-                  setView("project");
-                  setPremiumSection("problematic");
-                }}
+                onClick={startNewOwnerProject}
                 className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "project" ? "bg-[#87464B] text-white" : "text-[#87464B] hover:bg-[#C08081]/20"}`}
               >
                 Nouveau projet
