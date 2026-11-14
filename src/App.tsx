@@ -1737,15 +1737,22 @@ export default function App() {
   async function generatePublicProblematics(estimateOverride?: ProjectEstimate, projectOverride?: ProjectData) {
     const activeEstimate = estimateOverride || estimate;
     const activeProject = projectOverride || project;
-    if (!activeProject.sujet.trim() || !activeEstimate || !activeProject.pricingQuoteToken) {
+    if (!activeProject.sujet.trim() || (!ownerRoute && (!activeEstimate || !activeProject.pricingQuoteToken))) {
       pushToast("error", "Renseignez les informations du projet avant de continuer.");
       setView("project");
+      return;
+    }
+    if (ownerRoute && !ownerSessionValid) {
+      pushToast("error", "Reconnectez-vous à l’espace administrateur.");
       return;
     }
     setLoading(true);
     setGenerationError("");
     try {
-      const requestProject = { ...activeProject, pricingQuoteToken: activeProject.pricingQuoteToken };
+      // L'espace administrateur ne requiert aucun devis signé.
+      const requestProject = ownerRoute
+        ? { ...activeProject, pricingQuoteToken: undefined }
+        : { ...activeProject, pricingQuoteToken: activeProject.pricingQuoteToken };
       const personalQuestion = String(requestProject.problematiquePersonnelle || "").trim();
       let problematics: Problematic[] = [];
       if (personalQuestion) {
@@ -1795,7 +1802,7 @@ export default function App() {
     const existing = premium?.problematics || [];
     if (problematicGenerationCount >= 3) { pushToast("info", "La limite de trois propositions de problématique est atteinte."); return; }
     if (action === "improve" && !comments.trim()) { pushToast("error", "Décrivez les améliorations souhaitées."); return; }
-    if (!project.pricingQuoteToken || !estimate) { pushToast("error", "Lancez d'abord l'analyse du projet."); return; }
+    if (!ownerRoute && (!project.pricingQuoteToken || !estimate)) { pushToast("error", "Lancez d'abord l'analyse du projet."); return; }
     setLoading(true); setGenerationError("");
     try {
       const response = await fetchWithTimeout(PROBLEMATICS_API, {
@@ -1917,15 +1924,33 @@ export default function App() {
     return generatePlansForProblematic(problematic, true);
   }
 
-  function simulateOwnerPayment() {
-    if (!ownerSessionValid) {
-      pushToast("error", "Connectez-vous à l’espace propriétaire.");
+  async function generateOwnerFirstProblematic() {
+    if (!ownerRoute || !ownerSessionValid) {
+      pushToast("error", "Connectez-vous à l’espace administrateur.");
       return;
     }
-    pushToast("success", "Paiement simulé. Aucune transaction réelle n’a été exécutée.");
+    if (!project.sujet.trim()) {
+      pushToast("error", "Le sujet est obligatoire.");
+      return;
+    }
+    if (!project.niveau.trim() || !project.typeDoc.trim() || !project.domaine.trim()) {
+      pushToast("error", "Renseignez le niveau académique, le domaine et le type de document.");
+      return;
+    }
+    if (!Number.isInteger(project.pages) || project.pages < 1 || project.pages > 300) {
+      pushToast("error", "Indiquez un volume compris entre 1 et 300 pages.");
+      return;
+    }
+    // Aucun appel d'estimation tarifaire n'est effectué pour un projet propriétaire.
+    setEstimate(null);
+    await generatePublicProblematics(undefined, { ...project, pricingQuoteToken: undefined });
   }
 
   async function analyzeProject() {
+    if (ownerRoute) {
+      await generateOwnerFirstProblematic();
+      return;
+    }
     if (!project.sujet.trim()) {
       pushToast("error", "Le sujet est obligatoire.");
       return;
@@ -3683,7 +3708,7 @@ export default function App() {
                 <button
                   type="button"
                   disabled={loading}
-                  onClick={() => void analyzeProject()}
+                  onClick={() => void generateOwnerFirstProblematic()}
                   className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {loading ? (
@@ -3691,7 +3716,7 @@ export default function App() {
                   ) : (
                     <Sparkles className="h-4 w-4 text-white" />
                   )}
-                  Analyser le projet et proposer une problématique
+                  Générer une problématique
                 </button>
               </div>
 
@@ -3701,7 +3726,7 @@ export default function App() {
                 </div>
                 <div className="mt-4 space-y-3 font-inter text-sm">
                   <div className="rounded-2xl bg-[#C08081]/10 p-4">
-                    <strong>01.</strong> Analyse du projet
+                    <strong>01.</strong> Préparation du projet
                   </div>
                   <div className="rounded-2xl bg-[#C08081]/10 p-4">
                     <strong>02.</strong> Problématique générée une à une, amélioration ou alternative
@@ -4072,15 +4097,12 @@ export default function App() {
             <button onClick={handleOwnerLogout} className="rounded-full border border-[#87464B]/10 px-3 py-1.5 font-inter text-[11px]">Quitter</button>
           </div>
           <button type="button" onClick={startNewOwnerProject} className="mt-4 w-full rounded-xl bg-[#C08081]/10 px-3 py-3 font-inter text-xs font-semibold text-[#87464B]">Nouveau projet de test</button>
-          <button onClick={() => void analyzeProject()} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-xs font-semibold text-white disabled:opacity-50">
+          <button onClick={() => void generateOwnerFirstProblematic()} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-xs font-semibold text-white disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-white" />}
-            Analyser et proposer une problématique
-          </button>
-          <button onClick={() => simulateOwnerPayment()} className="mt-2 flex h-10 w-full items-center justify-center rounded-full border border-[#87464B]/10 font-inter text-xs font-semibold text-[#87464B]">
-            Simuler un paiement
+            Générer une problématique
           </button>
           <div className="mt-3 rounded-xl bg-[#C08081]/10 p-3 font-inter text-[10px] leading-[1.6] text-[#87464B]">
-            Les générations propriétaires ne déclenchent aucun paiement réel.
+            Les projets de test peuvent être rédigés et exportés sans paiement.
           </div>
         </aside>
       )}
