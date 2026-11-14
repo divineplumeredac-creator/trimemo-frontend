@@ -4,8 +4,8 @@
 
 /* Identité Trimémo : trois couleurs de marque sur tous les écrans. */
 :root {
-  --trimemo-vert: #0B4D3B;
-  --trimemo-rose: #C08081;
+  --trimemo-rose-fonce: #87464B;
+  --trimemo-vieux-rose: #C08081;
   --trimemo-blanc: #FFFFFF;
   color-scheme: light;
 }
@@ -13,9 +13,9 @@ html { scroll-behavior: smooth; }
 body {
   font-family: Inter, sans-serif;
   background-color: var(--trimemo-blanc);
-  color: var(--trimemo-vert);
+  color: var(--trimemo-rose-fonce);
 }
-input, textarea, select { caret-color: var(--trimemo-vert); }
-input::placeholder, textarea::placeholder { color: #0B4D3B99; }
-::selection { background: var(--trimemo-rose); color: var(--trimemo-vert); }
-:focus-visible { outline-color: var(--trimemo-rose); }
+input, textarea, select { caret-color: var(--trimemo-rose-fonce); }
+input::placeholder, textarea::placeholder { color: #87464B99; }
+::selection { background: var(--trimemo-vieux-rose); color: var(--trimemo-rose-fonce); }
+:focus-visible { outline-color: var(--trimemo-rose-fonce); }
