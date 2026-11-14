@@ -3377,8 +3377,8 @@ export default function App() {
     }
 
     return (
-      <div className="min-h-screen bg-[#EAF7EE] text-[#172554]">
-        <div className="border-b border-[#172554]/10 bg-[#172554] text-white">
+      <div className="min-h-screen bg-[#EAF7EE] text-[#163a30]">
+        <div className="border-b border-[#163a30]/10 bg-[#005b3f] text-white">
           <div className="mx-auto flex min-h-[76px] max-w-[1280px] items-center justify-between gap-4 px-5 lg:px-8">
             <div className="flex items-center gap-3">
               <img
@@ -3439,7 +3439,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleOwnerLogout}
-                className="rounded-full bg-white px-4 py-2 font-inter text-xs font-semibold text-[#172554]"
+                className="rounded-full bg-white px-4 py-2 font-inter text-xs font-semibold text-[#163a30]"
               >
                 Déconnexion
               </button>
@@ -3449,26 +3449,26 @@ export default function App() {
 
         <div className="mx-auto flex max-w-[1280px]">
         {mobileMenuOpen && (
-          <div className="border-b border-[#172554]/10 bg-white px-5 py-4 lg:hidden">
+          <div className="border-b border-[#163a30]/10 bg-white px-5 py-4 lg:hidden">
             <div className="mx-auto flex max-w-[1280px] flex-col gap-2 font-inter text-sm">
-              <button type="button" onClick={() => { setMobileMenuOpen(false); setView("project"); }} className="rounded-xl px-4 py-3 text-left text-[#172554] hover:bg-[#F7FAF8]">Nouveau projet</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); setView("project"); }} className="rounded-xl px-4 py-3 text-left text-[#163a30] hover:bg-[#F7FAF8]">Nouveau projet</button>
               {premium && (
                 <>
-                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="rounded-xl px-4 py-3 text-left text-[#172554] hover:bg-[#F7FAF8]">Problématique</button>
+                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="rounded-xl px-4 py-3 text-left text-[#163a30] hover:bg-[#F7FAF8]">Problématique</button>
                   {premium.problematics.map((item,index) => (
-                    <button key={item.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#172554]/70 hover:bg-[#EAF7EE]">Problématique {index+1}</button>
+                    <button key={item.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#163a30]/70 hover:bg-[#EAF7EE]">Problématique {index+1}</button>
                   ))}
-                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="rounded-xl px-4 py-3 text-left text-[#172554] hover:bg-[#F7FAF8]">Plan</button>
+                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="rounded-xl px-4 py-3 text-left text-[#163a30] hover:bg-[#F7FAF8]">Plan</button>
                   {premium.plans.map((plan,index) => (
-                    <button key={plan.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#172554]/70 hover:bg-[#EAF7EE]">Plan {index+1}</button>
+                    <button key={plan.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#163a30]/70 hover:bg-[#EAF7EE]">Plan {index+1}</button>
                   ))}
-                  <button type="button" disabled={!selectedPlan} onClick={() => { setMobileMenuOpen(false); setView("writing"); setPremiumSection("writing"); }} className="rounded-xl px-4 py-3 text-left text-[#172554] hover:bg-[#F7FAF8] disabled:opacity-40">Rédaction</button>
+                  <button type="button" disabled={!selectedPlan} onClick={() => { setMobileMenuOpen(false); setView("writing"); setPremiumSection("writing"); }} className="rounded-xl px-4 py-3 text-left text-[#163a30] hover:bg-[#F7FAF8] disabled:opacity-40">Rédaction</button>
                 </>
               )}
             </div>
           </div>
         )}
-          <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#172554]/10 bg-white p-5 lg:block">
+          <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#163a30]/10 bg-white p-5 lg:block">
             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Navigation</div>
             <nav className="mt-5 space-y-2">
               <button
@@ -3477,7 +3477,7 @@ export default function App() {
                   setView("project");
                   setPremiumSection("problematic");
                 }}
-                className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "project" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"}`}
+                className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "project" ? "bg-[#005b3f] text-white" : "text-[#163a30] hover:bg-[#F7FAF8]"}`}
               >
                 Nouveau projet
               </button>
@@ -3491,7 +3491,7 @@ export default function App() {
                       setPremiumSection("problematic");
                       setPremiumNav("problematic-0");
                     }}
-                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "problematic" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"}`}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "problematic" ? "bg-[#005b3f] text-white" : "text-[#163a30] hover:bg-[#F7FAF8]"}`}
                   >
                     Problématique
                   </button>
@@ -3507,7 +3507,7 @@ export default function App() {
                             setPremiumNav("problematic-" + index);
                             setSelectedProblematic(item);
                           }}
-                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "problematic-" + index && view === "premium" ? "bg-[#EAF7EE] text-[#172554]" : "text-[#172554]/70 hover:bg-[#F7FAF8]"}`}
+                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "problematic-" + index && view === "premium" ? "bg-[#EAF7EE] text-[#163a30]" : "text-[#163a30]/70 hover:bg-[#F7FAF8]"}`}
                         >
                           Problématique {index + 1}
                         </button>
@@ -3523,7 +3523,7 @@ export default function App() {
                       setPremiumSection("plan");
                       setPremiumNav("plan-0");
                     }}
-                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "plan" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"} disabled:opacity-40`}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "plan" ? "bg-[#005b3f] text-white" : "text-[#163a30] hover:bg-[#F7FAF8]"} disabled:opacity-40`}
                   >
                     Plan
                   </button>
@@ -3539,7 +3539,7 @@ export default function App() {
                             setPremiumNav("plan-" + index);
                             setSelectedPlan(plan);
                           }}
-                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "plan-" + index && view === "premium" ? "bg-[#EAF7EE] text-[#172554]" : "text-[#172554]/70 hover:bg-[#F7FAF8]"}`}
+                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "plan-" + index && view === "premium" ? "bg-[#EAF7EE] text-[#163a30]" : "text-[#163a30]/70 hover:bg-[#F7FAF8]"}`}
                         >
                           Plan {index + 1}
                         </button>
@@ -3554,7 +3554,7 @@ export default function App() {
                       setPremiumSection("writing");
                       setView("writing");
                     }}
-                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "writing" ? "bg-[#172554] text-white" : "text-[#172554] hover:bg-[#F7FAF8]"} disabled:opacity-40`}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "writing" ? "bg-[#005b3f] text-white" : "text-[#163a30] hover:bg-[#F7FAF8]"} disabled:opacity-40`}
                   >
                     Rédaction
                   </button>
@@ -3565,18 +3565,17 @@ export default function App() {
           <main className={`min-w-0 flex-1 px-6 py-8 lg:px-8 lg:py-10 ${view === "writing" ? "h-[calc(100vh-76px)] overflow-y-auto overscroll-contain" : ""}`}>
           {view === "project" && (
             <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
-              <div className="rounded-[24px] border border-[#172554]/5 bg-white p-7 shadow-sm lg:p-9">
+              <div className="rounded-[24px] border border-[#163a30]/5 bg-white p-7 shadow-sm lg:p-9">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
                       Test sans paiement
                     </div>
-                    <h1 className="mt-2 font-playfair text-4xl leading-tight text-[#172554]">
+                    <h1 className="mt-2 font-playfair text-4xl leading-tight text-[#163a30]">
                       Préparer une génération
                     </h1>
-                    <p className="mt-2 max-w-2xl font-inter text-sm leading-[1.7] text-[#172554]/65">
-                      Ce formulaire appartient uniquement à l’espace administrateur.
-                      Les utilisateurs publics ne voient jamais ce tableau de bord.
+                    <p className="mt-2 max-w-2xl font-inter text-sm leading-[1.7] text-[#163a30]/65">
+                      Préparez et testez votre projet depuis cet espace réservé à l’administration.
                     </p>
                   </div>
                   <div className="rounded-full bg-[#EAF7EE] px-3 py-1.5 font-inter text-[10px] font-semibold text-[#2F6B45]">
@@ -3586,7 +3585,7 @@ export default function App() {
 
                 <div className="mt-7 grid gap-5 md:grid-cols-2">
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">
                       Sujet
                     </label>
                     <textarea
@@ -3599,32 +3598,32 @@ export default function App() {
                       }
                       rows={3}
                       placeholder="Sujet du mémoire, rapport ou thèse"
-                      className="mt-2 w-full rounded-2xl border border-[#172554]/10 px-4 py-3 font-inter text-sm outline-none focus:border-[#172554]/30"
+                      className="mt-2 w-full rounded-2xl border border-[#163a30]/10 px-4 py-3 font-inter text-sm outline-none focus:border-[#163a30]/30"
                     />
                   </div>
 
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">Niveau</label>
-                    <select value={project.niveau} onChange={(event) => setProject((current) => ({ ...current, niveau: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 bg-white px-4 font-inter text-sm">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">Niveau</label>
+                    <select value={project.niveau} onChange={(event) => setProject((current) => ({ ...current, niveau: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#163a30]/10 bg-white px-4 font-inter text-sm">
                       <option value="">Sélectionnez un niveau</option><option>Licence 1</option><option>Licence 2</option><option>Licence 3</option><option>Master 1</option><option>Master 2</option><option>Doctorat</option><option>Autre</option>
                     </select>
                   </div>
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">Domaine</label>
-                    <select value={project.domaine} onChange={(event) => setProject((current) => ({ ...current, domaine: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 bg-white px-4 font-inter text-sm">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">Domaine</label>
+                    <select value={project.domaine} onChange={(event) => setProject((current) => ({ ...current, domaine: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#163a30]/10 bg-white px-4 font-inter text-sm">
                       <option value="">Sélectionnez un domaine</option>
                       {domainOptions.map((domain) => <option key={domain} value={domain}>{domain}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">Type de document</label>
-                    <select value={project.typeDoc} onChange={(event) => setProject((current) => ({ ...current, typeDoc: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 bg-white px-4 font-inter text-sm">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">Type de document</label>
+                    <select value={project.typeDoc} onChange={(event) => setProject((current) => ({ ...current, typeDoc: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#163a30]/10 bg-white px-4 font-inter text-sm">
                       <option value="">Sélectionnez un type</option><option>Mémoire</option><option>Thèse</option><option>Rapport</option><option>Dissertation</option><option>Devoir</option><option>Article scientifique</option><option>Autre</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">
                       Formule
                     </label>
                     <select
@@ -3635,7 +3634,7 @@ export default function App() {
                           formula: event.target.value as FormulaId,
                         }))
                       }
-                      className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 bg-white px-4 font-inter text-sm"
+                      className="mt-2 h-11 w-full rounded-xl border border-[#163a30]/10 bg-white px-4 font-inter text-sm"
                     >
                       {formulaOptions.map((option) => (
                         <option key={option.id} value={option.id}>
@@ -3646,7 +3645,7 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">
                       Nombre de pages
                     </label>
                     <input
@@ -3659,12 +3658,12 @@ export default function App() {
                           pages: Math.max(1, Number(event.target.value) || 1),
                         }))
                       }
-                      className="mt-2 h-11 w-full rounded-xl border border-[#172554]/10 px-4 font-inter text-sm"
+                      className="mt-2 h-11 w-full rounded-xl border border-[#163a30]/10 px-4 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">
                       Contexte
                     </label>
                     <textarea
@@ -3677,12 +3676,12 @@ export default function App() {
                       }
                       rows={4}
                       placeholder="Contexte, terrain, organisation ou informations utiles"
-                      className="mt-2 w-full rounded-2xl border border-[#172554]/10 px-4 py-3 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-[#163a30]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">
                       Problématique personnelle (facultatif)
                     </label>
                     <textarea
@@ -3692,12 +3691,12 @@ export default function App() {
                       }
                       rows={3}
                       placeholder="Ajoutez votre propre problématique. Elle sera proposée comme option distincte des trois générées."
-                      className="mt-2 w-full rounded-2xl border border-[#172554]/10 px-4 py-3 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-[#163a30]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">
                       Plan personnel (facultatif)
                     </label>
                     <textarea
@@ -3707,12 +3706,12 @@ export default function App() {
                       }
                       rows={5}
                       placeholder="Ajoutez votre propre plan. Il sera proposé comme option supplémentaire et contrôlé avant rédaction."
-                      className="mt-2 w-full rounded-2xl border border-[#172554]/10 px-4 py-3 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-[#163a30]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">
                       Consignes
                     </label>
                     <textarea
@@ -3725,12 +3724,12 @@ export default function App() {
                       }
                       rows={4}
                       placeholder="Consignes méthodologiques ou documentaires"
-                      className="mt-2 w-full rounded-2xl border border-[#172554]/10 px-4 py-3 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-[#163a30]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#172554]/75">
+                    <label className="font-inter text-xs font-semibold text-[#163a30]/75">
                       Documents du projet
                     </label>
                     <input
@@ -3741,7 +3740,7 @@ export default function App() {
                         void handleFiles(event.target.files);
                         event.currentTarget.value = "";
                       }}
-                      className="mt-2 w-full rounded-2xl border border-dashed border-[#172554]/15 bg-[#F7FAF8] px-4 py-4 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-dashed border-[#163a30]/15 bg-[#F7FAF8] px-4 py-4 font-inter text-sm"
                     />
                     {project.files.length > 0 && (
                       <div className="mt-3 space-y-2">
@@ -3757,7 +3756,7 @@ export default function App() {
                                 ...current,
                                 files: current.files.map((item, itemIndex) => itemIndex === index ? { ...item, category } : item),
                               }));
-                            }} className="rounded-lg border border-[#172554]/10 bg-white px-2 py-1 text-[11px]">
+                            }} className="rounded-lg border border-[#163a30]/10 bg-white px-2 py-1 text-[11px]">
                               <option value="methodology">Méthodologie</option>
                               <option value="instructions">Instructions</option>
                               <option value="context">Contexte</option>
@@ -3776,7 +3775,7 @@ export default function App() {
                   type="button"
                   disabled={loading}
                   onClick={() => void generateOwnerPremium()}
-                  className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#172554] font-inter text-sm font-semibold text-white disabled:opacity-50"
+                  className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#005b3f] font-inter text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -3787,7 +3786,7 @@ export default function App() {
                 </button>
               </div>
 
-              <aside className="h-fit rounded-[24px] border border-[#172554]/5 bg-white p-6 shadow-sm lg:sticky lg:top-[96px]">
+              <aside className="h-fit rounded-[24px] border border-[#163a30]/5 bg-white p-6 shadow-sm lg:sticky lg:top-[96px]">
                 <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
                   Pipeline de test
                 </div>
@@ -3817,7 +3816,7 @@ export default function App() {
                 <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
                   Espace propriétaire · résultats
                 </div>
-                <h1 className="mt-2 font-playfair text-4xl text-[#172554]">
+                <h1 className="mt-2 font-playfair text-4xl text-[#163a30]">
                   {premiumSection === "problematic"
                     ? "Problématique"
                     : premiumSection === "plan"
@@ -3839,42 +3838,42 @@ export default function App() {
                   const index = Number(premiumNav.replace("problematic-", "") || 0);
                   const item = premium.problematics[index] || premium.problematics[0];
                   return item ? (
-                    <article className="rounded-[24px] border border-[#172554]/10 bg-white p-7 shadow-sm lg:p-10">
+                    <article className="rounded-[24px] border border-[#163a30]/10 bg-white p-7 shadow-sm lg:p-10">
                       <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">
                         Problématique {index + 1}
                       </div>
-                      <h2 className="mt-3 font-playfair text-3xl text-[#172554]">{item.title}</h2>
-                      <p className="mt-6 font-inter text-base leading-[1.9] text-[#172554]/80">{item.question}</p>
+                      <h2 className="mt-3 font-playfair text-3xl text-[#163a30]">{item.title}</h2>
+                      <p className="mt-6 font-inter text-base leading-[1.9] text-[#163a30]/80">{item.question}</p>
                       {item.angle && (
-                        <div className="mt-5 rounded-2xl bg-[#EAF7EE] p-5 font-inter text-sm leading-[1.8] text-[#172554]/80">
+                        <div className="mt-5 rounded-2xl bg-[#EAF7EE] p-5 font-inter text-sm leading-[1.8] text-[#163a30]/80">
                           <strong>Angle :</strong> {item.angle}
                         </div>
                       )}
                       {item.rationale && (
-                        <div className="mt-4 rounded-2xl bg-[#F7FAF8] p-5 font-inter text-sm leading-[1.8] text-[#172554]/70">
+                        <div className="mt-4 rounded-2xl bg-[#F7FAF8] p-5 font-inter text-sm leading-[1.8] text-[#163a30]/70">
                           {item.rationale}
                         </div>
                       )}
-                      <div className="mt-6 grid gap-3 rounded-2xl border border-[#172554]/10 bg-[#F7FAF8] p-4">
-                        <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#172554]/65">Améliorer ou comparer la problématique</div>
-                        <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#172554]/10 bg-white px-4 py-3 font-inter text-sm" />
+                      <div className="mt-6 grid gap-3 rounded-2xl border border-[#163a30]/10 bg-[#F7FAF8] p-4">
+                        <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#163a30]/65">Améliorer ou comparer la problématique</div>
+                        <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#163a30]/10 bg-white px-4 py-3 font-inter text-sm" />
                         <div className="flex flex-wrap gap-2">
-                          <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("improve", item, problematicImprovementComments[item.id] || "")} className="rounded-full border border-[#172554]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#172554] disabled:opacity-50">Améliorer cette problématique</button>
-                          <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("alternative", item)} className="rounded-full border border-[#1D78C1]/30 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#1D78C1] disabled:opacity-50">Proposer une autre</button>
+                          <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("improve", item, problematicImprovementComments[item.id] || "")} className="rounded-full border border-[#163a30]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#163a30] disabled:opacity-50">Améliorer cette problématique</button>
+                          <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("alternative", item)} className="rounded-full border border-[#087c5a]/30 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#087c5a] disabled:opacity-50">Proposer une autre</button>
                         </div>
-                        <div className="font-inter text-[11px] text-[#172554]/55">{problematicGenerationCount}/3 propositions utilisées</div>
+                        <div className="font-inter text-[11px] text-[#163a30]/55">{problematicGenerationCount}/3 propositions utilisées</div>
                       </div>
                       <button
                         type="button"
                         disabled={loading}
                         onClick={() => void generatePlansForProblematic(item, ownerRoute === true, undefined, { action: "new" })}
-                        className="mt-7 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        className="mt-7 rounded-full bg-[#087c5a] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {loading && selectedProblematic?.id === item.id ? "Génération du plan..." : "Générer un plan"}
                       </button>
                     </article>
                   ) : (
-                    <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#172554]/65">
+                    <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#163a30]/65">
                       Aucune problématique disponible.
                     </div>
                   );
@@ -3886,24 +3885,24 @@ export default function App() {
                   return plan ? (
                     <article>
                       <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Plan {index + 1}</div>
-                      <h2 className="mt-3 font-playfair text-3xl text-[#172554]">{plan.title}</h2>
+                      <h2 className="mt-3 font-playfair text-3xl text-[#163a30]">{plan.title}</h2>
                       <div className="mt-7 space-y-5 font-inter">
                         {plan.parts.map((part) => (
                           <div key={part.id}>
-                            <div className="font-bold uppercase text-[#172554]">PARTIE {part.number}. {part.title}</div>
+                            <div className="font-bold uppercase text-[#163a30]">PARTIE {part.number}. {part.title}</div>
                             <div className="mt-3 space-y-3 pl-4">
                               {part.chapters.map((chapter) => (
                                 <div key={chapter.id}>
-                                  <div className="font-semibold text-[#172554]">Chapitre {chapter.number}. {chapter.title}</div>
+                                  <div className="font-semibold text-[#163a30]">Chapitre {chapter.number}. {chapter.title}</div>
                                   <div className="mt-2 space-y-2 pl-5">
                                     {chapter.sections.map((section) => (
                                       <div key={section.id}>
-                                        <div className="text-sm font-semibold text-[#172554]/90">Section {chapter.number}.{section.number}. {section.title}</div>
+                                        <div className="text-sm font-semibold text-[#163a30]/90">Section {chapter.number}.{section.number}. {section.title}</div>
                                         {section.subsections.map((subsection) => (
-                                          <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#172554]/70">
+                                          <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#163a30]/70">
                                             § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
                                             {subsection.internalTitles.map((internal) => (
-                                              <div key={internal.id} className="pl-4 text-[11px] text-[#172554]/55">{internal.number}. {internal.title}</div>
+                                              <div key={internal.id} className="pl-4 text-[11px] text-[#163a30]/55">{internal.number}. {internal.title}</div>
                                             ))}
                                           </div>
                                         ))}
@@ -3916,18 +3915,18 @@ export default function App() {
                           </div>
                         ))}
                       </div>
-                      <div className="mt-8 grid gap-3 rounded-2xl border border-[#172554]/10 bg-[#F7FAF8] p-5">
-                        <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#172554]/60">Validation du plan</div>
+                      <div className="mt-8 grid gap-3 rounded-2xl border border-[#163a30]/10 bg-[#F7FAF8] p-5">
+                        <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#163a30]/60">Validation du plan</div>
                         <textarea
                           value={planImprovementComments[plan.id] || ""}
                           onChange={(event) => setPlanImprovementComments((current) => ({ ...current, [plan.id]: event.target.value }))}
                           rows={4}
                           placeholder="Décrivez précisément les modifications souhaitées pour améliorer ce plan."
-                          className="w-full rounded-xl border border-[#172554]/10 bg-white px-4 py-3 font-inter text-sm"
+                          className="w-full rounded-xl border border-[#163a30]/10 bg-white px-4 py-3 font-inter text-sm"
                         />
                         <div className="flex flex-wrap gap-2">
-                          <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#172554]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#172554] disabled:opacity-50">Demander une amélioration</button>
-                          <button type="button" disabled={loading || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#1D78C1]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#1D78C1] disabled:opacity-50">Générer un autre plan</button>
+                          <button type="button" disabled={loading} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#163a30]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#163a30] disabled:opacity-50">Demander une amélioration</button>
+                          <button type="button" disabled={loading || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#087c5a]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#087c5a] disabled:opacity-50">Générer un autre plan</button>
                           <button type="button" disabled={loading} onClick={() => {
                             const problematic = selectedProblematic || premium.problematics[0];
                             if (!problematic) return;
@@ -3936,14 +3935,14 @@ export default function App() {
                             setView("writing");
                             setPremiumSection("writing");
                             pushToast("success", "Plan retenu. L’espace de rédaction et ses blocs sont affichés.");
-                          }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
+                          }} className="rounded-full bg-[#005b3f] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
                         </div>
                         {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#2F6B45]">Plan retenu</div>}
-                        <div className="font-inter text-[11px] text-[#172554]/55">{planGenerationCount}/3 génération(s) de plan utilisée(s)</div>
+                        <div className="font-inter text-[11px] text-[#163a30]/55">{planGenerationCount}/3 génération(s) de plan utilisée(s)</div>
                       </div>
                     </article>
                   ) : (
-                    <div className="font-inter text-sm text-[#172554]/65">Aucun plan disponible.</div>
+                    <div className="font-inter text-sm text-[#163a30]/65">Aucun plan disponible.</div>
                   );
                 })()}
               </div>
@@ -3955,8 +3954,8 @@ export default function App() {
                 <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
                   <div>
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D4A23A]">Rédaction</div>
-                    <h1 className="mt-2 font-playfair text-4xl text-[#172554]">{selectedPlan.title}</h1>
-                    <p className="mt-2 font-inter text-sm text-[#172554]/60">
+                    <h1 className="mt-2 font-playfair text-4xl text-[#163a30]">{selectedPlan.title}</h1>
+                    <p className="mt-2 font-inter text-sm text-[#163a30]/60">
                       Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
                     </p>
                     {cloudSaveStatus !== "idle" && <p role="status" aria-live="polite" className={`mt-2 font-inter text-xs ${cloudSaveStatus === "error" ? "text-red-700" : "text-[#64748B]"}`}>
@@ -3965,15 +3964,15 @@ export default function App() {
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     {(ownerRoute || (window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) ? (
-                      <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
+                      <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#005b3f] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
                         {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                       </button>
                     ) : isPreviewReady(blocks, previewLimit) ? (
-                      <button type="button" onClick={() => void exportDocument()} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-xs font-semibold text-[#172554]">
+                      <button type="button" onClick={() => void exportDocument()} className="rounded-full bg-[#D4A23A] px-5 py-3 font-inter text-xs font-semibold text-[#163a30]">
                         Voir l’aperçu
                       </button>
                     ) : (
-                      <div className="rounded-full border border-[#172554]/10 px-4 py-3 font-inter text-xs text-[#172554]/60">
+                      <div className="rounded-full border border-[#163a30]/10 px-4 py-3 font-inter text-xs text-[#163a30]/60">
                         Aperçu disponible à {previewLimit.toLocaleString("fr-FR")} mots ({totalDoneWords.toLocaleString("fr-FR")}/{previewLimit.toLocaleString("fr-FR")})
                       </div>
                     )}
@@ -4004,13 +4003,13 @@ export default function App() {
                                 setSelectedWritingBlockId(block.id);
                                 void generateBlock(block.id);
                               }}
-                              className="rounded-full bg-[#172554] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-full bg-[#005b3f] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {isGenerating ? "Rédaction en cours…" : block.status === "done" ? "Régénérer ce bloc" : "Rédiger ce bloc"}
                             </button>
                           </div>
 
-                          <h2 className="mt-4 font-playfair text-2xl text-[#172554]">{block.title}</h2>
+                          <h2 className="mt-4 font-playfair text-2xl text-[#163a30]">{block.title}</h2>
 
                           <div className="mt-5 border-l-2 border-[#D4A23A] pl-4">
                             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777]">
@@ -4041,7 +4040,7 @@ export default function App() {
                           ) : (
                             <div className="flex min-h-[420px] items-center justify-center text-center">
                               <div>
-                                <div className="font-playfair text-2xl text-[#172554]">{block.title}</div>
+                                <div className="font-playfair text-2xl text-[#163a30]">{block.title}</div>
                                 <div className="mt-3 font-inter text-sm text-[#777]">
                                   Ce bloc attend sa rédaction.
                                 </div>
@@ -4052,7 +4051,7 @@ export default function App() {
                                     setSelectedWritingBlockId(block.id);
                                     void generateBlock(block.id);
                                   }}
-                                  className="mt-5 rounded-full bg-[#1D78C1] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
+                                  className="mt-5 rounded-full bg-[#087c5a] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
                                 >
                                   {isGenerating ? "Rédaction en cours…" : "Rédiger ce bloc"}
                                 </button>
@@ -4098,7 +4097,7 @@ export default function App() {
                                 setSelectedWritingBlockId(next.id);
                                 document.getElementById(`writing-block-${next.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                               }}
-                              className="rounded-full border border-[#172554]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#172554] hover:bg-[#F7FAF8] disabled:cursor-not-allowed disabled:opacity-40"
+                              className="rounded-full border border-[#163a30]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#163a30] hover:bg-[#F7FAF8] disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Bloc suivant · {index + 2}
                             </button>
@@ -4112,15 +4111,15 @@ export default function App() {
             )}
 
 {view !== "project" && view !== "premium" && view !== "writing" && (
-            <section className="rounded-[28px] border border-[#172554]/10 bg-white p-6 shadow-sm">
+            <section className="rounded-[28px] border border-[#163a30]/10 bg-white p-6 shadow-sm">
               <h1 className="font-playfair text-3xl">Tableau de bord</h1>
-              <p className="mt-2 font-inter text-sm text-[#172554]/65">
+              <p className="mt-2 font-inter text-sm text-[#163a30]/65">
                 Préparez un test pour lancer la génération.
               </p>
               <button
                 type="button"
                 onClick={() => setView("project")}
-                className="mt-5 rounded-full bg-[#172554] px-5 py-3 font-inter text-xs font-semibold text-white"
+                className="mt-5 rounded-full bg-[#005b3f] px-5 py-3 font-inter text-xs font-semibold text-white"
               >
                 Nouveau test
               </button>
@@ -4129,7 +4128,7 @@ export default function App() {
           </main>
         </div>
 
-        <div className="fixed bottom-4 right-4 z-[90] max-w-sm rounded-2xl bg-[#172554] px-4 py-3 font-inter text-[11px] text-white shadow-xl">
+        <div className="fixed bottom-4 right-4 z-[90] max-w-sm rounded-2xl bg-[#005b3f] px-4 py-3 font-inter text-[11px] text-white shadow-xl">
           MODE ADMINISTRATEUR · PAIEMENT NEUTRALISÉ · ESPACE SÉPARÉ
         </div>
       </div>
