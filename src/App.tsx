@@ -620,7 +620,7 @@ export default function App() {
   const [showConfirmationResend, setShowConfirmationResend] = useState(false);
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
   const [clientLogoutBusy, setClientLogoutBusy] = useState(false);
-  const authIntent = useRef(new URLSearchParams(window.location.search).get("start") === "1" ? "project" : "dashboard");
+  const authIntent = useRef(window.sessionStorage.getItem("trimemo_auth_intent") === "ambassador" ? "ambassador" : new URLSearchParams(window.location.search).get("start") === "1" ? "project" : "dashboard");
   const confirmationHandled = useRef(false);
   const startProjectRef = useRef<() => Promise<void>>(async () => {});
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
@@ -2406,6 +2406,7 @@ export default function App() {
       // It remains in local storage until the user explicitly chooses recovery.
       pushToast("success", "Connexion réussie. Vos projets enregistrés sont disponibles dans votre espace client.");
       if (authIntent.current === "ambassador") {
+        window.sessionStorage.removeItem("trimemo_auth_intent");
         authIntent.current = "dashboard";
         setView("ambassadors");
         return;
@@ -4375,7 +4376,7 @@ export default function App() {
         </section>
       )}
       {view !== "dashboard" && (<>
-      {view === "ambassadors" && <AmbassadorProgram onBack={() => setView("home")} onLogin={() => { authIntent.current="ambassador"; setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} />}
+      {view === "ambassadors" && <AmbassadorProgram onBack={() => setView("home")} onLogin={() => { authIntent.current="ambassador"; window.sessionStorage.setItem("trimemo_auth_intent","ambassador"); setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} />}
       {view === "home" && (
         <>
           <MarketingHome onStart={goToProject} onRevision={() => { setClientDashboardTab("documents"); setView("dashboard"); void loadClientProjects(); }} onAmbassadors={() => { setView("ambassadors"); window.scrollTo({top:0,behavior:"smooth"}); }} />

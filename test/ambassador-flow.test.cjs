@@ -15,3 +15,5 @@ test('retour au programme après connexion',()=>{
  assert.match(app,/authIntent.current === "ambassador"/);
  assert.match(app,/setView\("ambassadors"\)/);
 });
+
+test('le retour au programme fonctionne après confirmation de compte',()=>{assert.match(app,/trimemo_auth_intent/);});
