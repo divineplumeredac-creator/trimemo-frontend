@@ -3332,7 +3332,7 @@ export default function App() {
               </div>
 
               {ownerLoginError && (
-                <div className="mt-3 rounded-xl bg-[#C08081]/15 p-3 font-inter text-xs text-[#87464B]">
+                <div className="mt-3 rounded-xl bg-[#1B4D3E]/15 p-3 font-inter text-xs text-[#87464B]">
                   {ownerLoginError}
                 </div>
               )}
@@ -3375,7 +3375,7 @@ export default function App() {
     }
 
     return (
-      <div className="min-h-screen bg-[#C08081]/10 text-[#87464B]">
+      <div className="min-h-screen bg-[#1B4D3E]/10 text-[#87464B]">
         <div className="border-b border-[#87464B]/10 bg-[#87464B] text-white">
           <div className="mx-auto flex min-h-[76px] max-w-[1280px] items-center justify-between gap-4 px-5 lg:px-8">
             <div className="flex items-center gap-3">
@@ -3437,18 +3437,18 @@ export default function App() {
         {mobileMenuOpen && (
           <div className="border-b border-[#87464B]/10 bg-white px-5 py-4 lg:hidden">
             <div className="mx-auto flex max-w-[1280px] flex-col gap-2 font-inter text-sm">
-              <button type="button" onClick={startNewOwnerProject} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#C08081]/20">Nouveau projet</button>
+              <button type="button" onClick={startNewOwnerProject} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#1B4D3E]/20">Nouveau projet</button>
               {premium && (
                 <>
-                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#C08081]/20">Problématique</button>
+                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#1B4D3E]/20">Problématique</button>
                   {premium.problematics.map((item,index) => (
-                    <button key={item.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#87464B]/85 hover:bg-[#C08081]/20">Problématique {index+1}</button>
+                    <button key={item.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#87464B]/85 hover:bg-[#1B4D3E]/20">Problématique {index+1}</button>
                   ))}
-                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#C08081]/20">Plan</button>
+                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#1B4D3E]/20">Plan</button>
                   {premium.plans.map((plan,index) => (
-                    <button key={plan.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#87464B]/85 hover:bg-[#C08081]/20">Plan {index+1}</button>
+                    <button key={plan.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#87464B]/85 hover:bg-[#1B4D3E]/20">Plan {index+1}</button>
                   ))}
-                  <button type="button" disabled={!selectedPlan} onClick={() => { setMobileMenuOpen(false); setView("writing"); setPremiumSection("writing"); }} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#C08081]/20 disabled:opacity-40">Rédaction</button>
+                  <button type="button" disabled={!selectedPlan} onClick={() => { setMobileMenuOpen(false); setView("writing"); setPremiumSection("writing"); }} className="rounded-xl px-4 py-3 text-left text-[#87464B] hover:bg-[#1B4D3E]/20 disabled:opacity-40">Rédaction</button>
                 </>
               )}
             </div>
@@ -3460,7 +3460,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={startNewOwnerProject}
-                className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "project" ? "bg-[#87464B] text-white" : "text-[#87464B] hover:bg-[#C08081]/20"}`}
+                className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "project" ? "bg-[#87464B] text-white" : "text-[#87464B] hover:bg-[#1B4D3E]/20"}`}
               >
                 Nouveau projet
               </button>
@@ -3474,7 +3474,7 @@ export default function App() {
                       setPremiumSection("problematic");
                       setPremiumNav("problematic-0");
                     }}
-                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "problematic" ? "bg-[#87464B] text-white" : "text-[#87464B] hover:bg-[#C08081]/20"}`}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "problematic" ? "bg-[#87464B] text-white" : "text-[#87464B] hover:bg-[#1B4D3E]/20"}`}
                   >
                     Problématique
                   </button>
@@ -3490,7 +3490,7 @@ export default function App() {
                             setPremiumNav("problematic-" + index);
                             setSelectedProblematic(item);
                           }}
-                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "problematic-" + index && view === "premium" ? "bg-[#C08081]/10 text-[#87464B]" : "text-[#87464B]/85 hover:bg-[#C08081]/20"}`}
+                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "problematic-" + index && view === "premium" ? "bg-[#1B4D3E]/10 text-[#87464B]" : "text-[#87464B]/85 hover:bg-[#1B4D3E]/20"}`}
                         >
                           Problématique {index + 1}
                         </button>
@@ -3506,7 +3506,7 @@ export default function App() {
                       setPremiumSection("plan");
                       setPremiumNav("plan-0");
                     }}
-                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "plan" ? "bg-[#87464B] text-white" : "text-[#87464B] hover:bg-[#C08081]/20"} disabled:opacity-40`}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "plan" ? "bg-[#87464B] text-white" : "text-[#87464B] hover:bg-[#1B4D3E]/20"} disabled:opacity-40`}
                   >
                     Plan
                   </button>
@@ -3522,7 +3522,7 @@ export default function App() {
                             setPremiumNav("plan-" + index);
                             setSelectedPlan(plan);
                           }}
-                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "plan-" + index && view === "premium" ? "bg-[#C08081]/10 text-[#87464B]" : "text-[#87464B]/85 hover:bg-[#C08081]/20"}`}
+                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "plan-" + index && view === "premium" ? "bg-[#1B4D3E]/10 text-[#87464B]" : "text-[#87464B]/85 hover:bg-[#1B4D3E]/20"}`}
                         >
                           Plan {index + 1}
                         </button>
@@ -3537,7 +3537,7 @@ export default function App() {
                       setPremiumSection("writing");
                       setView("writing");
                     }}
-                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "writing" ? "bg-[#87464B] text-white" : "text-[#87464B] hover:bg-[#C08081]/20"} disabled:opacity-40`}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "writing" ? "bg-[#87464B] text-white" : "text-[#87464B] hover:bg-[#1B4D3E]/20"} disabled:opacity-40`}
                   >
                     Rédaction
                   </button>
@@ -3561,7 +3561,7 @@ export default function App() {
                       Préparez et testez votre projet depuis cet espace réservé à l’administration.
                     </p>
                   </div>
-                  <div className="rounded-full bg-[#C08081]/10 px-3 py-1.5 font-inter text-[10px] font-semibold text-[#87464B]">
+                  <div className="rounded-full bg-[#1B4D3E]/10 px-3 py-1.5 font-inter text-[10px] font-semibold text-[#87464B]">
                     PAIEMENT NEUTRALISÉ
                   </div>
                 </div>
@@ -3702,14 +3702,14 @@ export default function App() {
                         void handleFiles(event.target.files);
                         event.currentTarget.value = "";
                       }}
-                      className="mt-2 w-full rounded-2xl border border-dashed border-[#87464B]/15 bg-[#C08081]/10 px-4 py-4 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-dashed border-[#87464B]/15 bg-[#1B4D3E]/10 px-4 py-4 font-inter text-sm"
                     />
                     {project.files.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {project.files.map((file, index) => (
                           <div
                             key={`${file.name}-${file.content.length}`}
-                            className="rounded-xl bg-[#C08081]/10 px-3 py-2 font-inter text-xs"
+                            className="rounded-xl bg-[#1B4D3E]/10 px-3 py-2 font-inter text-xs"
                           >
                             <span className="min-w-0 flex-1 truncate">{file.name}</span>
                             <select value={file.category || "reference"} onChange={(event) => {
@@ -3725,7 +3725,7 @@ export default function App() {
                               <option value="source">Source</option>
                               <option value="reference">Référence</option>
                             </select>
-                            <button type="button" onClick={() => setProject((current) => ({ ...current, files: current.files.filter((_, itemIndex) => itemIndex !== index) }))} className="ml-2 rounded-lg border border-[#C08081] px-2 py-1 text-[11px] text-[#87464B]">Retirer</button>
+                            <button type="button" onClick={() => setProject((current) => ({ ...current, files: current.files.filter((_, itemIndex) => itemIndex !== index) }))} className="ml-2 rounded-lg border border-[#1B4D3E] px-2 py-1 text-[11px] text-[#87464B]">Retirer</button>
                           </div>
                         ))}
                       </div>
@@ -3753,16 +3753,16 @@ export default function App() {
                   Pipeline de test
                 </div>
                 <div className="mt-4 space-y-3 font-inter text-sm">
-                  <div className="rounded-2xl bg-[#C08081]/10 p-4">
+                  <div className="rounded-2xl bg-[#1B4D3E]/10 p-4">
                     <strong>01.</strong> Préparation du projet
                   </div>
-                  <div className="rounded-2xl bg-[#C08081]/10 p-4">
+                  <div className="rounded-2xl bg-[#1B4D3E]/10 p-4">
                     <strong>02.</strong> Problématique générée une à une, amélioration ou alternative
                   </div>
-                  <div className="rounded-2xl bg-[#C08081]/10 p-4">
+                  <div className="rounded-2xl bg-[#1B4D3E]/10 p-4">
                     <strong>03.</strong> Plan généré un à un, amélioration et validation
                   </div>
-                  <div className="rounded-2xl bg-[#C08081]/10 p-4">
+                  <div className="rounded-2xl bg-[#1B4D3E]/10 p-4">
                     <strong>04.</strong> Rédaction par blocs et export Word sans paiement
                   </div>
                 </div>
@@ -3790,7 +3790,7 @@ export default function App() {
                   <div
                     role="alert"
                     aria-live="assertive"
-                    className="mt-5 rounded-2xl border border-[#C08081] bg-[#C08081]/15 p-4 font-inter text-sm leading-6 text-[#87464B]"
+                    className="mt-5 rounded-2xl border border-[#87464B]/30 bg-[#87464B]/10 p-4 font-inter text-sm leading-6 text-[#87464B]"
                   >
                     <strong>Une difficulté est survenue :</strong> {generationError}
                   </div>
@@ -3807,16 +3807,16 @@ export default function App() {
                       <h2 className="mt-3 font-playfair text-3xl text-[#87464B]">{item.title}</h2>
                       <p className="mt-6 font-inter text-base leading-[1.9] text-[#87464B]/85">{item.question}</p>
                       {item.angle && (
-                        <div className="mt-5 rounded-2xl bg-[#C08081]/10 p-5 font-inter text-sm leading-[1.8] text-[#87464B]/85">
+                        <div className="mt-5 rounded-2xl bg-[#1B4D3E]/10 p-5 font-inter text-sm leading-[1.8] text-[#87464B]/85">
                           <strong>Angle :</strong> {item.angle}
                         </div>
                       )}
                       {item.rationale && (
-                        <div className="mt-4 rounded-2xl bg-[#C08081]/10 p-5 font-inter text-sm leading-[1.8] text-[#87464B]/85">
+                        <div className="mt-4 rounded-2xl bg-[#1B4D3E]/10 p-5 font-inter text-sm leading-[1.8] text-[#87464B]/85">
                           {item.rationale}
                         </div>
                       )}
-                      <div className="mt-6 grid gap-3 rounded-2xl border border-[#87464B]/10 bg-[#C08081]/10 p-4">
+                      <div className="mt-6 grid gap-3 rounded-2xl border border-[#87464B]/10 bg-[#1B4D3E]/10 p-4">
                         <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#87464B]/85">Améliorer ou comparer la problématique</div>
                         <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#87464B]/10 bg-white px-4 py-3 font-inter text-sm" />
                         <div className="flex flex-wrap gap-2">
@@ -3877,7 +3877,7 @@ export default function App() {
                           </div>
                         ))}
                       </div>
-                      <div className="mt-8 grid gap-3 rounded-2xl border border-[#87464B]/10 bg-[#C08081]/10 p-5">
+                      <div className="mt-8 grid gap-3 rounded-2xl border border-[#87464B]/10 bg-[#1B4D3E]/10 p-5">
                         <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#87464B]/85">Validation du plan</div>
                         <textarea
                           value={planImprovementComments[plan.id] || ""}
@@ -3973,7 +3973,7 @@ export default function App() {
 
                           <h2 className="mt-4 font-playfair text-2xl text-[#87464B]">{block.title}</h2>
 
-                          <div className="mt-5 border-l-2 border-[#C08081] pl-4">
+                          <div className="mt-5 border-l-2 border-[#1B4D3E] pl-4">
                             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#87464B]/85">
                               Trame du plan sélectionné
                             </div>
@@ -3992,7 +3992,7 @@ export default function App() {
                           onCut={protectWriting ? (event) => event.preventDefault() : undefined}
                         >
                           {block.error && (
-                            <div className="mb-6 rounded-lg border border-[#C08081] bg-[#C08081]/15 p-4 font-inter text-xs leading-5 text-[#87464B]">
+                            <div className="mb-6 rounded-lg border border-[#87464B]/30 bg-[#87464B]/10 p-4 font-inter text-xs leading-5 text-[#87464B]">
                               <strong>Erreur de rédaction :</strong> {block.error}
                             </div>
                           )}
@@ -4059,7 +4059,7 @@ export default function App() {
                                 setSelectedWritingBlockId(next.id);
                                 document.getElementById(`writing-block-${next.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                               }}
-                              className="rounded-full border border-[#87464B]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#87464B] hover:bg-[#C08081]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="rounded-full border border-[#87464B]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#87464B] hover:bg-[#1B4D3E]/20 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Bloc suivant · {index + 2}
                             </button>
@@ -4124,12 +4124,12 @@ export default function App() {
             </div>
             <button onClick={handleOwnerLogout} className="rounded-full border border-[#87464B]/10 px-3 py-1.5 font-inter text-[11px]">Quitter</button>
           </div>
-          <button type="button" onClick={startNewOwnerProject} className="mt-4 w-full rounded-xl bg-[#C08081]/10 px-3 py-3 font-inter text-xs font-semibold text-[#87464B]">Nouveau projet de test</button>
+          <button type="button" onClick={startNewOwnerProject} className="mt-4 w-full rounded-xl bg-[#1B4D3E]/10 px-3 py-3 font-inter text-xs font-semibold text-[#87464B]">Nouveau projet de test</button>
           <button onClick={() => void generateOwnerFirstProblematic()} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#87464B] font-inter text-xs font-semibold text-white disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-white" />}
             Générer une problématique
           </button>
-          <div className="mt-3 rounded-xl bg-[#C08081]/10 p-3 font-inter text-[10px] leading-[1.6] text-[#87464B]">
+          <div className="mt-3 rounded-xl bg-[#1B4D3E]/10 p-3 font-inter text-[10px] leading-[1.6] text-[#87464B]">
             Les projets de test peuvent être rédigés et exportés sans paiement.
           </div>
         </aside>
@@ -4153,19 +4153,19 @@ export default function App() {
                 value={ownerPassword}
                 onChange={(event) => setOwnerPassword(event.target.value)}
                 autoComplete="current-password"
-                className="h-11 w-full rounded-xl border border-[#87464B]/10 px-4 pr-12 font-inter text-sm outline-none transition focus:border-[#87464B]/30 focus:ring-2 focus:ring-[#C08081]/10"
+                className="h-11 w-full rounded-xl border border-[#87464B]/10 px-4 pr-12 font-inter text-sm outline-none transition focus:border-[#87464B]/30 focus:ring-2 focus:ring-[#1B4D3E]/10"
               />
               <button
                 type="button"
                 onClick={() => setShowOwnerPassword((visible) => !visible)}
                 aria-label={showOwnerPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 aria-pressed={showOwnerPassword}
-                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-[#87464B]/85 transition hover:underline hover:decoration-[#C08081] hover:underline-offset-4 focus:outline-none focus:ring-2 focus:ring-[#C08081]"
+                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-[#87464B]/85 transition hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4 focus:outline-none focus:ring-2 focus:ring-[#1B4D3E]"
               >
                 {showOwnerPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {ownerLoginError && <div className="mt-3 rounded-xl bg-[#C08081]/15 p-3 font-inter text-xs text-[#87464B]">{ownerLoginError}</div>}
+            {ownerLoginError && <div className="mt-3 rounded-xl bg-[#1B4D3E]/15 p-3 font-inter text-xs text-[#87464B]">{ownerLoginError}</div>}
             <button type="submit" disabled={ownerBusy} className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#87464B] font-inter text-sm font-semibold text-white disabled:opacity-50">
               {ownerBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Se connecter"}
             </button>
@@ -4197,8 +4197,8 @@ export default function App() {
             <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-white">mo</span></span>
           </button>
           <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">
-            <button className="text-white hover:underline hover:decoration-[#C08081] hover:underline-offset-4" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
-            <button className="text-white hover:underline hover:decoration-[#C08081] hover:underline-offset-4" onClick={() => navigateToSection("revision-humaine")}>Révision humaine</button>
+            <button className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
+            <button className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4" onClick={() => navigateToSection("revision-humaine")}>Révision humaine</button>
             {view !== "home" && <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -4206,7 +4206,7 @@ export default function App() {
                 void loadClientProjects();
               }}
             >
-              <span className="text-white hover:underline hover:decoration-[#C08081] hover:underline-offset-4">Mon projet</span>
+              <span className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4">Mon projet</span>
             </button>}
           </div>
 
@@ -4276,7 +4276,7 @@ export default function App() {
       )}
 
       {view === "account" && (
-        <section className="min-h-[72vh] bg-gradient-to-b from-[#C08081]/10 via-white to-[#C08081]/10 px-4 py-8 sm:px-6 sm:py-12">
+        <section className="min-h-[72vh] bg-gradient-to-b from-[#1B4D3E]/10 via-white to-[#1B4D3E]/10 px-4 py-8 sm:px-6 sm:py-12">
           <div className="mx-auto max-w-xl rounded-3xl border border-[#87464B]/10 bg-white p-6 shadow-sm sm:p-9">
             <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#87464B]">Compte client Trimémo</div>
             <h1 className="mt-3 font-playfair text-3xl font-bold text-[#87464B]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
@@ -4298,8 +4298,8 @@ export default function App() {
               {clientAuthMode !== "forgot" && <label className="block font-inter text-sm font-medium text-[#87464B]">{clientAuthMode === "reset" ? "Nouveau mot de passe" : "Mot de passe"}
                 <input type="password" required minLength={8} autoComplete={clientAuthMode === "signup" || clientAuthMode === "reset" ? "new-password" : "current-password"} value={clientPassword} onChange={(event) => setClientPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-[#87464B]/15 px-4 py-3 font-normal outline-none focus:border-[#87464B]" placeholder="8 caractères minimum" />
               </label>}
-              {clientAuthError && <div role="alert" className="rounded-xl bg-[#C08081]/15 p-3 font-inter text-sm text-[#87464B]">{clientAuthError}</div>}
-              {clientAuthNotice && <div role="status" className="rounded-xl bg-[#C08081]/10 p-3 font-inter text-sm text-[#87464B]">{clientAuthNotice}</div>}
+              {clientAuthError && <div role="alert" className="rounded-xl bg-[#1B4D3E]/15 p-3 font-inter text-sm text-[#87464B]">{clientAuthError}</div>}
+              {clientAuthNotice && <div role="status" className="rounded-xl bg-[#1B4D3E]/10 p-3 font-inter text-sm text-[#87464B]">{clientAuthNotice}</div>}
               <button type="submit" disabled={clientAuthBusy || (clientAuthMode === "reset" && !clientRecoveryToken)} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#87464B] px-5 py-3 font-inter text-sm font-semibold text-white disabled:opacity-60">
                 {clientAuthBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : clientAuthMode === "signup" ? "Créer mon compte et continuer" : clientAuthMode === "login" ? "Se connecter" : clientAuthMode === "forgot" ? "Envoyer le lien de réinitialisation" : "Modifier mon mot de passe"}
               </button>
@@ -4318,7 +4318,7 @@ export default function App() {
             </>)}
 
       {view === "dashboard" && (
-        <section className="min-h-[72vh] bg-[#C08081]/10 px-4 py-6 sm:px-6 sm:py-8">
+        <section className="min-h-[72vh] bg-[#1B4D3E]/10 px-4 py-6 sm:px-6 sm:py-8">
           <div className="mx-auto max-w-7xl">
             <div className="rounded-3xl bg-[#87464B] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
@@ -4332,18 +4332,18 @@ export default function App() {
                 <p className="mt-1 font-inter text-sm text-[#87464B]/85">Une question sur votre projet, votre paiement ou votre document ? Contactez-nous directement.</p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#87464B] px-5 py-2.5 font-inter text-sm font-semibold text-white hover:bg-[#87464B]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C08081]">Contacter sur WhatsApp</a>
-                <a href="mailto:redacmemo78@gmail.com?subject=Assistance%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#87464B] bg-white px-5 py-2.5 font-inter text-sm font-semibold text-[#87464B] hover:bg-[#C08081]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C08081]">Envoyer un e-mail</a>
+                <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#87464B] px-5 py-2.5 font-inter text-sm font-semibold text-white hover:bg-[#87464B]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E]">Contacter sur WhatsApp</a>
+                <a href="mailto:redacmemo78@gmail.com?subject=Assistance%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#87464B] bg-white px-5 py-2.5 font-inter text-sm font-semibold text-[#87464B] hover:bg-[#1B4D3E]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E]">Envoyer un e-mail</a>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <button type="button" onClick={() => setClientDashboardTab("documents")} className={`rounded-2xl border border-[#87464B]/20 bg-white p-4 text-left shadow-sm hover:bg-[#C08081]/20 sm:p-5 ${clientDashboardTab==="documents"?"ring-2 ring-[#C08081] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#87464B] sm:text-sm">Mes projets</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#87464B]">{clientProjects.length}</span><span className="mt-1 block font-inter text-[11px] text-[#87464B]/85">Projets enregistrés</span></button>
-              <button type="button" onClick={() => setClientDashboardTab("in_progress")} className={`rounded-2xl border border-[#87464B]/20 bg-[#C08081]/10 p-4 text-left shadow-sm hover:bg-[#C08081]/20 sm:p-5 ${clientDashboardTab==="in_progress"?"ring-2 ring-[#C08081] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#87464B] sm:text-sm">Révisions en cours</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#87464B]">{clientRevisions.filter((r:any)=>r.status==="in_progress").length}</span><span className="mt-1 block font-inter text-[11px] text-[#87464B]/85">Traitement en cours</span></button>
-              <button type="button" onClick={() => setClientDashboardTab("pending")} className={`rounded-2xl border border-[#87464B]/20 bg-[#C08081]/10 p-4 text-left shadow-sm hover:bg-[#C08081]/20 sm:p-5 ${clientDashboardTab==="pending"?"ring-2 ring-[#C08081] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#87464B] sm:text-sm">Révisions en attente</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#87464B]">{clientRevisions.filter((r:any)=>["pending","requested","submitted"].includes(String(r.status||"").toLowerCase())).length}</span><span className="mt-1 block font-inter text-[11px] text-[#87464B]/85">À traiter</span></button>
-              <button type="button" onClick={() => setClientDashboardTab("completed")} className={`rounded-2xl border border-[#87464B]/20 bg-[#C08081]/10 p-4 text-left shadow-sm hover:bg-[#C08081]/20 sm:p-5 ${clientDashboardTab==="completed"?"ring-2 ring-[#C08081] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#87464B] sm:text-sm">Révisions terminées</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#87464B]">{clientRevisions.filter((r:any)=>r.status==="completed").length}</span><span className="mt-1 block font-inter text-[11px] text-[#87464B]/85">Documents livrés</span></button>
+              <button type="button" onClick={() => setClientDashboardTab("documents")} className={`rounded-2xl border border-[#87464B]/20 bg-white p-4 text-left shadow-sm hover:bg-[#1B4D3E]/20 sm:p-5 ${clientDashboardTab==="documents"?"ring-2 ring-[#1B4D3E] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#87464B] sm:text-sm">Mes projets</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#87464B]">{clientProjects.length}</span><span className="mt-1 block font-inter text-[11px] text-[#87464B]/85">Projets enregistrés</span></button>
+              <button type="button" onClick={() => setClientDashboardTab("in_progress")} className={`rounded-2xl border border-[#87464B]/20 bg-[#1B4D3E]/10 p-4 text-left shadow-sm hover:bg-[#1B4D3E]/20 sm:p-5 ${clientDashboardTab==="in_progress"?"ring-2 ring-[#1B4D3E] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#87464B] sm:text-sm">Révisions en cours</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#87464B]">{clientRevisions.filter((r:any)=>r.status==="in_progress").length}</span><span className="mt-1 block font-inter text-[11px] text-[#87464B]/85">Traitement en cours</span></button>
+              <button type="button" onClick={() => setClientDashboardTab("pending")} className={`rounded-2xl border border-[#87464B]/20 bg-[#1B4D3E]/10 p-4 text-left shadow-sm hover:bg-[#1B4D3E]/20 sm:p-5 ${clientDashboardTab==="pending"?"ring-2 ring-[#1B4D3E] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#87464B] sm:text-sm">Révisions en attente</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#87464B]">{clientRevisions.filter((r:any)=>["pending","requested","submitted"].includes(String(r.status||"").toLowerCase())).length}</span><span className="mt-1 block font-inter text-[11px] text-[#87464B]/85">À traiter</span></button>
+              <button type="button" onClick={() => setClientDashboardTab("completed")} className={`rounded-2xl border border-[#87464B]/20 bg-[#1B4D3E]/10 p-4 text-left shadow-sm hover:bg-[#1B4D3E]/20 sm:p-5 ${clientDashboardTab==="completed"?"ring-2 ring-[#1B4D3E] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#87464B] sm:text-sm">Révisions terminées</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#87464B]">{clientRevisions.filter((r:any)=>r.status==="completed").length}</span><span className="mt-1 block font-inter text-[11px] text-[#87464B]/85">Documents livrés</span></button>
             </div>
             <div className="mt-6 rounded-3xl border border-[#87464B]/20 bg-white p-5 shadow-sm sm:p-7">
-              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-2xl font-bold text-[#87464B]">{clientDashboardTab==="documents"?"Mes projets et documents":clientDashboardTab==="in_progress"?"Demandes de révision en cours":clientDashboardTab==="pending"?"Demandes de révision en attente":"Révisions terminées et livrées"}</h2><p className="mt-1 font-inter text-sm text-[#87464B]/85">{clientDashboardTab==="documents"?"Retrouvez vos projets et poursuivez votre rédaction.":"Suivez l'avancement et récupérez les documents corrigés."}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{setClientDashboardTab("documents");void loadClientProjects();}} className="rounded-full border border-[#87464B]/15 px-4 py-2 font-inter text-xs font-semibold text-[#87464B] hover:bg-[#C08081]/20">Actualiser</button><button type="button" onClick={startNewClientProject} className="rounded-full bg-[#87464B] px-4 py-2 font-inter text-xs font-semibold text-white">Nouveau projet</button></div></div>
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-2xl font-bold text-[#87464B]">{clientDashboardTab==="documents"?"Mes projets et documents":clientDashboardTab==="in_progress"?"Demandes de révision en cours":clientDashboardTab==="pending"?"Demandes de révision en attente":"Révisions terminées et livrées"}</h2><p className="mt-1 font-inter text-sm text-[#87464B]/85">{clientDashboardTab==="documents"?"Retrouvez vos projets et poursuivez votre rédaction.":"Suivez l'avancement et récupérez les documents corrigés."}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{setClientDashboardTab("documents");void loadClientProjects();}} className="rounded-full border border-[#87464B]/15 px-4 py-2 font-inter text-xs font-semibold text-[#87464B] hover:bg-[#1B4D3E]/20">Actualiser</button><button type="button" onClick={startNewClientProject} className="rounded-full bg-[#87464B] px-4 py-2 font-inter text-xs font-semibold text-white">Nouveau projet</button></div></div>
               {clientDashboardTab === "documents" && (localDraftKeys.length > 0 || Boolean(project.sujet?.trim())) && (
                 <div className="mt-5 rounded-xl border border-[#87464B]/20 p-4 font-inter text-sm text-[#87464B]">
                   <p>Reprendre un brouillon conservé sur cet appareil</p>
@@ -4352,9 +4352,9 @@ export default function App() {
                   {localDraftKeys.map((key, index) => <button key={key} type="button" disabled={loading} onClick={() => void recoverLocalDraft(key)} className="ml-2 mt-3 rounded-full border px-4 py-2 text-xs disabled:opacity-50">Reprendre une copie locale {index + 1}</button>)}
                 </div>
               )}
-              {clientDashboardTab==="documents"?<div className="mt-5 grid gap-4">{clientProjects.length?clientProjects.map((item)=><article key={item.project_id} className="flex flex-col gap-4 rounded-2xl border border-[#87464B]/20 bg-white p-5 shadow-sm transition hover:border-[#87464B] hover:shadow-md sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={()=>{void openClientProject(item.project_id);}} className="min-w-0 flex-1 text-left"><span className="block font-playfair text-xl font-semibold text-[#87464B]">{item.subject||"Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#87464B]/85">Dernière mise à jour : {item.updated_at?new Date(item.updated_at).toLocaleString("fr-FR"):"Non disponible"}</span><span className="mt-2 inline-block rounded-full bg-[#C08081]/10 px-3 py-2 font-inter text-xs font-semibold text-[#87464B]">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Paiement confirmé":"Paiement non confirmé"}</span></button><button type="button" disabled={loading} onClick={()=>void openHumanRevisionForProject(item)} className="rounded-full border border-[#87464B]/20 px-4 py-3 font-inter text-xs font-semibold text-[#87464B] hover:border-[#87464B] hover:bg-[#C08081]/20 disabled:opacity-50">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Demander une révision humaine":"Révision après rédaction et paiement"}</button></article>):<div className="rounded-2xl border border-dashed border-[#87464B]/20 bg-white p-8 font-inter text-sm text-[#87464B]/85">Aucun projet enregistré pour le moment.</div>}</div>:<div className="mt-5 grid gap-3">{clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?["pending","requested","submitted"].includes(String(r.status||"").toLowerCase()):r.status==="completed").length?clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?["pending","requested","submitted"].includes(String(r.status||"").toLowerCase()):r.status==="completed").map((revision:any)=><article key={revision.id} className={`rounded-2xl border p-4 sm:p-5 ${revision.status==="completed"?"border-[#87464B]/20 bg-[#C08081]/10":revision.status==="in_progress"?"border-[#87464B]/20 bg-[#C08081]/10":"border-[#87464B]/20 bg-[#C08081]/10"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-playfair text-lg font-bold text-[#87464B]">{revision.document_title}</h3><p className="mt-1 font-inter text-xs text-[#87464B]/85">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</p></div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#87464B] px-4 py-2 font-inter text-xs font-semibold text-white">Télécharger le document corrigé</button>}</div></article>):<p className="rounded-xl bg-white p-5 font-inter text-sm text-[#87464B]/85">Aucune demande dans cette catégorie pour le moment.</p>}</div>}
+              {clientDashboardTab==="documents"?<div className="mt-5 grid gap-4">{clientProjects.length?clientProjects.map((item)=><article key={item.project_id} className="flex flex-col gap-4 rounded-2xl border border-[#87464B]/20 bg-white p-5 shadow-sm transition hover:border-[#87464B] hover:shadow-md sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={()=>{void openClientProject(item.project_id);}} className="min-w-0 flex-1 text-left"><span className="block font-playfair text-xl font-semibold text-[#87464B]">{item.subject||"Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#87464B]/85">Dernière mise à jour : {item.updated_at?new Date(item.updated_at).toLocaleString("fr-FR"):"Non disponible"}</span><span className="mt-2 inline-block rounded-full bg-[#1B4D3E]/10 px-3 py-2 font-inter text-xs font-semibold text-[#87464B]">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Paiement confirmé":"Paiement non confirmé"}</span></button><button type="button" disabled={loading} onClick={()=>void openHumanRevisionForProject(item)} className="rounded-full border border-[#87464B]/20 px-4 py-3 font-inter text-xs font-semibold text-[#87464B] hover:border-[#87464B] hover:bg-[#1B4D3E]/20 disabled:opacity-50">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Demander une révision humaine":"Révision après rédaction et paiement"}</button></article>):<div className="rounded-2xl border border-dashed border-[#87464B]/20 bg-white p-8 font-inter text-sm text-[#87464B]/85">Aucun projet enregistré pour le moment.</div>}</div>:<div className="mt-5 grid gap-3">{clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?["pending","requested","submitted"].includes(String(r.status||"").toLowerCase()):r.status==="completed").length?clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?["pending","requested","submitted"].includes(String(r.status||"").toLowerCase()):r.status==="completed").map((revision:any)=><article key={revision.id} className={`rounded-2xl border p-4 sm:p-5 ${revision.status==="completed"?"border-[#87464B]/20 bg-[#1B4D3E]/10":revision.status==="in_progress"?"border-[#87464B]/20 bg-[#1B4D3E]/10":"border-[#87464B]/20 bg-[#1B4D3E]/10"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-playfair text-lg font-bold text-[#87464B]">{revision.document_title}</h3><p className="mt-1 font-inter text-xs text-[#87464B]/85">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</p></div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#87464B] px-4 py-2 font-inter text-xs font-semibold text-white">Télécharger le document corrigé</button>}</div></article>):<p className="rounded-xl bg-white p-5 font-inter text-sm text-[#87464B]/85">Aucune demande dans cette catégorie pour le moment.</p>}</div>}
             </div>
-            {revisionModalOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#87464B]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title"><form onSubmit={submitHumanRevision} className="max-h-[90vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-8"><div className="flex items-start justify-between gap-4"><div><p className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#87464B]">Assistance humaine</p><h2 id="revision-modal-title" className="mt-2 font-playfair text-2xl font-bold text-[#87464B]">Demande de révision</h2><p className="mt-2 font-inter text-sm text-[#87464B]/85">Document sélectionné : {revisionTargetTitle}</p></div><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-3 py-1 text-[#87464B]/85" aria-label="Fermer">✕</button></div><div className="grid gap-4 sm:grid-cols-2"><label className="block font-inter text-sm font-semibold text-[#87464B]">Niveau de révision<select value={revisionTier} onChange={e=>{const tier=e.target.value as "essential"|"standard"|"deep";setRevisionTier(tier);if(revisionFile)void calculateHumanRevisionQuote(revisionFile,tier);}} className="mt-2 w-full rounded-xl border border-[#87464B]/20 bg-white p-3 text-sm font-normal"><option value="essential">Correction essentielle</option><option value="standard">Révision standard</option><option value="deep">Révision approfondie</option></select><span className="mt-1 block text-xs font-normal text-[#87464B]/85">{revisionTier==="essential"?"Orthographe, grammaire, ponctuation et typographie.":revisionTier==="standard"?"Correction essentielle, reformulation, fluidité et réduction des répétitions.":"Révision standard, restructuration ciblée et contrôle de cohérence méthodologique."}</span></label><div className="rounded-xl border border-[#87464B]/20 bg-white p-4"><div className="font-inter text-sm font-semibold text-[#87464B]">Estimation de votre révision</div>{revisionQuoteLoading?<p className="mt-2 text-sm text-[#87464B]/85">Analyse du document et calcul du devis…</p>:revisionQuote?<div className="mt-3 grid gap-2 text-sm text-[#87464B]"><div className="flex justify-between gap-3"><span>Nombre de pages estimé</span><strong>{revisionPages}</strong></div><div className="flex justify-between gap-3"><span>Tarif par page</span><strong>{revisionQuote.unitPrice.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3 border-t border-[#87464B]/20 pt-2"><span>Coût estimé</span><strong className="text-lg text-[#87464B]">{revisionQuote.estimatedAmount.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3"><span>Délai de livraison estimé</span><strong>{revisionQuote.deliveryLabel}</strong></div></div>:<p className="mt-2 text-sm text-[#87464B]/85">Joignez votre document Word pour afficher le volume, le tarif et le délai de livraison.</p>}</div></div><label className="block font-inter text-sm font-semibold text-[#87464B]">Corrections demandées<textarea required minLength={10} value={revisionInstructions} onChange={e=>setRevisionInstructions(e.target.value)} rows={5} placeholder="Précisez les passages à corriger et les consignes à respecter…" className="mt-2 w-full rounded-xl border border-[#87464B]/20 p-3 text-sm font-normal outline-none focus:border-[#87464B]"/></label><div className="rounded-xl border border-[#87464B]/20 bg-white p-3 text-sm text-[#87464B]/85"><label className="block font-inter text-sm font-semibold text-[#87464B]">Document Word exporté depuis Trimémo<input type="file" required accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={e=>{const file=e.target.files?.[0]||null;setRevisionFile(file);setRevisionQuote(null);setRevisionPages(0);if(file)void calculateHumanRevisionQuote(file,revisionTier);else setRevisionError("");}} className="mt-2 block w-full rounded-xl border border-[#87464B]/20 bg-white p-3 text-sm font-normal file:mr-3 file:rounded-full file:border-0 file:bg-[#C08081]/10 file:px-3 file:py-2 file:text-xs file:font-semibold"/></label><span className="mt-2 block text-xs">Exportez d’abord le document Word final depuis votre projet, puis joignez-le ici. Format accepté : .docx. Taille maximale : 3 Mo.</span>{revisionFile&&<span className="mt-2 block text-xs font-semibold text-[#87464B]">Fichier sélectionné : {revisionFile.name}</span>}</div>{revisionError&&<p role="alert" className="rounded-xl bg-[#C08081]/15 p-3 text-sm text-[#87464B]">{revisionError}</p>}{revisionMessage&&<p role="status" className="rounded-xl bg-[#87464B]/10 p-3 text-sm text-white">{revisionMessage}</p>}<div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-5 py-3 text-sm">Annuler</button><button type="submit" disabled={revisionSubmitting} className="rounded-full bg-[#87464B] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{revisionSubmitting?"Envoi en cours…":"Envoyer la demande"}</button></div></form></div>}
+            {revisionModalOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#87464B]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title"><form onSubmit={submitHumanRevision} className="max-h-[90vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-8"><div className="flex items-start justify-between gap-4"><div><p className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#87464B]">Assistance humaine</p><h2 id="revision-modal-title" className="mt-2 font-playfair text-2xl font-bold text-[#87464B]">Demande de révision</h2><p className="mt-2 font-inter text-sm text-[#87464B]/85">Document sélectionné : {revisionTargetTitle}</p></div><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-3 py-1 text-[#87464B]/85" aria-label="Fermer">✕</button></div><div className="grid gap-4 sm:grid-cols-2"><label className="block font-inter text-sm font-semibold text-[#87464B]">Niveau de révision<select value={revisionTier} onChange={e=>{const tier=e.target.value as "essential"|"standard"|"deep";setRevisionTier(tier);if(revisionFile)void calculateHumanRevisionQuote(revisionFile,tier);}} className="mt-2 w-full rounded-xl border border-[#87464B]/20 bg-white p-3 text-sm font-normal"><option value="essential">Correction essentielle</option><option value="standard">Révision standard</option><option value="deep">Révision approfondie</option></select><span className="mt-1 block text-xs font-normal text-[#87464B]/85">{revisionTier==="essential"?"Orthographe, grammaire, ponctuation et typographie.":revisionTier==="standard"?"Correction essentielle, reformulation, fluidité et réduction des répétitions.":"Révision standard, restructuration ciblée et contrôle de cohérence méthodologique."}</span></label><div className="rounded-xl border border-[#87464B]/20 bg-white p-4"><div className="font-inter text-sm font-semibold text-[#87464B]">Estimation de votre révision</div>{revisionQuoteLoading?<p className="mt-2 text-sm text-[#87464B]/85">Analyse du document et calcul du devis…</p>:revisionQuote?<div className="mt-3 grid gap-2 text-sm text-[#87464B]"><div className="flex justify-between gap-3"><span>Nombre de pages estimé</span><strong>{revisionPages}</strong></div><div className="flex justify-between gap-3"><span>Tarif par page</span><strong>{revisionQuote.unitPrice.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3 border-t border-[#87464B]/20 pt-2"><span>Coût estimé</span><strong className="text-lg text-[#87464B]">{revisionQuote.estimatedAmount.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3"><span>Délai de livraison estimé</span><strong>{revisionQuote.deliveryLabel}</strong></div></div>:<p className="mt-2 text-sm text-[#87464B]/85">Joignez votre document Word pour afficher le volume, le tarif et le délai de livraison.</p>}</div></div><label className="block font-inter text-sm font-semibold text-[#87464B]">Corrections demandées<textarea required minLength={10} value={revisionInstructions} onChange={e=>setRevisionInstructions(e.target.value)} rows={5} placeholder="Précisez les passages à corriger et les consignes à respecter…" className="mt-2 w-full rounded-xl border border-[#87464B]/20 p-3 text-sm font-normal outline-none focus:border-[#87464B]"/></label><div className="rounded-xl border border-[#87464B]/20 bg-white p-3 text-sm text-[#87464B]/85"><label className="block font-inter text-sm font-semibold text-[#87464B]">Document Word exporté depuis Trimémo<input type="file" required accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={e=>{const file=e.target.files?.[0]||null;setRevisionFile(file);setRevisionQuote(null);setRevisionPages(0);if(file)void calculateHumanRevisionQuote(file,revisionTier);else setRevisionError("");}} className="mt-2 block w-full rounded-xl border border-[#87464B]/20 bg-white p-3 text-sm font-normal file:mr-3 file:rounded-full file:border-0 file:bg-[#1B4D3E]/10 file:px-3 file:py-2 file:text-xs file:font-semibold"/></label><span className="mt-2 block text-xs">Exportez d’abord le document Word final depuis votre projet, puis joignez-le ici. Format accepté : .docx. Taille maximale : 3 Mo.</span>{revisionFile&&<span className="mt-2 block text-xs font-semibold text-[#87464B]">Fichier sélectionné : {revisionFile.name}</span>}</div>{revisionError&&<p role="alert" className="rounded-xl bg-[#1B4D3E]/15 p-3 text-sm text-[#87464B]">{revisionError}</p>}{revisionMessage&&<p role="status" className="rounded-xl bg-[#87464B]/10 p-3 text-sm text-white">{revisionMessage}</p>}<div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-5 py-3 text-sm">Annuler</button><button type="submit" disabled={revisionSubmitting} className="rounded-full bg-[#87464B] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{revisionSubmitting?"Envoi en cours…":"Envoyer la demande"}</button></div></form></div>}
           </div>
         </section>
       )}
@@ -4367,7 +4367,7 @@ export default function App() {
       )}
 
       {(view === "project" || view === "estimate" || view === "preview" || view === "premium" || view === "writing") && (
-        <main className={`min-h-[calc(100vh-72px)] bg-[#C08081]/10 px-6 py-8 lg:px-8 lg:py-10 ${view === "writing" ? "h-[calc(100vh-72px)] overflow-y-auto overscroll-contain" : ""}`}>
+        <main className={`min-h-[calc(100vh-72px)] bg-[#1B4D3E]/10 px-6 py-8 lg:px-8 lg:py-10 ${view === "writing" ? "h-[calc(100vh-72px)] overflow-y-auto overscroll-contain" : ""}`}>
           <div className="mx-auto max-w-[1220px]">
             <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-start gap-3">
@@ -4388,7 +4388,7 @@ export default function App() {
             </div>
 
             {generationError && view === "project" && (
-              <div className="mb-5 rounded-2xl border border-[#C08081] bg-[#C08081]/15 p-4 font-inter text-sm leading-6 text-[#87464B]">
+              <div className="mb-5 rounded-2xl border border-[#87464B]/30 bg-[#87464B]/10 p-4 font-inter text-sm leading-6 text-[#87464B]">
                 <strong>Une difficulté est survenue :</strong> {generationError}
               </div>
             )}
@@ -4400,10 +4400,10 @@ export default function App() {
                   <h3 className="mt-3 font-playfair text-3xl text-[#87464B]">Estimation du coût</h3>
                   <p className="mt-4 font-inter text-sm leading-[1.8] text-[#87464B]/85">Trimémo a analysé le sujet, le niveau, les consignes et les documents fournis. Le montant est provisoire et couvre le service automatisé prévu pour le projet, y compris les propositions, les améliorations, les contrôles automatiques et l’aperçu avant paiement. La correction humaine est une prestation distincte, non comprise dans ce prix.</p>
                   <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-[#C08081]/10 p-4"><div className="font-inter text-xs text-[#87464B]/85">Type de document</div><div className="mt-1 font-inter text-sm font-semibold text-[#87464B]">{project.typeDoc}</div></div>
-                    <div className="rounded-2xl bg-[#C08081]/10 p-4"><div className="font-inter text-xs text-[#87464B]/85">Niveau académique</div><div className="mt-1 font-inter text-sm font-semibold text-[#87464B]">{project.niveau}</div></div>
-                    <div className="rounded-2xl bg-[#C08081]/10 p-4"><div className="font-inter text-xs text-[#87464B]/85">Volume demandé</div><div className="mt-1 font-inter text-sm font-semibold text-[#87464B]">{estimate.pages} pages · {(estimate.pages * estimate.wordsPerPage).toLocaleString("fr-FR")} mots</div></div>
-                    <div className="rounded-2xl bg-[#C08081]/10 p-4"><div className="font-inter text-xs text-[#87464B]/85">Complexité détectée</div><div className="mt-1 font-inter text-sm font-semibold capitalize text-[#87464B]">{estimate.complexity === "elevee" ? "Élevée" : estimate.complexity}</div></div>
+                    <div className="rounded-2xl bg-[#1B4D3E]/10 p-4"><div className="font-inter text-xs text-[#87464B]/85">Type de document</div><div className="mt-1 font-inter text-sm font-semibold text-[#87464B]">{project.typeDoc}</div></div>
+                    <div className="rounded-2xl bg-[#1B4D3E]/10 p-4"><div className="font-inter text-xs text-[#87464B]/85">Niveau académique</div><div className="mt-1 font-inter text-sm font-semibold text-[#87464B]">{project.niveau}</div></div>
+                    <div className="rounded-2xl bg-[#1B4D3E]/10 p-4"><div className="font-inter text-xs text-[#87464B]/85">Volume demandé</div><div className="mt-1 font-inter text-sm font-semibold text-[#87464B]">{estimate.pages} pages · {(estimate.pages * estimate.wordsPerPage).toLocaleString("fr-FR")} mots</div></div>
+                    <div className="rounded-2xl bg-[#1B4D3E]/10 p-4"><div className="font-inter text-xs text-[#87464B]/85">Complexité détectée</div><div className="mt-1 font-inter text-sm font-semibold capitalize text-[#87464B]">{estimate.complexity === "elevee" ? "Élevée" : estimate.complexity}</div></div>
                   </div>
                   <div className="mt-6 rounded-2xl border border-[#87464B]/10 p-5">
                     <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#87464B]/85">Critères pris en compte</div>
@@ -4412,7 +4412,7 @@ export default function App() {
                       {(estimate.reasons || []).map((item, index) => <li key={"reason-"+index}>• {item}</li>)}
                     </ul>
                   </div>
-                  {!estimate.countryDetected && <p className="mt-4 rounded-xl bg-[#C08081]/10 p-3 font-inter text-xs leading-[1.6] text-[#87464B]">Le pays n'a pas pu être détecté automatiquement. Le prix utilise provisoirement le marché international. Vérifiez le pays avant le paiement si ce tarif ne correspond pas à votre situation.</p>}
+                  {!estimate.countryDetected && <p className="mt-4 rounded-xl bg-[#1B4D3E]/10 p-3 font-inter text-xs leading-[1.6] text-[#87464B]">Le pays n'a pas pu être détecté automatiquement. Le prix utilise provisoirement le marché international. Vérifiez le pays avant le paiement si ce tarif ne correspond pas à votre situation.</p>}
                 </article>
                 <aside className="h-fit rounded-[24px] bg-[#87464B] p-7 text-white lg:sticky lg:top-[98px]">
                   <div className="font-inter text-[11px] uppercase tracking-[0.18em] text-white">{estimate.marketLabel}</div>
@@ -4536,7 +4536,7 @@ export default function App() {
 
             {view === "preview" && preview && !ownerRoute && canViewClientPreview && (
             <section
-              className="mb-7 mx-auto max-w-[900px] select-none rounded-lg border border-[#87464B]/10 bg-[#C08081]/10 p-3 sm:p-8"
+              className="mb-7 mx-auto max-w-[900px] select-none rounded-lg border border-[#87464B]/10 bg-[#1B4D3E]/10 p-3 sm:p-8"
               onCopy={(event) => event.preventDefault()}
               onCut={(event) => event.preventDefault()}
               onContextMenu={(event) => event.preventDefault()}
@@ -4619,7 +4619,7 @@ export default function App() {
                   )}
                   <div className="mx-auto mt-5 grid max-w-[420px] gap-3">
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
-                      <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-white font-inter text-sm font-semibold text-[#87464B] hover:bg-[#C08081]/10 disabled:opacity-60">
+                      <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-white font-inter text-sm font-semibold text-[#87464B] hover:bg-[#1B4D3E]/10 disabled:opacity-60">
                         {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
                         <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-[#87464B]">Pay</span><span className="text-[#87464B]">Pal</span></span><span>Payer avec PayPal</span>
                       </button>
@@ -4657,7 +4657,7 @@ export default function App() {
 
               <div className="min-w-0">
                   {generationError && premiumSection === "problematic" && (
-                    <div className="mb-5 rounded-2xl border border-[#C08081] bg-[#C08081]/15 p-4 font-inter text-sm leading-6 text-[#87464B]">
+                    <div className="mb-5 rounded-2xl border border-[#87464B]/30 bg-[#87464B]/10 p-4 font-inter text-sm leading-6 text-[#87464B]">
                       <strong>Erreur de génération du plan :</strong> {generationError}
                     </div>
                   )}
@@ -4672,9 +4672,9 @@ export default function App() {
                         </div>
                         <h2 className="mt-3 font-playfair text-3xl text-[#87464B]">{item.title}</h2>
                         <p className="mt-6 font-inter text-base leading-[1.9] text-[#87464B]/85">{item.question}</p>
-                        {item.angle && <div className="mt-5 rounded-2xl bg-[#C08081]/10 p-5 font-inter text-sm leading-[1.8] text-[#87464B]/85"><strong>Angle :</strong> {item.angle}</div>}
-                        {item.rationale && <div className="mt-4 rounded-2xl bg-[#C08081]/10 p-5 font-inter text-sm leading-[1.8] text-[#87464B]/85">{item.rationale}</div>}
-                        <div className="mt-6 grid gap-3 rounded-2xl border border-[#87464B]/10 bg-[#C08081]/10 p-4">
+                        {item.angle && <div className="mt-5 rounded-2xl bg-[#1B4D3E]/10 p-5 font-inter text-sm leading-[1.8] text-[#87464B]/85"><strong>Angle :</strong> {item.angle}</div>}
+                        {item.rationale && <div className="mt-4 rounded-2xl bg-[#1B4D3E]/10 p-5 font-inter text-sm leading-[1.8] text-[#87464B]/85">{item.rationale}</div>}
+                        <div className="mt-6 grid gap-3 rounded-2xl border border-[#87464B]/10 bg-[#1B4D3E]/10 p-4">
                           <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#87464B]/85">Améliorer ou comparer la problématique</div>
                           <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#87464B]/10 bg-white px-4 py-3 font-inter text-sm" />
                           <div className="flex flex-wrap gap-2">
@@ -4733,7 +4733,7 @@ export default function App() {
                             </div>
                           ))}
                         </div>
-                        <div className="mt-8 grid gap-3 rounded-2xl border border-[#87464B]/10 bg-[#C08081]/10 p-5">
+                        <div className="mt-8 grid gap-3 rounded-2xl border border-[#87464B]/10 bg-[#1B4D3E]/10 p-5">
                           <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#87464B]/85">Validation du plan</div>
                           <textarea
                             value={planImprovementComments[plan.id] || ""}
@@ -4775,12 +4775,12 @@ export default function App() {
               <aside className="h-fit rounded-2xl border border-[#87464B]/10 bg-white p-4">
                 <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#87464B]">Navigation du projet</div>
                 <nav className="mt-4 space-y-2">
-                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#C08081]/20">1. Problématique</button>
-                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#C08081]/20">2. Plan validé</button>
+                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#1B4D3E]/20">1. Problématique</button>
+                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#1B4D3E]/20">2. Plan validé</button>
                   <button type="button" onClick={() => { const p = selectedPlan || premium?.plans?.[0]; const q = selectedProblematic || premium?.problematics?.[0]; if (p && q) selectPremiumPlan(q, p); }} className="w-full rounded-xl bg-[#87464B] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
                 </nav>
               </aside>
-              <div className="rounded-2xl border border-[#C08081] bg-white p-6 font-inter text-sm leading-6 text-[#87464B]/85">
+              <div className="rounded-2xl border border-[#1B4D3E] bg-white p-6 font-inter text-sm leading-6 text-[#87464B]/85">
                 <h2 className="font-playfair text-2xl text-[#87464B]">Préparation de l’espace de rédaction</h2>
                 <p className="mt-3">Le plan ou la problématique n’a pas été restauré correctement. Utilisez le menu de gauche pour revenir au plan, puis validez-le à nouveau.</p>
                 {generationError && <p className="mt-3 text-[#87464B]">{generationError}</p>}
@@ -4793,21 +4793,21 @@ export default function App() {
                   <aside className="h-fit rounded-2xl border border-[#87464B]/10 bg-white p-4 lg:sticky lg:top-5">
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#87464B]">Navigation du projet</div>
                     <nav className="mt-4 space-y-2">
-                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); setWritingTab("problematic"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#C08081]/20">1. Problématique</button>
-                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); setWritingTab("plan"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#C08081]/20">2. Plan validé</button>
+                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); setWritingTab("problematic"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#1B4D3E]/20">1. Problématique</button>
+                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); setWritingTab("plan"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#1B4D3E]/20">2. Plan validé</button>
                       <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#87464B] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
                       {ownerRoute || window.sessionStorage.getItem("trimemo_premium_token") ? (
-                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#87464B]/15 px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#C08081]/20">Exporter le document</button>
+                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#87464B]/15 px-4 py-3 text-left font-inter text-sm text-[#87464B] hover:bg-[#1B4D3E]/20">Exporter le document</button>
                       ) : isPreviewReady(blocks, previewLimit) ? (
                         <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl bg-[#87464B] px-4 py-3 text-left font-inter text-sm font-semibold text-white hover:bg-[#87464B]/90">Voir l’aperçu</button>
                       ) : (
                         <div className="rounded-xl border border-[#87464B]/10 px-4 py-3 font-inter text-xs leading-5 text-[#87464B]/85">L’aperçu se débloque à {previewLimit.toLocaleString("fr-FR")} mots au maximum.</div>
                       )}
                     </nav>
-                    <div className="mt-5 rounded-xl bg-[#C08081]/10 p-3">
+                    <div className="mt-5 rounded-xl bg-[#1B4D3E]/10 p-3">
                       <div className="font-inter text-[11px] text-[#87464B]/85">Progression rédactionnelle</div>
                       <div className="mt-1 font-inter text-sm font-semibold">{totalDoneWords.toLocaleString("fr-FR")} mots rédigés</div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#C08081]/10"><div className="h-full rounded-full bg-[#87464B]" style={{ width: `${previewLimit ? Math.min(100, Math.round(totalDoneWords / previewLimit * 100)) : 0}%` }} /></div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#1B4D3E]/10"><div className="h-full rounded-full bg-[#87464B]" style={{ width: `${previewLimit ? Math.min(100, Math.round(totalDoneWords / previewLimit * 100)) : 0}%` }} /></div>
                       <div className="mt-1 font-inter text-[10px] text-[#87464B]/85">Aperçu indicatif : {previewLimit.toLocaleString("fr-FR")} mots maximum</div>
                     </div>
                   </aside>
@@ -4858,7 +4858,7 @@ export default function App() {
 
                           <h2 className="mt-4 font-playfair text-2xl text-[#87464B]">{block.title}</h2>
 
-                          <div className="mt-5 border-l-2 border-[#C08081] pl-4">
+                          <div className="mt-5 border-l-2 border-[#1B4D3E] pl-4">
                             <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#87464B]/85">
                               Trame du plan sélectionné
                             </div>
@@ -4877,7 +4877,7 @@ export default function App() {
                           onCut={protectWriting ? (event) => event.preventDefault() : undefined}
                         >
                           {block.error && (
-                            <div className="mb-6 rounded-lg border border-[#C08081] bg-[#C08081]/15 p-4 font-inter text-xs leading-5 text-[#87464B]">
+                            <div className="mb-6 rounded-lg border border-[#87464B]/30 bg-[#87464B]/10 p-4 font-inter text-xs leading-5 text-[#87464B]">
                               <strong>Erreur de rédaction :</strong> {block.error}
                             </div>
                           )}
@@ -4939,7 +4939,7 @@ export default function App() {
                                 setSelectedWritingBlockId(next.id);
                                 document.getElementById(`writing-block-${next.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                               }}
-                              className="rounded-full border border-[#87464B]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#87464B] hover:bg-[#C08081]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="rounded-full border border-[#87464B]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#87464B] hover:bg-[#1B4D3E]/20 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Bloc suivant · {index + 2}
                             </button>
@@ -4959,7 +4959,7 @@ export default function App() {
             )}
 
             {(view === "premium" || view === "writing") && !loading && !premium && (
-              <div className="rounded-[24px] border border-[#C08081] bg-[#C08081]/15 p-8 text-center"><LockKeyhole className="mx-auto h-6 w-6 text-[#87464B]" /><div className="mt-3 font-inter text-sm text-[#87464B]">Le déblocage premium doit être confirmé par le serveur de paiement.</div></div>
+              <div className="rounded-[24px] border border-[#87464B]/30 bg-[#87464B]/10 p-8 text-center"><LockKeyhole className="mx-auto h-6 w-6 text-[#87464B]" /><div className="mt-3 font-inter text-sm text-[#87464B]">Le déblocage premium doit être confirmé par le serveur de paiement.</div></div>
             )}
           </div>
         </div>

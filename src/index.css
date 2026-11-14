@@ -2,10 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Identité Trimémo : trois couleurs de marque sur tous les écrans. */
+/* Identité Trimémo : rose foncé, vert anglais et blanc sur tous les écrans. */
 :root {
   --trimemo-rose-fonce: #87464B;
-  --trimemo-vieux-rose: #C08081;
+  --trimemo-vert-anglais: #1B4D3E;
   --trimemo-blanc: #FFFFFF;
   color-scheme: light;
 }
@@ -17,5 +17,5 @@ body {
 }
 input, textarea, select { caret-color: var(--trimemo-rose-fonce); }
 input::placeholder, textarea::placeholder { color: #87464B99; }
-::selection { background: var(--trimemo-vieux-rose); color: var(--trimemo-rose-fonce); }
+::selection { background: var(--trimemo-vert-anglais); color: var(--trimemo-blanc); }
 :focus-visible { outline-color: var(--trimemo-rose-fonce); }

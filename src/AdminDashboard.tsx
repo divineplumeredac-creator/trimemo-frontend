@@ -36,15 +36,15 @@ const shortId = (value: unknown) => { const s=String(value||""); return s.length
 
 function Button({children,onClick,disabled=false,variant="primary",type="button"}:any) {
   const common="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
-  const variants:any={primary:"bg-[#87464B] text-white hover:bg-[#87464B]/90",secondary:"border border-[#87464B]/20 bg-white text-[#87464B] hover:bg-[#C08081]/5",danger:"bg-[#C08081]/15 text-[#87464B] hover:bg-[#C08081]/15",gold:"bg-[#87464B] text-white hover:bg-[#87464B]"};
+  const variants:any={primary:"bg-[#87464B] text-white hover:bg-[#87464B]/90",secondary:"border border-[#87464B]/20 bg-white text-[#87464B] hover:bg-[#1B4D3E]/5",danger:"bg-[#87464B]/15 text-[#87464B] hover:bg-[#87464B]/20",gold:"bg-[#87464B] text-white hover:bg-[#87464B]"};
   return <button type={type} onClick={onClick} disabled={disabled} className={common+" "+variants[variant]}>{children}</button>;
 }
 function Status({children,tone="neutral"}:any) {
-  const style:any={neutral:"bg-[#C08081]/5 text-[#87464B]/85",green:"bg-[#87464B]/10 text-[#87464B]",red:"bg-[#C08081]/15 text-[#87464B]",amber:"bg-[#C08081]/15 text-[#87464B]",blue:"bg-[#87464B]/10 text-[#87464B]"};
+  const style:any={neutral:"bg-[#1B4D3E]/5 text-[#87464B]/85",green:"bg-[#87464B]/10 text-[#87464B]",red:"bg-[#87464B]/15 text-[#87464B]",amber:"bg-[#87464B]/10 text-[#87464B]",blue:"bg-[#87464B]/10 text-[#87464B]"};
   return <span className={"inline-flex rounded-full px-2.5 py-1 text-xs font-semibold "+style[tone]}>{children}</span>;
 }
 function Card({title,value,sub,icon:Icon,tone="blue"}:any) {
-  const backgrounds:any={blue:"bg-[#87464B]/10 text-[#87464B]",gold:"bg-[#C08081]/15 text-[#87464B]",green:"bg-[#87464B]/10 text-[#87464B]",red:"bg-[#C08081]/15 text-[#87464B]"};
+  const backgrounds:any={blue:"bg-[#87464B]/10 text-[#87464B]",gold:"bg-[#1B4D3E]/15 text-[#87464B]",green:"bg-[#87464B]/10 text-[#87464B]",red:"bg-[#87464B]/15 text-[#87464B]"};
   return <div className="rounded-2xl border border-[#87464B]/20 bg-white p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3"><div className="text-sm font-medium text-[#87464B]/85">{title}</div><span className={"rounded-xl p-2 "+backgrounds[tone]}><Icon size={19}/></span></div>
     <div className="mt-3 break-words text-2xl font-bold tracking-tight text-[#87464B]">{value ?? "—"}</div>
@@ -53,9 +53,9 @@ function Card({title,value,sub,icon:Icon,tone="blue"}:any) {
 }
 function Empty({children="Aucune donnée à afficher."}:any) { return <div className="rounded-2xl border border-dashed border-[#87464B]/20 bg-white px-6 py-10 text-center text-sm text-[#87464B]/85">{children}</div>; }
 function TableWrap({children}:any) { return <div className="overflow-x-auto rounded-2xl border border-[#87464B]/20 bg-white"><table className="w-full min-w-[760px] border-collapse text-left text-sm">{children}</table></div>; }
-function Th({children}:any) { return <th className="whitespace-nowrap border-b border-[#87464B]/20 bg-[#C08081]/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#87464B]/85">{children}</th>; }
+function Th({children}:any) { return <th className="whitespace-nowrap border-b border-[#87464B]/20 bg-[#1B4D3E]/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#87464B]/85">{children}</th>; }
 function Td({children,className=""}:any) { return <td className={"border-b border-[#87464B]/20 px-4 py-3 align-top text-[#87464B] "+className}>{children}</td>; }
-function Progress({value}: {value:number}) { const percent=Math.max(0,Math.min(100,Number(value)||0)); return <div className="min-w-[130px]"><div className="mb-1 flex justify-between gap-2 text-xs text-[#87464B]/85"><span>Progression</span><strong className="text-[#87464B]">{percent}%</strong></div><div className="h-2 overflow-hidden rounded-full bg-[#C08081]/5"><div className="h-full rounded-full bg-[#87464B]" style={{width:percent+"%"}}/></div></div>; }
+function Progress({value}: {value:number}) { const percent=Math.max(0,Math.min(100,Number(value)||0)); return <div className="min-w-[130px]"><div className="mb-1 flex justify-between gap-2 text-xs text-[#87464B]/85"><span>Progression</span><strong className="text-[#87464B]">{percent}%</strong></div><div className="h-2 overflow-hidden rounded-full bg-[#1B4D3E]/5"><div className="h-full rounded-full bg-[#87464B]" style={{width:percent+"%"}}/></div></div>; }
 
 export default function AdminDashboard({ token, email, onLogout, onOpenWriter }: Props) {
   const [tab,setTab]=useState<Tab>(() => { const saved = new URLSearchParams(window.location.search).get("adminTab"); return tabs.some(item => item.id === saved) ? saved as Tab : "overview"; });
@@ -188,7 +188,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   const filteredOrders=filterRows(orders,["order_id","subject","customer_email","status","currency"]);
   const filteredLogs=logs.filter(row=>(logSeverity==="all"||row.severity===logSeverity)&&filterRows([row],["message","action","category","request_path","actor"] ).length);
 
-  return <div className="min-h-screen bg-[#C08081]/10 font-inter text-[#87464B]">
+  return <div className="min-h-screen bg-[#1B4D3E]/10 font-inter text-[#87464B]">
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#87464B] text-white shadow-sm">
       <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
@@ -206,9 +206,9 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       <aside className="h-fit rounded-2xl border border-[#87464B]/20 bg-white p-2 shadow-sm lg:sticky lg:top-[88px]">
         <div className="hidden px-3 pb-3 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#87464B]/85 lg:block">Administration</div>
         <nav className="flex gap-1 overflow-x-auto lg:flex-col">
-          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#87464B] text-white shadow-sm":"text-[#87464B]/85 hover:bg-[#C08081]/5 hover:text-[#87464B]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span>{item.id==="revisions"&&<span className={"ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold "+(tab===item.id?"bg-white/20 text-white":revisions.some((r:any)=>r.status==="pending")?"bg-[#C08081]/15 text-[#87464B]":"bg-[#C08081]/5 text-[#87464B]/85")}>{revisions.filter((r:any)=>r.status==="pending").length}</span>}{item.id==="revisions"&&newRevisionIds.length>0&&<span className={"rounded-full px-2 py-0.5 text-[10px] font-bold "+(tab===item.id?"bg-white/20 text-white":"bg-[#87464B] text-white")}>Nouveau</span>}</button>;})}
+          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#87464B] text-white shadow-sm":"text-[#87464B]/85 hover:bg-[#1B4D3E]/5 hover:text-[#87464B]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span>{item.id==="revisions"&&<span className={"ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold "+(tab===item.id?"bg-white/20 text-white":revisions.some((r:any)=>r.status==="pending")?"bg-[#1B4D3E]/15 text-[#87464B]":"bg-[#1B4D3E]/5 text-[#87464B]/85")}>{revisions.filter((r:any)=>r.status==="pending").length}</span>}{item.id==="revisions"&&newRevisionIds.length>0&&<span className={"rounded-full px-2 py-0.5 text-[10px] font-bold "+(tab===item.id?"bg-white/20 text-white":"bg-[#87464B] text-white")}>Nouveau</span>}</button>;})}
         </nav>
-        <div className="mt-4 hidden rounded-xl bg-[#C08081]/10 p-3 text-xs leading-5 text-[#87464B]/85 lg:block">
+        <div className="mt-4 hidden rounded-xl bg-[#1B4D3E]/10 p-3 text-xs leading-5 text-[#87464B]/85 lg:block">
           Les données clients, paiements et journaux sont chargés depuis le serveur sécurisé. Les secrets PayPal et Claude ne sont jamais transmis à l’interface.
         </div>
       </aside>
@@ -219,7 +219,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
           <Button variant="secondary" disabled={loading} onClick={()=>void refresh(tab)}><RefreshCcw size={16} className={loading?"animate-spin":""}/> Actualiser</Button>
         </div>
 
-        {error&&<div className="flex items-start gap-2 rounded-xl border border-[#C08081] bg-[#C08081]/15 p-4 text-sm text-[#87464B]"><AlertTriangle size={18} className="mt-0.5 shrink-0"/><div>{error}</div></div>}
+        {error&&<div className="flex items-start gap-2 rounded-xl border border-[#87464B]/30 bg-[#87464B]/10 p-4 text-sm text-[#87464B]"><AlertTriangle size={18} className="mt-0.5 shrink-0"/><div>{error}</div></div>}
         {notice&&<div className="flex items-start gap-2 rounded-xl border border-[#87464B]/20 bg-[#87464B]/10 p-4 text-sm text-white"><CheckCircle2 size={18} className="mt-0.5 shrink-0"/><div>{notice}</div></div>}
         {loading&&!overview&&tab==="overview"&&<Empty>Chargement des indicateurs…</Empty>}
 
@@ -236,7 +236,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
             {summary.revenue?.by_currency?.length?<div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{summary.revenue.by_currency.map((row:any)=><div key={row.currency} className="rounded-xl border border-[#87464B]/20 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-[#87464B]/85">{row.currency}</div><div className="mt-2 text-2xl font-bold">{fmtMoney(row.net,row.currency)}</div><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><div><div className="text-[#87464B]/85">Encaissements bruts</div><strong>{fmtMoney(row.gross,row.currency)}</strong></div><div><div className="text-[#87464B]/85">Remboursements</div><strong>{fmtMoney(row.refunds,row.currency)}</strong></div></div><div className="mt-3 text-xs text-[#87464B]/85">{row.paid_orders} commande(s) payée(s) • {row.refunded_orders} remboursée(s)</div></div>)}</div>:<Empty>Aucun revenu enregistré pour le moment.</Empty>}
           </section>
           <div className="grid gap-5 xl:grid-cols-2">
-            <section className="rounded-2xl border border-[#87464B]/20 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Consommation Claude</h2><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-[#87464B]/10 p-4"><div className="text-xs text-[#87464B]">Total tokens</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.total_tokens)}</div></div><div className="rounded-xl bg-[#C08081]/15 p-4"><div className="text-xs text-[#87464B]">Appels enregistrés</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.requests)}</div></div></div><p className="mt-3 text-xs leading-5 text-[#87464B]/85">{summary.usage?.cost_coverage ? fmtNumber(summary.usage.cost_coverage)+" appel(s) avec coût estimé renseigné." : "Les prochains appels afficheront leur coût estimé, avec le cache et les recherches web. Les anciens appels restent inchangés."}</p></section>
+            <section className="rounded-2xl border border-[#87464B]/20 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Consommation Claude</h2><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-[#87464B]/10 p-4"><div className="text-xs text-[#87464B]">Total tokens</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.total_tokens)}</div></div><div className="rounded-xl bg-[#1B4D3E]/15 p-4"><div className="text-xs text-[#87464B]">Appels enregistrés</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.requests)}</div></div></div><p className="mt-3 text-xs leading-5 text-[#87464B]/85">{summary.usage?.cost_coverage ? fmtNumber(summary.usage.cost_coverage)+" appel(s) avec coût estimé renseigné." : "Les prochains appels afficheront leur coût estimé, avec le cache et les recherches web. Les anciens appels restent inchangés."}</p></section>
             <section className="rounded-2xl border border-[#87464B]/20 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Dernières commandes</h2>{summary.recentOrders?.length?<div className="mt-3 divide-y divide-[#87464B]/20">{summary.recentOrders.slice(0,6).map((o:any)=><div key={o.order_id} className="flex items-center justify-between gap-3 py-3"><div className="min-w-0"><div className="truncate text-sm font-semibold">{o.subject||shortId(o.order_id)}</div><div className="mt-1 text-xs text-[#87464B]/85">{fmtDate(o.paid_at||o.created_at)}</div></div><div className="shrink-0 text-right"><div className="font-semibold">{fmtMoney(o.amount,o.currency)}</div><Status tone={o.status==="refunded"?"red":o.status==="pending"?"amber":"green"}>{o.status}</Status></div></div>)}</div>:<Empty>Aucune commande récente.</Empty>}</section>
           </div>
           <section className="rounded-2xl border border-[#87464B]/20 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Projets récemment mis à jour</h2>{summary.recentProjects?.length?<TableWrap><thead><tr><Th>Projet</Th><Th>Client</Th><Th>Progression</Th><Th>Mis à jour</Th></tr></thead><tbody>{summary.recentProjects.map((p:any)=><tr key={p.project_id}><Td><div className="max-w-[300px] font-semibold">{p.subject}</div><div className="mt-1 text-xs text-[#87464B]/85">{p.domain||"Domaine non renseigné"}</div></Td><Td>{p.email||"—"}</Td><Td><Progress value={p.progress_percent}/></Td><Td>{fmtDate(p.updated_at||p.created_at)}</Td></tr>)}</tbody></TableWrap>:<Empty>Aucun projet trouvé.</Empty>}</section>
@@ -285,13 +285,13 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
 
         {tab==="revisions"&&<section className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
-            <button type="button" onClick={()=>setRevisionFilter("pending")} aria-pressed={revisionFilter==="pending"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#C08081] "+(revisionFilter==="pending"?"ring-2 ring-[#C08081]":"hover:-translate-y-0.5")}>
+            <button type="button" onClick={()=>setRevisionFilter("pending")} aria-pressed={revisionFilter==="pending"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#1B4D3E] "+(revisionFilter==="pending"?"ring-2 ring-[#1B4D3E]":"hover:-translate-y-0.5")}>
               <Card title="En attente" value={revisions.filter(r=>r.status==="pending").length} icon={AlertTriangle} tone="gold"/>
             </button>
-            <button type="button" onClick={()=>setRevisionFilter("in_progress")} aria-pressed={revisionFilter==="in_progress"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#C08081] "+(revisionFilter==="in_progress"?"ring-2 ring-[#C08081]":"hover:-translate-y-0.5")}>
+            <button type="button" onClick={()=>setRevisionFilter("in_progress")} aria-pressed={revisionFilter==="in_progress"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#1B4D3E] "+(revisionFilter==="in_progress"?"ring-2 ring-[#1B4D3E]":"hover:-translate-y-0.5")}>
               <Card title="En cours" value={revisions.filter(r=>r.status==="in_progress").length} icon={Activity} tone="blue"/>
             </button>
-            <button type="button" onClick={()=>setRevisionFilter("completed")} aria-pressed={revisionFilter==="completed"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#C08081] "+(revisionFilter==="completed"?"ring-2 ring-[#C08081]":"hover:-translate-y-0.5")}>
+            <button type="button" onClick={()=>setRevisionFilter("completed")} aria-pressed={revisionFilter==="completed"} className={"rounded-2xl text-left transition focus:outline-none focus:ring-2 focus:ring-[#1B4D3E] "+(revisionFilter==="completed"?"ring-2 ring-[#1B4D3E]":"hover:-translate-y-0.5")}>
               <Card title="Terminées" value={revisions.filter(r=>r.status==="completed").length} icon={CheckCircle2} tone="green"/>
             </button>
           </div>
@@ -301,7 +301,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
           </div>
           {revisions.filter(r=>r.status===revisionFilter).length?revisions.filter(r=>r.status===revisionFilter).map(row=><article key={row.id} className="space-y-4 rounded-2xl border border-[#87464B]/20 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-xs text-[#87464B]/85">Demande #{row.id} · {fmtDate(row.created_at)}</div><h2 className="mt-1 text-lg font-bold">{row.document_title}</h2><div className="mt-1 text-sm text-[#87464B]/85">{row.client_name||"Nom non renseigné"} · Projet {shortId(row.project_id)}</div></div><Status tone={row.status==="completed"?"green":row.status==="in_progress"?"blue":"amber"}>{row.status==="completed"?"Terminée":row.status==="in_progress"?"En cours":"En attente"}</Status></div>
-            <div className="rounded-xl bg-[#C08081]/5 p-4"><div className="mb-1 text-xs font-bold uppercase tracking-wide text-[#87464B]/85">Consignes du client</div><p className="whitespace-pre-wrap text-sm leading-6">{row.instructions}</p></div>
+            <div className="rounded-xl bg-[#1B4D3E]/5 p-4"><div className="mb-1 text-xs font-bold uppercase tracking-wide text-[#87464B]/85">Consignes du client</div><p className="whitespace-pre-wrap text-sm leading-6">{row.instructions}</p></div>
             <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={()=>void downloadRevisionFile(row,false)}><FileText size={15}/> Télécharger le document reçu</Button>{row.status==="completed"&&<Button variant="secondary" onClick={()=>void downloadRevisionFile(row,true)}>Télécharger le document livré</Button>}</div>
             <label className="block text-sm font-semibold">Notes internes<textarea value={revisionNotes[String(row.id)]??row.admin_notes??""} onChange={e=>setRevisionNotes(cur=>({...cur,[String(row.id)]:e.target.value}))} rows={2} className="mt-2 w-full rounded-xl border border-[#87464B]/20 p-3 font-normal"/></label>
             {row.status!=="completed"&&<label className="block text-sm font-semibold">Document corrigé à livrer (PDF, Word, TXT ou RTF, 3 Mo max)<input type="file" accept=".pdf,.doc,.docx,.txt,.rtf" onChange={e=>setRevisionFiles(cur=>({...cur,[String(row.id)]:e.target.files?.[0]||null}))} className="mt-2 block w-full rounded-xl border border-[#87464B]/20 p-3 font-normal"/></label>}

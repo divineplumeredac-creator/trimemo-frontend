@@ -9,26 +9,26 @@ export default function MarketingHome({ onStart, onRevision }: { onStart: () => 
     { icon: FileUp, title: 'Finalisez votre document', description: 'Payez votre projet, poursuivez la rédaction et exportez en Word.' },
   ];
   return <>
-    <section className="bg-gradient-to-b from-white to-[#C08081]/10 px-5 pb-8 pt-12 sm:px-8 lg:pt-16">
+    <section className="bg-gradient-to-b from-white to-[#1B4D3E]/10 px-5 pb-8 pt-12 sm:px-8 lg:pt-16">
       <div className="mx-auto grid max-w-[1420px] items-center gap-12 lg:grid-cols-2">
         <div className="font-inter">
           <p className="text-lg font-bold text-[#87464B] sm:text-xl">Votre assistant IA prompté pour la rédaction académique</p>
-          <h1 className="mt-4 text-4xl font-bold leading-[1.08] tracking-tight text-[#87464B] sm:text-5xl xl:text-6xl">De votre sujet à un <span className="text-[#C08081]">mémoire structuré.</span></h1>
+          <h1 className="mt-4 text-4xl font-bold leading-[1.08] tracking-tight text-[#87464B] sm:text-5xl xl:text-6xl">De votre sujet à un <span className="text-[#1B4D3E]">mémoire structuré.</span></h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-[#87464B] sm:text-xl">Préparez votre mémoire, rapport ou thèse avec Trimémo : problématique, plan personnalisé, rédaction assistée par IA et export Word.</p>
-          <button onClick={onStart} className="mt-8 rounded-xl bg-[#87464B] px-8 py-4 text-base font-bold text-white shadow-sm hover:bg-[#87464B]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C08081]">Commencer mon projet</button>
+          <button onClick={onStart} className="mt-8 rounded-xl bg-[#87464B] px-8 py-4 text-base font-bold text-white shadow-sm hover:bg-[#87464B]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E]">Commencer mon projet</button>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-[#87464B] sm:text-base">Décrivez votre projet, transmettez vos consignes et vos documents de référence.</p>
         </div>
         <div aria-label="Illustration de l’espace de rédaction" className="overflow-hidden rounded-2xl border border-[#87464B]/20 bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#87464B]/20 px-5 py-4 font-inter"><span className="text-xl font-bold text-[#87464B]">Trimémo</span><span className="text-sm font-semibold text-[#87464B]">Mon mémoire</span><span className="rounded-lg bg-[#C08081]/10 px-3 py-2 text-xs font-semibold text-[#87464B]">✓ Enregistré</span></div>
+          <div className="flex items-center justify-between border-b border-[#87464B]/20 px-5 py-4 font-inter"><span className="text-xl font-bold text-[#87464B]">Trimémo</span><span className="text-sm font-semibold text-[#87464B]">Mon mémoire</span><span className="rounded-lg bg-[#1B4D3E]/10 px-3 py-2 text-xs font-semibold text-[#87464B]">✓ Enregistré</span></div>
           <div className="grid min-h-[280px] grid-cols-[130px_1fr] sm:grid-cols-[180px_1fr]">
-            <div className="space-y-5 border-r border-[#87464B]/20 bg-[#C08081]/5 p-4 font-inter text-xs font-semibold text-[#87464B]">{['Problématique validée','Plan validé','Rédaction en cours'].map((label,i)=><div key={label} className="flex items-center gap-2"><span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${i===2?'border-2 border-[#87464B]':'bg-[#87464B] text-white'}`}>{i<2&&<Check size={13}/>}</span>{label}</div>)}</div>
+            <div className="space-y-5 border-r border-[#87464B]/20 bg-[#1B4D3E]/5 p-4 font-inter text-xs font-semibold text-[#87464B]">{['Problématique validée','Plan validé','Rédaction en cours'].map((label,i)=><div key={label} className="flex items-center gap-2"><span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${i===2?'border-2 border-[#87464B]':'bg-[#87464B] text-white'}`}>{i<2&&<Check size={13}/>}</span>{label}</div>)}</div>
             <div className="p-4 sm:p-6"><div className="mb-5 border-b border-[#87464B]/20 pb-3 font-inter text-xs text-[#87464B]/85">Paragraphe　　B　 I　 U　 ☷</div><h2 className="font-serif text-lg font-bold text-[#87464B] sm:text-xl">INTRODUCTION GÉNÉRALE</h2><p className="mt-4 font-serif text-sm leading-relaxed text-[#87464B]">Ce travail s’inscrit dans une réflexion sur la place de la digitalisation dans le fonctionnement des organisations. Il vise à analyser ses effets sur les pratiques et la coordination.</p><p className="mt-3 font-serif text-sm leading-relaxed text-[#87464B]">Après avoir présenté le contexte et l’intérêt du sujet, nous formulerons la problématique qui guide cette étude.</p><div className="mt-5 text-right font-inter text-xs font-bold text-[#87464B]">▣　Export Word</div></div>
           </div>
         </div>
       </div>
       <p className="mx-auto mt-10 text-center font-inter text-sm text-[#87464B] sm:text-base">Licence　·　Master　·　Doctorat　　|　　Mémoire　·　Rapport　·　Article　·　Thèse</p>
     </section>
-    <section aria-labelledby="difference-trimemo" className="bg-[#C08081]/10 px-5 py-10 sm:px-8">
+    <section aria-labelledby="difference-trimemo" className="bg-[#1B4D3E]/10 px-5 py-10 sm:px-8">
       <div className="mx-auto max-w-[1420px]">
         <h2 id="difference-trimemo" className="text-center font-inter text-3xl font-bold text-[#87464B] sm:text-4xl">Pourquoi choisir Trimémo plutôt qu’une IA généraliste ?</h2>
         <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-base leading-relaxed text-[#87464B]">Une IA généraliste peut vous aider à rédiger, mais obtenir un mémoire bien structuré demande souvent de maîtriser les prompts. <strong>Trimémo intègre déjà des prompts spécialisés, élaborés par un expert en méthodologie académique à partir de son expérience réelle de la rédaction.</strong></p>
@@ -45,10 +45,10 @@ export default function MarketingHome({ onStart, onRevision }: { onStart: () => 
         <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-xs leading-relaxed text-[#87464B]/85">Trimémo assiste la rédaction : les sources, les analyses et la conformité académique restent à vérifier.</p>
       </div>
     </section>
-    <section id="fonctionnement" className="px-5 py-12 sm:px-8"><div className="mx-auto max-w-[1420px]"><h2 className="text-center font-inter text-3xl font-bold text-[#87464B] sm:text-4xl">Un parcours clair, du début à la fin</h2><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{steps.map(({icon:Icon,title,description},i)=><article key={title} className="rounded-xl border border-[#87464B]/20 bg-white p-6"><div className="flex items-center justify-between text-[#87464B]"><Icon size={34}/><span className="rounded-full bg-[#C08081]/10 px-3 py-1 text-sm font-bold">{i+1}</span></div><h3 className="mt-4 font-inter text-lg font-bold text-[#87464B]">{i+1}. {title}</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#87464B]">{description}</p></article>)}</div>
-      <div id="revision-humaine" className="mt-7 flex flex-wrap items-center gap-5 rounded-2xl bg-[#C08081]/10 p-6"><Users className="text-[#87464B]" size={38}/><div className="flex-1"><h3 className="font-inter text-xl font-bold text-[#87464B]">Besoin d’un regard humain ?</h3><p className="mt-1 font-inter text-sm text-[#87464B]">Faites relire votre document par un professionnel : révision humaine facultative et payante.</p></div><button onClick={onRevision} className="rounded-xl bg-[#87464B] px-6 py-3 font-inter text-sm font-semibold text-white hover:bg-[#87464B]/90">Découvrir la révision</button></div>
+    <section id="fonctionnement" className="px-5 py-12 sm:px-8"><div className="mx-auto max-w-[1420px]"><h2 className="text-center font-inter text-3xl font-bold text-[#87464B] sm:text-4xl">Un parcours clair, du début à la fin</h2><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{steps.map(({icon:Icon,title,description},i)=><article key={title} className="rounded-xl border border-[#87464B]/20 bg-white p-6"><div className="flex items-center justify-between text-[#87464B]"><Icon size={34}/><span className="rounded-full bg-[#1B4D3E]/10 px-3 py-1 text-sm font-bold">{i+1}</span></div><h3 className="mt-4 font-inter text-lg font-bold text-[#87464B]">{i+1}. {title}</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#87464B]">{description}</p></article>)}</div>
+      <div id="revision-humaine" className="mt-7 flex flex-wrap items-center gap-5 rounded-2xl bg-[#1B4D3E]/10 p-6"><Users className="text-[#87464B]" size={38}/><div className="flex-1"><h3 className="font-inter text-xl font-bold text-[#87464B]">Besoin d’un regard humain ?</h3><p className="mt-1 font-inter text-sm text-[#87464B]">Faites relire votre document par un professionnel : révision humaine facultative et payante.</p></div><button onClick={onRevision} className="rounded-xl bg-[#87464B] px-6 py-3 font-inter text-sm font-semibold text-white hover:bg-[#87464B]/90">Découvrir la révision</button></div>
     </div></section>
-    <section aria-labelledby="faq-trimemo" className="bg-[#C08081]/10 px-5 py-12 sm:px-8">
+    <section aria-labelledby="faq-trimemo" className="bg-[#1B4D3E]/10 px-5 py-12 sm:px-8">
       <div className="mx-auto max-w-[920px]">
         <h2 id="faq-trimemo" className="text-center font-inter text-3xl font-bold text-[#87464B] sm:text-4xl">Questions fréquentes</h2>
         <p className="mt-3 text-center font-inter text-sm text-[#87464B]">Les réponses essentielles avant de commencer votre projet.</p>
@@ -93,12 +93,12 @@ export default function MarketingHome({ onStart, onRevision }: { onStart: () => 
 
 
     <section id="contact" aria-labelledby="contact-trimemo" className="bg-white px-5 py-14 sm:px-8">
-      <div className="mx-auto max-w-[920px] rounded-2xl border border-[#87464B]/20 bg-[#C08081]/10 px-6 py-10 text-center shadow-sm sm:px-10">
+      <div className="mx-auto max-w-[920px] rounded-2xl border border-[#87464B]/20 bg-[#1B4D3E]/10 px-6 py-10 text-center shadow-sm sm:px-10">
         <h2 id="contact-trimemo" className="font-inter text-3xl font-bold text-[#87464B]">Une question ? Contactez-nous</h2>
         <p className="mx-auto mt-3 max-w-xl font-inter text-sm leading-relaxed text-[#87464B] sm:text-base">Besoin d’une information sur Trimémo, votre projet ou nos services ? Notre équipe est à votre écoute.</p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp (nouvel onglet)" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#87464B] px-6 py-3 font-inter text-sm font-semibold text-white transition hover:bg-[#87464B]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C08081] sm:w-auto">Contacter sur WhatsApp</a>
-          <a href="mailto:redacmemo78@gmail.com?subject=Contact%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#87464B] bg-white px-6 py-3 font-inter text-sm font-semibold text-[#87464B] transition hover:bg-[#C08081]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C08081] sm:w-auto">Envoyer un e-mail</a>
+          <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp (nouvel onglet)" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#87464B] px-6 py-3 font-inter text-sm font-semibold text-white transition hover:bg-[#87464B]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E] sm:w-auto">Contacter sur WhatsApp</a>
+          <a href="mailto:redacmemo78@gmail.com?subject=Contact%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#87464B] bg-white px-6 py-3 font-inter text-sm font-semibold text-[#87464B] transition hover:bg-[#1B4D3E]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E] sm:w-auto">Envoyer un e-mail</a>
         </div>
       </div>
     </section>
