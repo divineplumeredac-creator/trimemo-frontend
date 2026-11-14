@@ -593,7 +593,7 @@ export default function App() {
   latestProject.current = project;
   latestBlocks.current = blocks;
   const [clientProjectFlow, setClientProjectFlow] = useState(false);
-  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" | "ambassadors">(() => { const params = new URLSearchParams(window.location.search); return ["signup", "confirmed"].includes(params.get("account") || "") || params.get("reset-password") === "1" ? "account" : ["home", "project", "estimate", "preview", "premium", "writing", "account", "dashboard", "ambassadors"].includes(params.get("view") || "") ? params.get("view") as "home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" | "ambassadors" : "home"; });
+  const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" | "ambassadors">(() => { const params = new URLSearchParams(window.location.search); return ["signup", "confirmed"].includes(params.get("account") || "") || params.get("reset-password") === "1" || (params.has("token_hash") && ["email", "signup"].includes(params.get("type") || "")) || (new URLSearchParams(window.location.hash.replace(/^#/, "")).get("type") === "signup" && new URLSearchParams(window.location.hash.replace(/^#/, "")).has("access_token")) ? "account" : ["home", "project", "estimate", "preview", "premium", "writing", "account", "dashboard", "ambassadors"].includes(params.get("view") || "") ? params.get("view") as "home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" | "ambassadors" : "home"; });
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
   const [premiumSection, setPremiumSection] = useState<"problematic" | "plan" | "writing">("problematic");
@@ -620,7 +620,7 @@ export default function App() {
   const [showConfirmationResend, setShowConfirmationResend] = useState(false);
   const [clientAuthBusy, setClientAuthBusy] = useState(false);
   const [clientLogoutBusy, setClientLogoutBusy] = useState(false);
-  const authIntent = useRef(window.sessionStorage.getItem("trimemo_auth_intent") === "ambassador" ? "ambassador" : new URLSearchParams(window.location.search).get("start") === "1" ? "project" : "dashboard");
+  const authIntent = useRef(new URLSearchParams(window.location.search).get("next") === "ambassadors" || window.sessionStorage.getItem("trimemo_auth_intent") === "ambassador" ? "ambassador" : new URLSearchParams(window.location.search).get("start") === "1" ? "project" : "dashboard");
   const confirmationHandled = useRef(false);
   const startProjectRef = useRef<() => Promise<void>>(async () => {});
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"paypal" | "mobile-money" | null>(null);
@@ -1438,25 +1438,66 @@ export default function App() {
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
-    if (query.get("account") !== "confirmed" || confirmationHandled.current) return;
-    confirmationHandled.current = true;
     const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const token = fragment.get("access_token") || "";
-    const refreshToken = fragment.get("refresh_token") || "";
+    const emailConfirmation = ["email", "signup"].includes(query.get("type") || "") && query.has("token_hash");
+    const implicitConfirmation = ["signup", "email"].includes(fragment.get("type") || "") && fragment.has("access_token");
+    if ((query.get("account") !== "confirmed" && !emailConfirmation && !implicitConfirmation) || confirmationHandled.current) return;
+    confirmationHandled.current = true;
+    const tokenFromUrl = fragment.get("access_token") || query.get("access_token") || "";
+    const tokenHash = query.get("token_hash") || fragment.get("token_hash") || "";
+    const tokenType = query.get("type") || fragment.get("type") || "email";
+    const refreshFromUrl = fragment.get("refresh_token") || "";
+    const linkError = fragment.get("error_code") || query.get("error_code") || fragment.get("error") || query.get("error") || "";
+    // Éviter d'exposer les jetons dans l'historique du navigateur.
     window.history.replaceState({}, document.title, window.location.pathname);
+    setView("account");
     setClientAuthMode("login");
-    if (!token) { setClientAuthNotice("Si votre adresse est confirmée, connectez-vous pour continuer."); return; }
+    if (query.get("next") === "ambassadors") {
+      authIntent.current = "ambassador";
+      window.sessionStorage.setItem("trimemo_auth_intent", "ambassador");
+    }
+    if (linkError) {
+      setClientAuthError("Ce lien de confirmation est expiré ou invalide. Connectez-vous si votre compte est déjà activé, ou demandez un nouveau lien.");
+      setShowConfirmationResend(true);
+      return;
+    }
+    if (!tokenFromUrl && !tokenHash) {
+      setClientAuthNotice("Votre adresse peut déjà être confirmée. Connectez-vous pour poursuivre votre inscription.");
+      setShowConfirmationResend(true);
+      return;
+    }
     void (async () => {
       try {
-        const response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "confirm-session", token }) });
+        const response = await fetch(CLIENT_ACCOUNT_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tokenFromUrl
+            ? { action: "confirm-session", token: tokenFromUrl }
+            : { action: "verify-email", tokenHash, type: tokenType }),
+        });
         const data = await readApiResponse(response);
         if (!data.user?.id) throw new Error("La confirmation de votre compte n’a pas pu être vérifiée.");
+        const token = String(data.token || tokenFromUrl);
+        const refreshToken = String(data.refresh_token || refreshFromUrl);
+        if (!token) throw new Error("La session de confirmation est incomplète.");
         const fullName = [data.user.firstName, data.user.lastName].filter(Boolean).join(" ");
-        window.localStorage.setItem("trimemo_client_session", JSON.stringify({ token, refreshToken, userId: data.user.id, email: data.user.email || "", fullName }));
+        window.localStorage.setItem("trimemo_client_session", JSON.stringify({ token, refreshToken, expiresAt: data.expires_at || null, userId: data.user.id, email: data.user.email || "", fullName }));
         setClientEmailDisplay(String(data.user.email || "")); setClientNameDisplay(fullName || "Mon compte");
-        if (query.get("start") === "1") { authIntent.current = "dashboard"; await startProjectRef.current(); }
-        else { setView("dashboard"); await loadClientProjects(); }
-      } catch { setClientAuthError("Le lien est expiré ou invalide. Connectez-vous ou demandez un nouveau lien de confirmation."); setShowConfirmationResend(true); }
+        window.sessionStorage.removeItem("trimemo_auth_intent");
+        if (query.get("next") === "ambassadors" || authIntent.current === "ambassador") {
+          authIntent.current = "dashboard";
+          setView("ambassadors");
+        } else if (query.get("start") === "1") {
+          authIntent.current = "dashboard";
+          await startProjectRef.current();
+        } else {
+          setView("dashboard");
+          await loadClientProjects();
+        }
+      } catch (error) {
+        setClientAuthError(error instanceof Error ? error.message : "Le lien n’a pas pu être vérifié. Connectez-vous ou demandez un nouveau lien.");
+        setShowConfirmationResend(true);
+      }
     })();
   }, []);
 
@@ -2362,7 +2403,7 @@ export default function App() {
       const response = await fetch(CLIENT_ACCOUNT_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: clientAuthMode, firstName: clientFirstName.trim(), lastName: clientLastName.trim(), email: clientEmail.trim(), password: clientPassword, startProject: authIntent.current === "project" }),
+        body: JSON.stringify({ action: clientAuthMode, firstName: clientFirstName.trim(), lastName: clientLastName.trim(), email: clientEmail.trim(), password: clientPassword, startProject: authIntent.current === "project", ambassador: authIntent.current === "ambassador" }),
       });
       const data = await readApiResponse(response);
       if (clientAuthMode === "signup" && data.confirmation_required) {
@@ -2437,7 +2478,7 @@ export default function App() {
   async function resendClientConfirmation() {
     setClientAuthBusy(true); setClientAuthError(""); setClientAuthNotice("");
     try {
-      const response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "resend-confirmation", email: clientEmail.trim(), startProject: authIntent.current === "project" }) });
+      const response = await fetch(CLIENT_ACCOUNT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "resend-confirmation", email: clientEmail.trim(), startProject: authIntent.current === "project", ambassador: authIntent.current === "ambassador" }) });
       const data = await readApiResponse(response);
       setClientAuthNotice(data.message || "Si ce compte attend une confirmation, un nouveau lien sera envoyé.");
     } catch (error) { setClientAuthError(error instanceof Error ? error.message : "Impossible de renvoyer le lien."); }
