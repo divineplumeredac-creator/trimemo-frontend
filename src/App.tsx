@@ -1620,7 +1620,7 @@ export default function App() {
     if (status === 429 || /rate.?limit|too many requests|limite de requêtes/i.test(value)) {
       return "Le service reçoit actuellement de nombreuses demandes. Votre travail est conservé ; veuillez réessayer dans quelques instants.";
     }
-    if (status >= 500 || /anthropic|claude|openai|api[_ -]?key|supabase|vercel|upstash|redis|json|stack|traceback|http [45]\\d\\d|endpoint|proxy \/api|tokens?|modèle (?:ia|api)/i.test(value)) {
+    if (status >= 500 || /anthropic|claude|openai|api[_ -]?key|supabase|vercel|upstash|redis|json|stack|traceback|endpoint|proxy \/api|tokens?|modèle (?:ia|api)/i.test(value)) {
       return "Une difficulté technique empêche momentanément cette opération. Votre travail est conservé ; veuillez réessayer ou contacter notre assistance.";
     }
     return value || "Cette opération n'a pas pu aboutir. Veuillez réessayer.";
