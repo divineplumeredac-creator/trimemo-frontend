@@ -3156,9 +3156,7 @@ export default function App() {
           source,
         ])
     );
-    if (uniqueSources.size < 10) {
-      pushToast("info", `Export autorisé avec avertissement : ${uniqueSources.size} source(s) bibliographique(s) sont actuellement retenues. Une vérification manuelle peut être nécessaire.`);
-    }
+
     try {
       setLoading(true);
       const papers = doneBlocks.flatMap((block) => (block.sources || []).filter((source) => source?.verified === true));
@@ -3202,7 +3200,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${(project.sujet || "trimemo-document").replace(/[^a-z0-9À-ÿ]+/gi, "-").slice(0, 80)}.docx`;
+      link.download = `${(project.sujet || "trimemo-document").replace(/\bcnflits\b/gi, "conflits").replace(/[^a-z0-9À-ÿ]+/gi, "-").slice(0, 80)}.docx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
