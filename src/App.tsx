@@ -4226,7 +4226,7 @@ export default function App() {
         {view !== "home" ? (
           <div className="mx-auto flex min-h-[72px] max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
-              <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain" />
+              <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain brightness-0 invert" />
               <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#C08081]">mo</span></span>
             </div>
             <div className="flex items-center gap-2">
@@ -4240,7 +4240,7 @@ export default function App() {
         ) : (
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
           <button onClick={() => setView("home")} className="flex items-center gap-3" aria-label="Retour à l’accueil">
-            <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain" />
+            <img src={LOGO_SRC} alt="Logo Trimémo" className="h-12 w-12 object-contain brightness-0 invert" />
             <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-[#C08081]">mo</span></span>
           </button>
           <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">
