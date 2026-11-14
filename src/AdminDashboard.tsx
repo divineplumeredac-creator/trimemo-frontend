@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import AmbassadorAdminPanel from "./AmbassadorAdminPanel";
 import {
   Activity, AlertTriangle, BarChart3, CheckCircle2, CircleDollarSign, Cpu, CreditCard,
   FileText, FolderOpen, LayoutDashboard, LogOut, RefreshCcw, ShieldCheck, SlidersHorizontal,
   Users, Wallet, Search,
 } from "lucide-react";
 
-type Tab = "overview" | "clients" | "projects" | "orders" | "revisions" | "pricing" | "usage" | "logs";
+type Tab = "overview" | "clients" | "projects" | "orders" | "revisions" | "ambassadors" | "pricing" | "usage" | "logs";
 type Props = { token: string; email: string; onLogout: () => void; onOpenWriter: () => void };
 
 const API = "/api/admin-console";
@@ -15,6 +16,7 @@ const tabs: Array<{id:Tab;label:string;icon:React.ComponentType<any>}> = [
   { id: "projects", label: "Projets", icon: FolderOpen },
   { id: "orders", label: "Commandes et paiements", icon: CreditCard },
   { id: "revisions", label: "Révisions humaines", icon: FileText },
+  { id: "ambassadors", label: "Ambassadeurs", icon: Users },
   { id: "pricing", label: "Tarifs et quotas", icon: SlidersHorizontal },
   { id: "usage", label: "Consommation Claude", icon: Cpu },
   { id: "logs", label: "Erreurs et journaux", icon: Activity },
@@ -308,6 +310,8 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
             <div className="flex flex-wrap gap-2">{row.status!=="in_progress"&&row.status!=="completed"&&<Button onClick={()=>void updateRevision(row,"in_progress")}>Prendre en charge</Button>}{row.status==="in_progress"&&<Button onClick={()=>void updateRevision(row,"pending")} variant="secondary">Remettre en attente</Button>}{row.status!=="completed"&&<Button variant="gold" onClick={()=>void updateRevision(row,"completed")}>Livrer et terminer</Button>}</div>
           </article>):<Empty>{loading?"Chargement des demandes…":revisionFilter==="pending"?"Aucune demande en attente.":revisionFilter==="in_progress"?"Aucune demande en cours de traitement.":"Aucune demande terminée pour le moment."}</Empty>}
         </section>}
+
+        {tab==="ambassadors"&&<AmbassadorAdminPanel token={token}/>}
 
         {tab==="logs"&&<section className="space-y-4">
           <div className="flex flex-col gap-3 rounded-2xl border border-[#1B4D3E]/20 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-bold">Journaux applicatifs centralisés</h2><p className="mt-1 text-xs text-[#1B4D3E]/85">Erreurs, avertissements et opérations administrateur journalisés par le backend.</p></div><div className="flex gap-2"><select value={logSeverity} onChange={e=>setLogSeverity(e.target.value)} className="h-10 rounded-xl border border-[#1B4D3E]/20 px-3 text-sm"><option value="all">Tous les niveaux</option><option value="critical">Critique</option><option value="error">Erreur</option><option value="warning">Avertissement</option><option value="info">Information</option><option value="debug">Debug</option></select><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher dans les journaux…" className="h-10 min-w-0 rounded-xl border border-[#1B4D3E]/20 px-3 text-sm sm:w-64"/></div></div>
