@@ -25,6 +25,6 @@ test("les options de sauvegarde sont cachées sous un menu accessible",()=>{
 test("la sauvegarde et la récupération restent opérationnelles et sécurisées",()=>{
   assert.match(dashboard,/archiveCurrentDraft\(\)/);
   assert.match(dashboard,/recoverLocalDraft\(key\)/);
-  assert.match(app,/function recoverLocalDraft\(/);
+  assert.match(app,/(?:async )?function recoverLocalDraft\(/);
   assert.match(app,/function archiveCurrentDraft\(/);
 });
