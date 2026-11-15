@@ -16,8 +16,8 @@ test("Le favicon contient le monogramme TM et l'index le charge",()=>{
  assert.match(favicon,/viewBox="0 0 256 256"/);assert.match(favicon,/#173F4D/);assert.match(favicon,/#C6A477/);
  assert.match(html,/rel="icon" type="image\/svg\+xml" href="\/favicon\.svg"/);
 });
-test("Le menu clair utilise le logo coloré et les menus sombres le logo inverse",()=>{
- assert.match(app,/<BrandLogo className="h-12 w-12" \/>/);
+test("Les menus bleu pétrole utilisent le monogramme blanc et or",()=>{
+ assert.match(app,/<BrandLogo className="h-11 w-11 sm:h-12 sm:w-12" light \/>/);
  assert.match(app,/<BrandLogo className="h-12 w-12" light \/>/);
  assert.match(app,/light \? "\/trimemo-tm-inverse\.svg" : "\/trimemo-tm\.svg"/);
 });
