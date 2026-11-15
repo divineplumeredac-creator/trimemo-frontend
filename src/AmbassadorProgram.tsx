@@ -10,7 +10,7 @@ function sessionToken():string {
  try{return String(JSON.parse(window.localStorage.getItem("trimemo_client_session")||"null")?.token||"");}catch{return "";}
 }
 
-export default function AmbassadorProgram({onBack,onLogin,onSignup}:{onBack:()=>void;onLogin:()=>void;onSignup:()=>void}){
+export default function AmbassadorProgram({onBack,onLogin,onSignup,backLabel="Retour à l’accueil"}:{onBack:()=>void;onLogin:()=>void;onSignup:()=>void;backLabel?:string}){
  const [token,setToken]=useState(sessionToken);
  const [profile,setProfile]=useState<Profile|null>(null);
  const [busy,setBusy]=useState(false);
@@ -66,7 +66,7 @@ export default function AmbassadorProgram({onBack,onLogin,onSignup}:{onBack:()=>
  };
  return <main className="min-h-[76vh] bg-[#E7F1EC]/50 px-4 py-12 font-inter text-[#1B4D3E] sm:px-6">
   <div className="mx-auto max-w-[1050px]">
-   <button type="button" onClick={onBack} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold hover:underline"><ArrowLeft size={17}/> Retour à l’accueil</button>
+   <button type="button" onClick={onBack} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold hover:underline"><ArrowLeft size={17}/> {backLabel}</button>
    <div className="rounded-3xl bg-[#1B4D3E] p-8 text-white shadow-sm sm:p-12">
     <span className="text-xs font-bold uppercase tracking-widest text-white/80">Première sélection • 10 places</span>
     <h1 className="mt-3 text-3xl font-bold sm:text-4xl">Programme Ambassadeurs Trimémo</h1>
