@@ -22,11 +22,31 @@ export default function AmbassadorAdminPanel({token}:{token:string}){
   finally{setBusy(false);}
  },[request]);
  useEffect(()=>{void refresh();},[refresh]);
+ const showNotificationResult=(response:{notification?:{status:string;message:string}})=>{
+  const notification=response.notification;
+  if(notification?.status==="failed"||notification?.status==="unconfigured"){
+   setNotice("Décision enregistrée.");
+   setError(notification.message);
+  }else{
+   setNotice(notification?.message||"Statut mis à jour.");
+  }
+ };
  const decide=async(row:Ambassador,status:string)=>{
-  if(!window.confirm(status==="active"?"Approuver cette candidature pour le pilote ?":status==="suspended"?"Suspendre cet ambassadeur ?":"Ne pas retenir cette candidature ?"))return;
+  if(!window.confirm(status==="active"?"Approuver cette candidature pour le pilote ? Un e-mail sera envoyé au candidat.":status==="suspended"?"Suspendre cet ambassadeur ?":"Ne pas retenir cette candidature ? Un e-mail sera envoyé au candidat."))return;
   setBusy(true);setError("");setNotice("");
-  try{await request("admin-decision",{id:row.id,status});setNotice("Statut mis à jour.");await refresh();}
+  try{const response=await request("admin-decision",{id:row.id,status});showNotificationResult(response);await refresh();}
   catch(e){setError(e instanceof Error?e.message:"Décision indisponible.");}
+  finally{setBusy(false);}
+ };
+ const resendNotification=async(row:Ambassador)=>{
+  if(!window.confirm("Renvoyer l’e-mail concernant cette décision au candidat ?"))return;
+  setBusy(true);setError("");setNotice("");
+  try{
+   const response=await request("admin-resend-notification",{id:row.id});
+   const notification=response.notification;
+   if(notification?.status==="accepted")setNotice(notification.message);
+   else setError(notification?.message||"L’e-mail n’a pas pu être envoyé.");
+  }catch(e){setError(e instanceof Error?e.message:"Renvoi indisponible.");}
   finally{setBusy(false);}
  };
  const payout=async(c:Commission)=>{
@@ -61,6 +81,7 @@ export default function AmbassadorAdminPanel({token}:{token:string}){
       {a.status!=="active"&&<button disabled={busy||active>=(data?.limit||10)} onClick={()=>void decide(a,"active")} className="rounded-lg bg-[#1B4D3E] px-4 py-2 text-xs font-bold text-white disabled:opacity-40">Approuver</button>}
       {a.status==="pending"&&<button disabled={busy} onClick={()=>void decide(a,"rejected")} className="rounded-lg border px-4 py-2 text-xs font-bold">Non retenu</button>}
       {a.status==="active"&&<button disabled={busy} onClick={()=>void decide(a,"suspended")} className="rounded-lg border border-[#B42318]/30 px-4 py-2 text-xs font-bold text-[#B42318]">Suspendre</button>}
+      {(a.status==="active"||a.status==="rejected")&&<button disabled={busy} onClick={()=>void resendNotification(a)} className="rounded-lg border border-[#1B4D3E]/25 px-4 py-2 text-xs font-semibold text-[#1B4D3E] disabled:opacity-40">Renvoyer l’e-mail</button>}
      </div>
     </article>)}
    </div>
