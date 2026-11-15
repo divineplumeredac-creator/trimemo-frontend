@@ -51,7 +51,7 @@ function WritingWorkspacePreview(){
     <div className="absolute -bottom-7 -right-4 -z-10 h-56 w-56 rounded-full bg-[#173F4D]/15 blur-3xl"/>
     <div className="overflow-hidden rounded-[22px] border border-[#C9D5D4] bg-white shadow-[0_28px_70px_-30px_rgba(23,63,77,0.45)]">
       <div className="flex items-center justify-between border-b border-[#E6E1D8] bg-[#FBFAF7] px-4 py-3 sm:px-5">
-        <div className="flex items-center gap-2"><BookOpen size={19} color={gold}/><span className="font-playfair text-lg font-bold text-[#173F4D]">Trimémo</span></div>
+        <div className="flex items-center gap-2"><img src="/trimemo-tm.svg" alt="" className="h-7 w-8 object-contain"/><span className="font-playfair text-lg font-bold text-[#173F4D]">Trimémo</span></div>
         <span className="hidden text-xs font-medium text-[#5E6B73] sm:block">Mon projet de mémoire</span>
         <span className="inline-flex items-center gap-1 rounded-full bg-[#E8F2ED] px-2.5 py-1 text-[10px] font-semibold text-[#2B7058]"><CheckCircle2 size={13}/> Enregistré</span>
       </div>

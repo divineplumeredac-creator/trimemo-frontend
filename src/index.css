@@ -29,7 +29,7 @@ input::placeholder,textarea::placeholder { color: #899298; }
 .studio-site-header { box-shadow: 0 1px 7px rgba(23,63,77,.08); }
 .studio-header--home { background: rgba(247,245,239,.97) !important; border-bottom: 1px solid var(--trimemo-bordure) !important; }
 .studio-header--home :is(button,button > span) { color: var(--trimemo-bleu-petrole) !important; }
-.studio-header--home [aria-label="Logo Trimémo"] { background-color: var(--trimemo-or-doux) !important; }
+
 .studio-header--home .studio-primary-nav-action { background: var(--trimemo-bleu-petrole) !important; color: #fff !important; box-shadow: 0 6px 18px rgba(23,63,77,.17); }
 .studio-header--home .studio-primary-nav-action:hover { background: #245B6D !important; }
 .studio-header--home .studio-primary-nav-action :is(svg,span) { color: white !important; }
@@ -61,3 +61,6 @@ input::placeholder,textarea::placeholder { color: #899298; }
 .studio-workspace .studio-writing-sheet > div:first-child { background: #FCFBF8; }
 .studio-admin th { white-space: nowrap; }
 .studio-admin .shadow-sm { border-color: #E6E1D8; }
+
+/* Monogramme TM : empêcher les étirements et préserver les couleurs vectorielles. */
+img[alt^="Logo TM"] { object-fit: contain; }
