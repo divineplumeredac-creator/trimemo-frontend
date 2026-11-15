@@ -31,28 +31,17 @@ const PROJECT_STATE_API = `${API_BASE_URL}/api/project-state`;
 const BLOCK_API = `${API_BASE_URL}/api/generate-block`;
 const PREVIEW_CONTINUATION_API = `${API_BASE_URL}/api/preview-continuation`;
 const WORDS_PER_PAGE = 320;
-const LOGO_SRC = "/trimemo-logo.webp";
 function BrandLogo({ className = "", light = false }: { className?: string; light?: boolean }) {
-  return (
-    <span
-      role="img"
-      aria-label="Logo Trimémo"
-      className={`inline-block shrink-0 ${className}`}
-      style={{
-        backgroundColor: light ? "#FFFFFF" : "#173F4D",
-        maskImage: `url("${LOGO_SRC}")`,
-        WebkitMaskImage: `url("${LOGO_SRC}")`,
-        maskSize: "contain",
-        WebkitMaskSize: "contain",
-        maskRepeat: "no-repeat",
-        WebkitMaskRepeat: "no-repeat",
-        maskPosition: "center",
-        WebkitMaskPosition: "center",
-      }}
-    />
-  );
+  return <img
+    src={light ? "/trimemo-tm-inverse.svg" : "/trimemo-tm.svg"}
+    alt="Logo TM de Trimémo"
+    width={320}
+    height={240}
+    loading="eager"
+    draggable={false}
+    className={`block shrink-0 object-contain ${className}`}
+  />;
 }
-
 
 const OWNER_AUTH_API = `${API_BASE_URL}/api/owner-auth`;
 const CLIENT_ACCOUNT_API = `${API_BASE_URL}/api/client-account`;
@@ -4257,7 +4246,7 @@ export default function App() {
         ) : (
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
           <button onClick={() => setView("home")} className="flex items-center gap-3" aria-label="Retour à l’accueil">
-            <BrandLogo className="h-12 w-12" light />
+            <BrandLogo className="h-12 w-12" />
             <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-white">mo</span></span>
           </button>
           <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">

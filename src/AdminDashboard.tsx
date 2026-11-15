@@ -194,7 +194,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#173F4D] text-white shadow-sm">
       <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10"><ShieldCheck size={22} className="text-white"/></div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10"><img src="/trimemo-tm-inverse.svg" alt="Logo TM Trimémo" className="h-10 w-10 object-contain"/></div>
           <div className="min-w-0"><div className="truncate text-lg font-bold">Trimémo <span className="font-medium text-white">Admin</span></div><div className="truncate text-xs text-white/90">Console de gestion sécurisée</div></div>
         </div>
         <div className="flex items-center gap-2">
