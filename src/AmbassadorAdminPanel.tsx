@@ -63,35 +63,35 @@ export default function AmbassadorAdminPanel({token}:{token:string}){
  const pending=ambassadors.filter(a=>a.status==="pending").length;
  const map=new Map(ambassadors.map(a=>[a.id,a]));
  return <section className="space-y-5">
-  <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#1B4D3E]/20 bg-white p-5">
+  <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#173F4D]/20 bg-white p-5">
    <div><h2 className="text-xl font-bold">Ambassadeurs Trimémo</h2><p className="mt-2 text-sm">Candidatures, parrainages et commissions.</p></div>
-   <button disabled={busy} onClick={()=>void refresh()} className="inline-flex items-center gap-2 rounded-xl bg-[#1B4D3E] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"><RefreshCcw size={16}/> Actualiser</button>
+   <button disabled={busy} onClick={()=>void refresh()} className="inline-flex items-center gap-2 rounded-xl bg-[#173F4D] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"><RefreshCcw size={16}/> Actualiser</button>
   </div>
   <div className="grid gap-3 sm:grid-cols-3">
-   {[{name:"Ambassadeurs actifs",value:active+" / "+(data?.limit||10),icon:ShieldCheck},{name:"Candidatures à examiner",value:String(pending),icon:Users},{name:"Projets parrainés",value:String(referrals.length),icon:CheckCircle2}].map(({name,value,icon:Icon})=><div key={name} className="rounded-2xl border border-[#1B4D3E]/20 bg-white p-5"><Icon size={22}/><div className="mt-2 text-2xl font-bold">{value}</div><p className="text-xs">{name}</p></div>)}
+   {[{name:"Ambassadeurs actifs",value:active+" / "+(data?.limit||10),icon:ShieldCheck},{name:"Candidatures à examiner",value:String(pending),icon:Users},{name:"Projets parrainés",value:String(referrals.length),icon:CheckCircle2}].map(({name,value,icon:Icon})=><div key={name} className="rounded-2xl border border-[#173F4D]/20 bg-white p-5"><Icon size={22}/><div className="mt-2 text-2xl font-bold">{value}</div><p className="text-xs">{name}</p></div>)}
   </div>
   {error&&<p role="alert" className="rounded-xl bg-[#B42318]/10 p-3 text-sm text-[#B42318]">{error}</p>}
-  {notice&&<p role="status" className="rounded-xl bg-[#E7F1EC] p-3 text-sm">{notice}</p>}
-  <div className="rounded-2xl border border-[#1B4D3E]/20 bg-white p-5">
+  {notice&&<p role="status" className="rounded-xl bg-[#F7F5EF] p-3 text-sm">{notice}</p>}
+  <div className="rounded-2xl border border-[#173F4D]/20 bg-white p-5">
    <h3 className="text-lg font-bold">Candidatures</h3>
    <div className="mt-4 space-y-3">
-    {!ambassadors.length?<p className="text-sm">Aucune candidature pour le moment.</p>:ambassadors.map(a=><article key={a.id} className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-[#1B4D3E]/15 p-4">
+    {!ambassadors.length?<p className="text-sm">Aucune candidature pour le moment.</p>:ambassadors.map(a=><article key={a.id} className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-[#173F4D]/15 p-4">
      <div><h4 className="font-bold">{a.full_name}</h4><p className="mt-1 text-sm">{a.university} • {a.city}</p><p className="mt-1 text-xs">{a.whatsapp} • {new Date(a.created_at).toLocaleDateString("fr-FR")}</p><p className="mt-1 text-xs font-semibold">Statut : {a.status==="pending"?"À examiner":a.status==="active"?"Actif":a.status==="rejected"?"Non retenu":"Suspendu"}</p>{a.status==="active"&&<p className="mt-1 text-xs">Code : {a.referral_code}</p>}<p className="mt-1 text-xs">Projets parrainés : {referrals.filter(r=>r.ambassador_id===a.id).length}</p></div>
      <div className="flex flex-wrap gap-2">
-      {a.status!=="active"&&<button disabled={busy||active>=(data?.limit||10)} onClick={()=>void decide(a,"active")} className="rounded-lg bg-[#1B4D3E] px-4 py-2 text-xs font-bold text-white disabled:opacity-40">Approuver</button>}
+      {a.status!=="active"&&<button disabled={busy||active>=(data?.limit||10)} onClick={()=>void decide(a,"active")} className="rounded-lg bg-[#173F4D] px-4 py-2 text-xs font-bold text-white disabled:opacity-40">Approuver</button>}
       {a.status==="pending"&&<button disabled={busy} onClick={()=>void decide(a,"rejected")} className="rounded-lg border px-4 py-2 text-xs font-bold">Non retenu</button>}
       {a.status==="active"&&<button disabled={busy} onClick={()=>void decide(a,"suspended")} className="rounded-lg border border-[#B42318]/30 px-4 py-2 text-xs font-bold text-[#B42318]">Suspendre</button>}
-      {(a.status==="active"||a.status==="rejected")&&<button disabled={busy} onClick={()=>void resendNotification(a)} className="rounded-lg border border-[#1B4D3E]/25 px-4 py-2 text-xs font-semibold text-[#1B4D3E] disabled:opacity-40">Renvoyer l’e-mail</button>}
+      {(a.status==="active"||a.status==="rejected")&&<button disabled={busy} onClick={()=>void resendNotification(a)} className="rounded-lg border border-[#173F4D]/25 px-4 py-2 text-xs font-semibold text-[#173F4D] disabled:opacity-40">Renvoyer l’e-mail</button>}
      </div>
     </article>)}
    </div>
   </div>
-  <div className="rounded-2xl border border-[#1B4D3E]/20 bg-white p-5">
+  <div className="rounded-2xl border border-[#173F4D]/20 bg-white p-5">
    <h3 className="text-lg font-bold">Commissions</h3>
    <p className="mt-2 text-xs leading-5">Enregistrez ici les versements déjà effectués.</p>
    <div className="mt-4 space-y-3">{commissions.length?commissions.map(c=><article key={c.order_id} className="rounded-xl border p-4">
     <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="font-bold">{map.get(c.ambassador_id)?.full_name||"Ambassadeur"}</p><p className="mt-1 text-xs">{c.order_id} • {new Date(c.created_at).toLocaleDateString("fr-FR")}</p></div><div className="text-right"><strong>{format(c.commission_amount,c.currency)}</strong><p className="text-xs">Vente : {format(c.sale_amount,c.currency)} • {c.status==="pending"?"À vérifier":c.status==="paid"?"Payée":c.status==="void"?"Annulée":"À régulariser"}</p></div></div>
-    {c.status==="pending"&&<div className="mt-3 flex flex-wrap gap-2"><input aria-label={"Référence de virement "+c.order_id} placeholder="Référence du virement déjà effectué" value={payouts[c.order_id]||""} onChange={e=>setPayouts(cur=>({...cur,[c.order_id]:e.target.value}))} className="min-w-[220px] flex-1 rounded-lg border border-[#1B4D3E]/20 p-2 text-xs"/><button disabled={busy} onClick={()=>void payout(c)} className="rounded-lg bg-[#1B4D3E] px-4 py-2 text-xs font-bold text-white disabled:opacity-40">Marquer comme versée</button></div>}
+    {c.status==="pending"&&<div className="mt-3 flex flex-wrap gap-2"><input aria-label={"Référence de virement "+c.order_id} placeholder="Référence du virement déjà effectué" value={payouts[c.order_id]||""} onChange={e=>setPayouts(cur=>({...cur,[c.order_id]:e.target.value}))} className="min-w-[220px] flex-1 rounded-lg border border-[#173F4D]/20 p-2 text-xs"/><button disabled={busy} onClick={()=>void payout(c)} className="rounded-lg bg-[#173F4D] px-4 py-2 text-xs font-bold text-white disabled:opacity-40">Marquer comme versée</button></div>}
     {c.status==="paid"&&<p className="mt-2 text-xs">Référence : {c.payout_reference||"Non disponible"}</p>}
    </article>):<p className="text-sm">Aucune commission pour le moment.</p>}</div>
   </div>
