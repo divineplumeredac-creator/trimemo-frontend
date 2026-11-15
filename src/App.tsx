@@ -1481,13 +1481,15 @@ export default function App() {
         const refreshToken = String(data.refresh_token || refreshFromUrl);
         if (!token) throw new Error("La session de confirmation est incomplète.");
         const fullName = [data.user.firstName, data.user.lastName].filter(Boolean).join(" ");
+        // Signup metadata is used for navigation only, never for authorization.
+        const confirmedSignupIntent = ["ambassador", "project"].includes(data.user.signupIntent) ? data.user.signupIntent : "";
         window.localStorage.setItem("trimemo_client_session", JSON.stringify({ token, refreshToken, expiresAt: data.expires_at || null, userId: data.user.id, email: data.user.email || "", fullName }));
         setClientEmailDisplay(String(data.user.email || "")); setClientNameDisplay(fullName || "Mon compte");
         window.sessionStorage.removeItem("trimemo_auth_intent");
-        if (query.get("next") === "ambassadors" || authIntent.current === "ambassador") {
+        if (query.get("next") === "ambassadors" || authIntent.current === "ambassador" || confirmedSignupIntent === "ambassador") {
           authIntent.current = "dashboard";
           setView("ambassadors");
-        } else if (query.get("start") === "1") {
+        } else if (query.get("start") === "1" || confirmedSignupIntent === "project") {
           authIntent.current = "dashboard";
           await startProjectRef.current();
         } else {
