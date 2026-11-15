@@ -5,7 +5,8 @@ const app=readFileSync("src/App.tsx","utf8");
 const amb=readFileSync("src/AmbassadorProgram.tsx","utf8");
 
 test("le tableau de bord client propose Devenir ambassadeur sans inscription supplémentaire",()=>{
- const dashboard=app.slice(app.indexOf('{view === "dashboard" && ('),app.indexOf('{view !== "dashboard" && (<>'));
+ const start=app.indexOf('{view === "dashboard" && (');
+ const dashboard=app.slice(start,app.indexOf('{view !== "dashboard" && (<>',start));
  assert.match(dashboard,/Mon tableau de bord/);
  assert.match(dashboard,/Devenir ambassadeur/);
  assert.match(dashboard,/ambassadorOrigin\.current = "dashboard"; setMobileMenuOpen\(false\); setView\("ambassadors"\)/);
