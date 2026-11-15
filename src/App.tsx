@@ -39,7 +39,7 @@ function BrandLogo({ className = "", light = false }: { className?: string; ligh
       aria-label="Logo Trimémo"
       className={`inline-block shrink-0 ${className}`}
       style={{
-        backgroundColor: light ? "#FFFFFF" : "#1B4D3E",
+        backgroundColor: light ? "#FFFFFF" : "#173F4D",
         maskImage: `url("${LOGO_SRC}")`,
         WebkitMaskImage: `url("${LOGO_SRC}")`,
         maskSize: "contain",
@@ -3151,16 +3151,16 @@ export default function App() {
         const numberDepth = (headingText.match(/\./gu) || []).length;
         const level = markdownHeading ? Math.min(6, markdownHeading[1].length) : /^(?:INTRODUCTION|CONCLUSION|PARTIE)\b/iu.test(headingText) ? 1 : /^CHAPITRE\b/iu.test(headingText) ? 2 : numberedHeading ? Math.min(5, numberDepth + 2) : 3;
         const className = level <= 1
-          ? "mb-5 mt-9 text-center text-lg font-bold uppercase tracking-wide text-[#1B4D3E]"
+          ? "mb-5 mt-9 text-center text-lg font-bold uppercase tracking-wide text-[#173F4D]"
           : level === 2
-            ? "mb-4 mt-8 text-base font-bold uppercase text-[#1B4D3E]"
+            ? "mb-4 mt-8 text-base font-bold uppercase text-[#173F4D]"
             : numberedHeading
-              ? "mb-3 mt-5 text-sm font-bold text-[#1B4D3E]"
-              : "mb-3 mt-6 text-sm font-bold text-[#1B4D3E]";
+              ? "mb-3 mt-5 text-sm font-bold text-[#173F4D]"
+              : "mb-3 mt-6 text-sm font-bold text-[#173F4D]";
         return (
           <React.Fragment key={index}>
             <h4 className={className}>{displayHeading}</h4>
-            {splitHeading?.subtitle && <h5 className="mb-4 mt-2 text-sm font-semibold leading-6 text-[#1B4D3E]/85">{splitHeading.subtitle}</h5>}
+            {splitHeading?.subtitle && <h5 className="mb-4 mt-2 text-sm font-semibold leading-6 text-[#5E6B73]">{splitHeading.subtitle}</h5>}
           </React.Fragment>
         );
       }
@@ -3169,7 +3169,7 @@ export default function App() {
         .replace(/(?<!\*)\*([^*]+)\*(?!\*)/gu, "$1")
         .replace(/^#{1,6}\s*/u, "")
         .trim();
-      return <p key={index} className="mb-4 text-justify font-normal text-[#1B4D3E]" style={{ color: "#111111", fontFamily: '"Times New Roman", Times, serif', fontSize: "12pt", textIndent: "1.25cm", lineHeight: 1.5, marginBottom: "0.72em", whiteSpace: "normal", overflowWrap: "break-word", fontWeight: 400, fontStyle: "normal", orphans: 3, widows: 3 }}>{paragraph}</p>;
+      return <p key={index} className="mb-4 text-justify font-normal text-[#173F4D]" style={{ color: "#111111", fontFamily: '"Times New Roman", Times, serif', fontSize: "12pt", textIndent: "1.25cm", lineHeight: 1.5, marginBottom: "0.72em", whiteSpace: "normal", overflowWrap: "break-word", fontWeight: 400, fontStyle: "normal", orphans: 3, widows: 3 }}>{paragraph}</p>;
     }).filter(Boolean);
   }
 
@@ -3326,29 +3326,29 @@ export default function App() {
   if (ownerRoute) {
     if (!ownerSessionValid) {
       return (
-        <div className="min-h-screen bg-[#1B4D3E] px-5 py-10 text-white">
+        <div className="min-h-screen bg-[#173F4D] px-5 py-10 text-white">
           <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-md items-center justify-center">
             <form
               onSubmit={(event) => {
                 event.preventDefault();
                 void handleOwnerLogin();
               }}
-              className="w-full rounded-[28px] bg-white p-7 text-[#1B4D3E] shadow-2xl"
+              className="w-full rounded-[28px] bg-white p-7 text-[#173F4D] shadow-2xl"
             >
               <div className="flex justify-center">
                 <BrandLogo className="h-16 w-16" />
               </div>
-              <div className="mt-4 text-center font-inter text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1B4D3E]">
+              <div className="mt-4 text-center font-inter text-[10px] font-semibold uppercase tracking-[0.2em] text-[#173F4D]">
                 Accès sécurisé
               </div>
-              <h1 className="mt-2 text-center font-playfair text-3xl text-[#1B4D3E]">
+              <h1 className="mt-2 text-center font-playfair text-3xl text-[#173F4D]">
                 Administration Trimémo
               </h1>
-              <p className="mt-3 text-center font-inter text-sm leading-[1.7] text-[#1B4D3E]/85">
+              <p className="mt-3 text-center font-inter text-sm leading-[1.7] text-[#5E6B73]">
                 Espace séparé de la plateforme publique pour tester les générations sans paiement.
               </p>
 
-              <label htmlFor="owner-email" className="mt-6 block font-inter text-xs font-semibold text-[#1B4D3E]/85">
+              <label htmlFor="owner-email" className="mt-6 block font-inter text-xs font-semibold text-[#5E6B73]">
                 E-mail administrateur
               </label>
               <input
@@ -3358,12 +3358,12 @@ export default function App() {
                 value={ownerEmail}
                 onChange={(event) => setOwnerEmail(event.target.value)}
                 autoComplete="username"
-                className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/20 bg-white px-4 font-inter text-sm text-[#1B4D3E] caret-[#1B4D3E] outline-none focus:border-[#1B4D3E] focus:ring-2 focus:ring-[#1B4D3E]/10"
+                className="mt-2 h-11 w-full rounded-xl border border-[#173F4D]/20 bg-white px-4 font-inter text-sm text-[#173F4D] caret-[#173F4D] outline-none focus:border-[#173F4D] focus:ring-2 focus:ring-[#173F4D]/10"
               />
 
               <label
                 htmlFor="owner-password"
-                className="mt-4 block font-inter text-xs font-semibold text-[#1B4D3E]/85"
+                className="mt-4 block font-inter text-xs font-semibold text-[#5E6B73]"
               >
                 Mot de passe
               </label>
@@ -3375,12 +3375,12 @@ export default function App() {
                   value={ownerPassword}
                   onChange={(event) => setOwnerPassword(event.target.value)}
                   autoComplete="current-password"
-                  className="h-11 w-full rounded-xl border border-[#1B4D3E]/20 bg-white px-4 pr-12 font-inter text-sm text-[#1B4D3E] caret-[#1B4D3E] outline-none focus:border-[#1B4D3E] focus:ring-2 focus:ring-[#1B4D3E]/10"
+                  className="h-11 w-full rounded-xl border border-[#173F4D]/20 bg-white px-4 pr-12 font-inter text-sm text-[#173F4D] caret-[#173F4D] outline-none focus:border-[#173F4D] focus:ring-2 focus:ring-[#173F4D]/10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowOwnerPassword((visible) => !visible)}
-                  className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#1B4D3E]/85"
+                  className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#5E6B73]"
                   aria-label={
                     showOwnerPassword
                       ? "Masquer le mot de passe"
@@ -3396,7 +3396,7 @@ export default function App() {
               </div>
 
               {ownerLoginError && (
-                <div className="mt-3 rounded-xl bg-[#1B4D3E]/15 p-3 font-inter text-xs text-[#1B4D3E]">
+                <div className="mt-3 rounded-xl bg-[#173F4D]/15 p-3 font-inter text-xs text-[#173F4D]">
                   {ownerLoginError}
                 </div>
               )}
@@ -3404,7 +3404,7 @@ export default function App() {
               <button
                 type="submit"
                 disabled={ownerBusy}
-                className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#1B4D3E] font-inter text-sm font-semibold text-white disabled:opacity-50"
+                className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#173F4D] font-inter text-sm font-semibold text-white disabled:opacity-50"
               >
                 {ownerBusy ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -3418,7 +3418,7 @@ export default function App() {
                 onClick={() => {
                   window.location.href = "/";
                 }}
-                className="mt-3 w-full font-inter text-xs text-[#1B4D3E]/85"
+                className="mt-3 w-full font-inter text-xs text-[#5E6B73]"
               >
                 Retour à la plateforme publique
               </button>
@@ -3439,8 +3439,8 @@ export default function App() {
     }
 
     return (
-      <div className="min-h-screen bg-[#1B4D3E]/10 text-[#1B4D3E]">
-        <div className="border-b border-[#1B4D3E]/10 bg-[#1B4D3E] text-white">
+      <div className="min-h-screen bg-[#173F4D]/10 text-[#173F4D]">
+        <div className="border-b border-[#173F4D]/10 bg-[#173F4D] text-white">
           <div className="mx-auto flex min-h-[76px] max-w-[1280px] items-center justify-between gap-4 px-5 lg:px-8">
             <div className="flex items-center gap-3">
               <BrandLogo className="h-11 w-11" light />
@@ -3489,7 +3489,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleOwnerLogout}
-                className="rounded-full bg-white px-4 py-2 font-inter text-xs font-semibold text-[#1B4D3E]"
+                className="rounded-full bg-white px-4 py-2 font-inter text-xs font-semibold text-[#173F4D]"
               >
                 Déconnexion
               </button>
@@ -3499,32 +3499,32 @@ export default function App() {
 
         <div className="mx-auto flex max-w-[1280px]">
         {mobileMenuOpen && (
-          <div className="border-b border-[#1B4D3E]/10 bg-white px-5 py-4 lg:hidden">
+          <div className="border-b border-[#173F4D]/10 bg-white px-5 py-4 lg:hidden">
             <div className="mx-auto flex max-w-[1280px] flex-col gap-2 font-inter text-sm">
-              <button type="button" onClick={startNewOwnerProject} className="rounded-xl px-4 py-3 text-left text-[#1B4D3E] hover:bg-[#1B4D3E]/20">Nouveau projet</button>
+              <button type="button" onClick={startNewOwnerProject} className="rounded-xl px-4 py-3 text-left text-[#173F4D] hover:bg-[#173F4D]/20">Nouveau projet</button>
               {premium && (
                 <>
-                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="rounded-xl px-4 py-3 text-left text-[#1B4D3E] hover:bg-[#1B4D3E]/20">Problématique</button>
+                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="rounded-xl px-4 py-3 text-left text-[#173F4D] hover:bg-[#173F4D]/20">Problématique</button>
                   {premium.problematics.map((item,index) => (
-                    <button key={item.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#1B4D3E]/85 hover:bg-[#1B4D3E]/20">Problématique {index+1}</button>
+                    <button key={item.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#5E6B73] hover:bg-[#173F4D]/20">Problématique {index+1}</button>
                   ))}
-                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="rounded-xl px-4 py-3 text-left text-[#1B4D3E] hover:bg-[#1B4D3E]/20">Plan</button>
+                  <button type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="rounded-xl px-4 py-3 text-left text-[#173F4D] hover:bg-[#173F4D]/20">Plan</button>
                   {premium.plans.map((plan,index) => (
-                    <button key={plan.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#1B4D3E]/85 hover:bg-[#1B4D3E]/20">Plan {index+1}</button>
+                    <button key={plan.id} type="button" onClick={() => { setMobileMenuOpen(false); setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="ml-4 rounded-lg px-4 py-2 text-left text-xs text-[#5E6B73] hover:bg-[#173F4D]/20">Plan {index+1}</button>
                   ))}
-                  <button type="button" disabled={!selectedPlan} onClick={() => { setMobileMenuOpen(false); setView("writing"); setPremiumSection("writing"); }} className="rounded-xl px-4 py-3 text-left text-[#1B4D3E] hover:bg-[#1B4D3E]/20 disabled:opacity-40">Rédaction</button>
+                  <button type="button" disabled={!selectedPlan} onClick={() => { setMobileMenuOpen(false); setView("writing"); setPremiumSection("writing"); }} className="rounded-xl px-4 py-3 text-left text-[#173F4D] hover:bg-[#173F4D]/20 disabled:opacity-40">Rédaction</button>
                 </>
               )}
             </div>
           </div>
         )}
-          <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#1B4D3E]/10 bg-white p-5 lg:block">
-            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">Navigation</div>
+          <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#173F4D]/10 bg-white p-5 lg:block">
+            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Navigation</div>
             <nav className="mt-5 space-y-2">
               <button
                 type="button"
                 onClick={startNewOwnerProject}
-                className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "project" ? "bg-[#1B4D3E] text-white" : "text-[#1B4D3E] hover:bg-[#1B4D3E]/20"}`}
+                className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "project" ? "bg-[#173F4D] text-white" : "text-[#173F4D] hover:bg-[#173F4D]/20"}`}
               >
                 Nouveau projet
               </button>
@@ -3538,12 +3538,12 @@ export default function App() {
                       setPremiumSection("problematic");
                       setPremiumNav("problematic-0");
                     }}
-                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "problematic" ? "bg-[#1B4D3E] text-white" : "text-[#1B4D3E] hover:bg-[#1B4D3E]/20"}`}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "problematic" ? "bg-[#173F4D] text-white" : "text-[#173F4D] hover:bg-[#173F4D]/20"}`}
                   >
                     Problématique
                   </button>
                   {premiumSection === "problematic" && (
-                    <div className="ml-3 space-y-1 border-l-2 border-[#1B4D3E]/20 pl-2">
+                    <div className="ml-3 space-y-1 border-l-2 border-[#173F4D]/20 pl-2">
                       {premium.problematics.map((item, index) => (
                         <button
                           key={item.id}
@@ -3554,7 +3554,7 @@ export default function App() {
                             setPremiumNav("problematic-" + index);
                             setSelectedProblematic(item);
                           }}
-                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "problematic-" + index && view === "premium" ? "bg-[#1B4D3E]/10 text-[#1B4D3E]" : "text-[#1B4D3E]/85 hover:bg-[#1B4D3E]/20"}`}
+                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "problematic-" + index && view === "premium" ? "bg-[#173F4D]/10 text-[#173F4D]" : "text-[#5E6B73] hover:bg-[#173F4D]/20"}`}
                         >
                           Problématique {index + 1}
                         </button>
@@ -3570,12 +3570,12 @@ export default function App() {
                       setPremiumSection("plan");
                       setPremiumNav("plan-0");
                     }}
-                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "plan" ? "bg-[#1B4D3E] text-white" : "text-[#1B4D3E] hover:bg-[#1B4D3E]/20"} disabled:opacity-40`}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "premium" && premiumSection === "plan" ? "bg-[#173F4D] text-white" : "text-[#173F4D] hover:bg-[#173F4D]/20"} disabled:opacity-40`}
                   >
                     Plan
                   </button>
                   {premiumSection === "plan" && premium.plans.length > 0 && (
-                    <div className="ml-3 space-y-1 border-l-2 border-[#1B4D3E]/20 pl-2">
+                    <div className="ml-3 space-y-1 border-l-2 border-[#173F4D]/20 pl-2">
                       {premium.plans.map((plan, index) => (
                         <button
                           key={plan.id}
@@ -3586,7 +3586,7 @@ export default function App() {
                             setPremiumNav("plan-" + index);
                             setSelectedPlan(plan);
                           }}
-                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "plan-" + index && view === "premium" ? "bg-[#1B4D3E]/10 text-[#1B4D3E]" : "text-[#1B4D3E]/85 hover:bg-[#1B4D3E]/20"}`}
+                          className={`w-full rounded-lg px-3 py-2 text-left font-inter text-[11px] font-semibold ${premiumNav === "plan-" + index && view === "premium" ? "bg-[#173F4D]/10 text-[#173F4D]" : "text-[#5E6B73] hover:bg-[#173F4D]/20"}`}
                         >
                           Plan {index + 1}
                         </button>
@@ -3601,7 +3601,7 @@ export default function App() {
                       setPremiumSection("writing");
                       setView("writing");
                     }}
-                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "writing" ? "bg-[#1B4D3E] text-white" : "text-[#1B4D3E] hover:bg-[#1B4D3E]/20"} disabled:opacity-40`}
+                    className={`w-full rounded-xl px-4 py-3 text-left font-inter text-xs font-semibold ${view === "writing" ? "bg-[#173F4D] text-white" : "text-[#173F4D] hover:bg-[#173F4D]/20"} disabled:opacity-40`}
                   >
                     Rédaction
                   </button>
@@ -3612,27 +3612,27 @@ export default function App() {
           <main className={`min-w-0 flex-1 px-6 py-8 lg:px-8 lg:py-10 ${view === "writing" ? "h-[calc(100vh-76px)] overflow-y-auto overscroll-contain" : ""}`}>
           {view === "project" && (
             <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
-              <div className="rounded-[24px] border border-[#1B4D3E]/5 bg-white p-7 shadow-sm lg:p-9">
+              <div className="rounded-[24px] border border-[#173F4D]/5 bg-white p-7 shadow-sm lg:p-9">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">
+                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
                       Test sans paiement
                     </div>
-                    <h1 className="mt-2 font-playfair text-4xl leading-tight text-[#1B4D3E]">
+                    <h1 className="mt-2 font-playfair text-4xl leading-tight text-[#173F4D]">
                       Préparer une génération
                     </h1>
-                    <p className="mt-2 max-w-2xl font-inter text-sm leading-[1.7] text-[#1B4D3E]/85">
+                    <p className="mt-2 max-w-2xl font-inter text-sm leading-[1.7] text-[#5E6B73]">
                       Préparez et testez votre projet depuis cet espace réservé à l’administration.
                     </p>
                   </div>
-                  <div className="rounded-full bg-[#1B4D3E]/10 px-3 py-1.5 font-inter text-[10px] font-semibold text-[#1B4D3E]">
+                  <div className="rounded-full bg-[#173F4D]/10 px-3 py-1.5 font-inter text-[10px] font-semibold text-[#173F4D]">
                     PAIEMENT NEUTRALISÉ
                   </div>
                 </div>
 
                 <div className="mt-7 grid gap-5 md:grid-cols-2">
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">
                       Sujet
                     </label>
                     <textarea
@@ -3645,33 +3645,33 @@ export default function App() {
                       }
                       rows={3}
                       placeholder="Sujet du mémoire, rapport ou thèse"
-                      className="mt-2 w-full rounded-2xl border border-[#1B4D3E]/10 px-4 py-3 font-inter text-sm outline-none focus:border-[#1B4D3E]/30"
+                      className="mt-2 w-full rounded-2xl border border-[#173F4D]/10 px-4 py-3 font-inter text-sm outline-none focus:border-[#173F4D]/30"
                     />
                   </div>
 
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">Niveau</label>
-                    <select value={project.niveau} onChange={(event) => setProject((current) => ({ ...current, niveau: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/10 bg-white px-4 font-inter text-sm">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">Niveau</label>
+                    <select value={project.niveau} onChange={(event) => setProject((current) => ({ ...current, niveau: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#173F4D]/10 bg-white px-4 font-inter text-sm">
                       <option value="">Sélectionnez un niveau</option><option>Licence 1</option><option>Licence 2</option><option>Licence 3</option><option>Master 1</option><option>Master 2</option><option>Doctorat</option><option>Autre</option>
                     </select>
                   </div>
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">Domaine</label>
-                    <select value={project.domaine} onChange={(event) => setProject((current) => ({ ...current, domaine: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/10 bg-white px-4 font-inter text-sm">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">Domaine</label>
+                    <select value={project.domaine} onChange={(event) => setProject((current) => ({ ...current, domaine: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#173F4D]/10 bg-white px-4 font-inter text-sm">
                       <option value="">Sélectionnez un domaine</option>
                       {domainOptions.map((domain) => <option key={domain} value={domain}>{domain}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">Type de document</label>
-                    <select value={project.typeDoc} onChange={(event) => setProject((current) => ({ ...current, typeDoc: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/10 bg-white px-4 font-inter text-sm">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">Type de document</label>
+                    <select value={project.typeDoc} onChange={(event) => setProject((current) => ({ ...current, typeDoc: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-[#173F4D]/10 bg-white px-4 font-inter text-sm">
                       <option value="">Sélectionnez un type</option><option>Mémoire</option><option>Thèse</option><option>Rapport</option><option>Dissertation</option><option>Devoir</option><option>Article scientifique</option><option>Autre</option>
                     </select>
                   </div>
 
 
 <div>
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">
                       Nombre de pages
                     </label>
                     <input
@@ -3684,12 +3684,12 @@ export default function App() {
                           pages: Math.max(1, Number(event.target.value) || 1),
                         }))
                       }
-                      className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/10 px-4 font-inter text-sm"
+                      className="mt-2 h-11 w-full rounded-xl border border-[#173F4D]/10 px-4 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">
                       Contexte
                     </label>
                     <textarea
@@ -3702,12 +3702,12 @@ export default function App() {
                       }
                       rows={4}
                       placeholder="Contexte, terrain, organisation ou informations utiles"
-                      className="mt-2 w-full rounded-2xl border border-[#1B4D3E]/10 px-4 py-3 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-[#173F4D]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">
                       Problématique personnelle (facultatif)
                     </label>
                     <textarea
@@ -3717,12 +3717,12 @@ export default function App() {
                       }
                       rows={3}
                       placeholder="Si vous avez déjà une problématique, saisissez-la ici. Sinon, une première proposition pourra être améliorée ou remplacée."
-                      className="mt-2 w-full rounded-2xl border border-[#1B4D3E]/10 px-4 py-3 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-[#173F4D]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">
                       Plan personnel (facultatif)
                     </label>
                     <textarea
@@ -3732,12 +3732,12 @@ export default function App() {
                       }
                       rows={5}
                       placeholder="Si vous avez déjà un plan, indiquez-le ici. Il guidera la création du plan à valider."
-                      className="mt-2 w-full rounded-2xl border border-[#1B4D3E]/10 px-4 py-3 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-[#173F4D]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">
                       Consignes
                     </label>
                     <textarea
@@ -3750,12 +3750,12 @@ export default function App() {
                       }
                       rows={4}
                       placeholder="Consignes méthodologiques ou documentaires"
-                      className="mt-2 w-full rounded-2xl border border-[#1B4D3E]/10 px-4 py-3 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-[#173F4D]/10 px-4 py-3 font-inter text-sm"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="font-inter text-xs font-semibold text-[#1B4D3E]/85">
+                    <label className="font-inter text-xs font-semibold text-[#5E6B73]">
                       Documents du projet
                     </label>
                     <input
@@ -3766,14 +3766,14 @@ export default function App() {
                         void handleFiles(event.target.files);
                         event.currentTarget.value = "";
                       }}
-                      className="mt-2 w-full rounded-2xl border border-dashed border-[#1B4D3E]/15 bg-[#1B4D3E]/10 px-4 py-4 font-inter text-sm"
+                      className="mt-2 w-full rounded-2xl border border-dashed border-[#173F4D]/15 bg-[#173F4D]/10 px-4 py-4 font-inter text-sm"
                     />
                     {project.files.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {project.files.map((file, index) => (
                           <div
                             key={`${file.name}-${file.content.length}`}
-                            className="rounded-xl bg-[#1B4D3E]/10 px-3 py-2 font-inter text-xs"
+                            className="rounded-xl bg-[#173F4D]/10 px-3 py-2 font-inter text-xs"
                           >
                             <span className="min-w-0 flex-1 truncate">{file.name}</span>
                             <select value={file.category || "reference"} onChange={(event) => {
@@ -3782,14 +3782,14 @@ export default function App() {
                                 ...current,
                                 files: current.files.map((item, itemIndex) => itemIndex === index ? { ...item, category } : item),
                               }));
-                            }} className="rounded-lg border border-[#1B4D3E]/10 bg-white px-2 py-1 text-[11px]">
+                            }} className="rounded-lg border border-[#173F4D]/10 bg-white px-2 py-1 text-[11px]">
                               <option value="methodology">Méthodologie</option>
                               <option value="instructions">Instructions</option>
                               <option value="context">Contexte</option>
                               <option value="source">Source</option>
                               <option value="reference">Référence</option>
                             </select>
-                            <button type="button" onClick={() => setProject((current) => ({ ...current, files: current.files.filter((_, itemIndex) => itemIndex !== index) }))} className="ml-2 rounded-lg border border-[#1B4D3E] px-2 py-1 text-[11px] text-[#1B4D3E]">Retirer</button>
+                            <button type="button" onClick={() => setProject((current) => ({ ...current, files: current.files.filter((_, itemIndex) => itemIndex !== index) }))} className="ml-2 rounded-lg border border-[#173F4D] px-2 py-1 text-[11px] text-[#173F4D]">Retirer</button>
                           </div>
                         ))}
                       </div>
@@ -3801,7 +3801,7 @@ export default function App() {
                   type="button"
                   disabled={loading}
                   onClick={() => void generateOwnerFirstProblematic()}
-                  className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1B4D3E] font-inter text-sm font-semibold text-white disabled:opacity-50"
+                  className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#173F4D] font-inter text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -3812,21 +3812,21 @@ export default function App() {
                 </button>
               </div>
 
-              <aside className="h-fit rounded-[24px] border border-[#1B4D3E]/5 bg-white p-6 shadow-sm lg:sticky lg:top-[96px]">
-                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">
+              <aside className="h-fit rounded-[24px] border border-[#173F4D]/5 bg-white p-6 shadow-sm lg:sticky lg:top-[96px]">
+                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
                   Pipeline de test
                 </div>
                 <div className="mt-4 space-y-3 font-inter text-sm">
-                  <div className="rounded-2xl bg-[#1B4D3E]/10 p-4">
+                  <div className="rounded-2xl bg-[#173F4D]/10 p-4">
                     <strong>01.</strong> Préparation du projet
                   </div>
-                  <div className="rounded-2xl bg-[#1B4D3E]/10 p-4">
+                  <div className="rounded-2xl bg-[#173F4D]/10 p-4">
                     <strong>02.</strong> Problématique générée une à une, amélioration ou alternative
                   </div>
-                  <div className="rounded-2xl bg-[#1B4D3E]/10 p-4">
+                  <div className="rounded-2xl bg-[#173F4D]/10 p-4">
                     <strong>03.</strong> Plan généré un à un, amélioration et validation
                   </div>
-                  <div className="rounded-2xl bg-[#1B4D3E]/10 p-4">
+                  <div className="rounded-2xl bg-[#173F4D]/10 p-4">
                     <strong>04.</strong> Rédaction par blocs et export Word sans paiement
                   </div>
                 </div>
@@ -3839,10 +3839,10 @@ export default function App() {
           {view === "premium" && premium && premiumSection !== "writing" && (
             <section>
               <div className="mb-6">
-                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">
+                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
                   Espace propriétaire · résultats
                 </div>
-                <h1 className="mt-2 font-playfair text-4xl text-[#1B4D3E]">
+                <h1 className="mt-2 font-playfair text-4xl text-[#173F4D]">
                   {premiumSection === "problematic"
                     ? "Problématique"
                     : premiumSection === "plan"
@@ -3854,7 +3854,7 @@ export default function App() {
                   <div
                     role="alert"
                     aria-live="assertive"
-                    className="mt-5 rounded-2xl border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-sm leading-6 text-[#1B4D3E]"
+                    className="mt-5 rounded-2xl border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-sm leading-6 text-[#173F4D]"
                   >
                     <strong>Une difficulté est survenue :</strong> {generationError}
                   </div>
@@ -3864,42 +3864,42 @@ export default function App() {
                   const index = Number(premiumNav.replace("problematic-", "") || 0);
                   const item = premium.problematics[index] || premium.problematics[0];
                   return item ? (
-                    <article className="rounded-[24px] border border-[#1B4D3E]/10 bg-white p-7 shadow-sm lg:p-10">
-                      <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">
+                    <article className="rounded-[24px] border border-[#173F4D]/10 bg-white p-7 shadow-sm lg:p-10">
+                      <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
                         Problématique {index + 1}
                       </div>
-                      <h2 className="mt-3 font-playfair text-3xl text-[#1B4D3E]">{item.title}</h2>
-                      <p className="mt-6 font-inter text-base leading-[1.9] text-[#1B4D3E]/85">{item.question}</p>
+                      <h2 className="mt-3 font-playfair text-3xl text-[#173F4D]">{item.title}</h2>
+                      <p className="mt-6 font-inter text-base leading-[1.9] text-[#5E6B73]">{item.question}</p>
                       {item.angle && (
-                        <div className="mt-5 rounded-2xl bg-[#1B4D3E]/10 p-5 font-inter text-sm leading-[1.8] text-[#1B4D3E]/85">
+                        <div className="mt-5 rounded-2xl bg-[#173F4D]/10 p-5 font-inter text-sm leading-[1.8] text-[#5E6B73]">
                           <strong>Angle :</strong> {item.angle}
                         </div>
                       )}
                       {item.rationale && (
-                        <div className="mt-4 rounded-2xl bg-[#1B4D3E]/10 p-5 font-inter text-sm leading-[1.8] text-[#1B4D3E]/85">
+                        <div className="mt-4 rounded-2xl bg-[#173F4D]/10 p-5 font-inter text-sm leading-[1.8] text-[#5E6B73]">
                           {item.rationale}
                         </div>
                       )}
-                      <div className="mt-6 grid gap-3 rounded-2xl border border-[#1B4D3E]/10 bg-[#1B4D3E]/10 p-4">
-                        <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Améliorer ou comparer la problématique</div>
-                        <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#1B4D3E]/10 bg-white px-4 py-3 font-inter text-sm" />
+                      <div className="mt-6 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-4">
+                        <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#5E6B73]">Améliorer ou comparer la problématique</div>
+                        <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#173F4D]/10 bg-white px-4 py-3 font-inter text-sm" />
                         <div className="flex flex-wrap gap-2">
-                          <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("improve", item, problematicImprovementComments[item.id] || "")} className="rounded-full border border-[#1B4D3E]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#1B4D3E] disabled:opacity-50">Améliorer cette problématique</button>
-                          <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("alternative", item)} className="rounded-full border border-[#1B4D3E]/30 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#1B4D3E] disabled:opacity-50">Proposer une autre</button>
+                          <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("improve", item, problematicImprovementComments[item.id] || "")} className="rounded-full border border-[#173F4D]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#173F4D] disabled:opacity-50">Améliorer cette problématique</button>
+                          <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("alternative", item)} className="rounded-full border border-[#173F4D]/30 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#173F4D] disabled:opacity-50">Proposer une autre</button>
                         </div>
-                        <div className="font-inter text-[11px] text-[#1B4D3E]/85">{problematicGenerationCount}/3 propositions utilisées</div>
+                        <div className="font-inter text-[11px] text-[#5E6B73]">{problematicGenerationCount}/3 propositions utilisées</div>
                       </div>
                       <button
                         type="button"
                         disabled={loading}
                         onClick={() => void generatePlansForProblematic(item, ownerRoute === true, undefined, { action: "new" })}
-                        className="mt-7 rounded-full bg-[#1B4D3E] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        className="mt-7 rounded-full bg-[#173F4D] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {loading && selectedProblematic?.id === item.id ? "Génération du plan..." : "Générer un plan"}
                       </button>
                     </article>
                   ) : (
-                    <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#1B4D3E]/85">
+                    <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#5E6B73]">
                       Aucune problématique disponible.
                     </div>
                   );
@@ -3910,25 +3910,25 @@ export default function App() {
                   const plan = premium.plans[index] || premium.plans[0];
                   return plan ? (
                     <article>
-                      <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">Plan {index + 1}</div>
-                      <h2 className="mt-3 font-playfair text-3xl text-[#1B4D3E]">{plan.title}</h2>
+                      <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Plan {index + 1}</div>
+                      <h2 className="mt-3 font-playfair text-3xl text-[#173F4D]">{plan.title}</h2>
                       <div className="mt-7 space-y-5 font-inter">
                         {plan.parts.map((part) => (
                           <div key={part.id}>
-                            <div className="font-bold uppercase text-[#1B4D3E]">PARTIE {part.number}. {part.title}</div>
+                            <div className="font-bold uppercase text-[#173F4D]">PARTIE {part.number}. {part.title}</div>
                             <div className="mt-3 space-y-3 pl-4">
                               {part.chapters.map((chapter) => (
                                 <div key={chapter.id}>
-                                  <div className="font-semibold text-[#1B4D3E]">Chapitre {chapter.number}. {chapter.title}</div>
+                                  <div className="font-semibold text-[#173F4D]">Chapitre {chapter.number}. {chapter.title}</div>
                                   <div className="mt-2 space-y-2 pl-5">
                                     {chapter.sections.map((section) => (
                                       <div key={section.id}>
-                                        <div className="text-sm font-semibold text-[#1B4D3E]/90">Section {chapter.number}.{section.number}. {section.title}</div>
+                                        <div className="text-sm font-semibold text-[#173F4D]/90">Section {chapter.number}.{section.number}. {section.title}</div>
                                         {section.subsections.map((subsection) => (
-                                          <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#1B4D3E]/85">
+                                          <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#5E6B73]">
                                             § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
                                             {subsection.internalTitles.map((internal) => (
-                                              <div key={internal.id} className="pl-4 text-[11px] text-[#1B4D3E]/85">{internal.number}. {internal.title}</div>
+                                              <div key={internal.id} className="pl-4 text-[11px] text-[#5E6B73]">{internal.number}. {internal.title}</div>
                                             ))}
                                           </div>
                                         ))}
@@ -3941,18 +3941,18 @@ export default function App() {
                           </div>
                         ))}
                       </div>
-                      <div className="mt-8 grid gap-3 rounded-2xl border border-[#1B4D3E]/10 bg-[#1B4D3E]/10 p-5">
-                        <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#1B4D3E]/85">Validation du plan</div>
+                      <div className="mt-8 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-5">
+                        <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#5E6B73]">Validation du plan</div>
                         <textarea
                           value={planImprovementComments[plan.id] || ""}
                           onChange={(event) => setPlanImprovementComments((current) => ({ ...current, [plan.id]: event.target.value }))}
                           rows={4}
                           placeholder="Décrivez précisément les modifications souhaitées pour améliorer ce plan."
-                          className="w-full rounded-xl border border-[#1B4D3E]/10 bg-white px-4 py-3 font-inter text-sm"
+                          className="w-full rounded-xl border border-[#173F4D]/10 bg-white px-4 py-3 font-inter text-sm"
                         />
                         <div className="flex flex-wrap gap-2">
-                          <button type="button" disabled={loading || planGenerationCount >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#1B4D3E]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#1B4D3E] disabled:opacity-50">Demander une amélioration</button>
-                          <button type="button" disabled={loading || planGenerationCount >= 3 || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#1B4D3E]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#1B4D3E] disabled:opacity-50">Générer un autre plan</button>
+                          <button type="button" disabled={loading || planGenerationCount >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#173F4D]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#173F4D] disabled:opacity-50">Demander une amélioration</button>
+                          <button type="button" disabled={loading || planGenerationCount >= 3 || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#173F4D]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#173F4D] disabled:opacity-50">Générer un autre plan</button>
                           <button type="button" disabled={loading} onClick={() => {
                             const problematic = selectedProblematic || premium.problematics[0];
                             if (!problematic) return;
@@ -3961,14 +3961,14 @@ export default function App() {
                             setView("writing");
                             setPremiumSection("writing");
                             pushToast("success", "Plan retenu. L’espace de rédaction et ses blocs sont affichés.");
-                          }} className="rounded-full bg-[#1B4D3E] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
+                          }} className="rounded-full bg-[#173F4D] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
                         </div>
-                        {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#1B4D3E]">Plan retenu</div>}
-                        <div className="font-inter text-[11px] text-[#1B4D3E]/85">{planGenerationCount}/3 génération(s) de plan utilisée(s)</div>
+                        {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#173F4D]">Plan retenu</div>}
+                        <div className="font-inter text-[11px] text-[#5E6B73]">{planGenerationCount}/3 génération(s) de plan utilisée(s)</div>
                       </div>
                     </article>
                   ) : (
-                    <div className="font-inter text-sm text-[#1B4D3E]/85">Aucun plan disponible.</div>
+                    <div className="font-inter text-sm text-[#5E6B73]">Aucun plan disponible.</div>
                   );
                 })()}
               </div>
@@ -3979,26 +3979,26 @@ export default function App() {
               <section className="min-h-full">
                 <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
                   <div>
-                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">Rédaction</div>
-                    <h1 className="mt-2 font-playfair text-4xl text-[#1B4D3E]">{selectedPlan.title}</h1>
-                    <p className="mt-2 font-inter text-sm text-[#1B4D3E]/85">
+                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Rédaction</div>
+                    <h1 className="mt-2 font-playfair text-4xl text-[#173F4D]">{selectedPlan.title}</h1>
+                    <p className="mt-2 font-inter text-sm text-[#5E6B73]">
                       Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
                     </p>
-                    {cloudSaveStatus !== "idle" && <p role="status" aria-live="polite" className={`mt-2 font-inter text-xs ${cloudSaveStatus === "error" ? "text-[#1B4D3E]" : "text-[#1B4D3E]/85"}`}>
+                    {cloudSaveStatus !== "idle" && <p role="status" aria-live="polite" className={`mt-2 font-inter text-xs ${cloudSaveStatus === "error" ? "text-[#173F4D]" : "text-[#5E6B73]"}`}>
                       {cloudSaveStatus === "saving" ? "Enregistrement de votre document…" : cloudSaveStatus === "saved" ? "Document enregistré dans votre compte." : "Enregistrement interrompu. Gardez cette page ouverte et réessayez."}
                     </p>}
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     {(ownerRoute || (window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) ? (
-                      <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#1B4D3E] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
+                      <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#173F4D] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
                         {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                       </button>
                     ) : isPreviewReady(blocks, previewLimit) ? (
-                      <button type="button" onClick={() => void exportDocument()} className="rounded-full bg-[#1B4D3E] px-5 py-3 font-inter text-xs font-semibold text-white">
+                      <button type="button" onClick={() => void exportDocument()} className="rounded-full bg-[#173F4D] px-5 py-3 font-inter text-xs font-semibold text-white">
                         Voir l’aperçu
                       </button>
                     ) : (
-                      <div className="rounded-full border border-[#1B4D3E]/10 px-4 py-3 font-inter text-xs text-[#1B4D3E]/85">
+                      <div className="rounded-full border border-[#173F4D]/10 px-4 py-3 font-inter text-xs text-[#5E6B73]">
                         Aperçu disponible à {previewLimit.toLocaleString("fr-FR")} mots ({totalDoneWords.toLocaleString("fr-FR")}/{previewLimit.toLocaleString("fr-FR")})
                       </div>
                     )}
@@ -4015,11 +4015,11 @@ export default function App() {
                       <article
                         key={block.id}
                         id={`writing-block-${block.id}`}
-                        className="mx-auto max-w-[900px] overflow-hidden border border-[#1B4D3E]/20 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+                        className="studio-writing-sheet mx-auto max-w-[900px] overflow-hidden border border-[#E6E1D8] bg-white shadow-[0_15px_45px_-30px_rgba(23,63,77,0.30)]"
                       >
-                        <div className="border-b border-[#1B4D3E]/20 px-10 py-6 md:px-16">
+                        <div className="border-b border-[#173F4D]/20 px-10 py-6 md:px-16">
                           <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]/85">
+                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5E6B73]">
                               Bloc {index + 1}
                             </div>
                             <button
@@ -4029,19 +4029,19 @@ export default function App() {
                                 setSelectedWritingBlockId(block.id);
                                 void generateBlock(block.id);
                               }}
-                              className="rounded-full bg-[#1B4D3E] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-full bg-[#173F4D] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {isGenerating ? "Rédaction en cours…" : block.status === "done" ? "Régénérer ce bloc" : "Rédiger ce bloc"}
                             </button>
                           </div>
 
-                          <h2 className="mt-4 font-playfair text-2xl text-[#1B4D3E]">{block.title}</h2>
+                          <h2 className="mt-4 font-playfair text-2xl text-[#173F4D]">{block.title}</h2>
 
-                          <div className="mt-5 border-l-2 border-[#1B4D3E] pl-4">
-                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1B4D3E]/85">
+                          <div className="mt-5 border-l-2 border-[#173F4D] pl-4">
+                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#5E6B73]">
                               Trame du plan sélectionné
                             </div>
-                            <div className="mt-2 space-y-1 font-inter text-[11px] leading-5 text-[#1B4D3E]/85">
+                            <div className="mt-2 space-y-1 font-inter text-[11px] leading-5 text-[#5E6B73]">
                               {block.structure.map((item, structureIndex) => (
                                 <div key={`${block.id}-structure-${structureIndex}`}>{item}</div>
                               ))}
@@ -4050,13 +4050,13 @@ export default function App() {
                         </div>
 
                         <div
-                          className="min-h-[720px] bg-white px-10 py-14 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#1B4D3E] md:px-[2.5cm] md:py-[2.5cm]"
+                          className="studio-document-page min-h-[720px] bg-white px-6 py-10 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#27323A] sm:px-10 sm:py-14 md:px-[2.5cm] md:py-[2.5cm]"
                           style={protectWriting ? { userSelect: "none", WebkitUserSelect: "none" } : undefined}
                           onCopy={protectWriting ? (event) => event.preventDefault() : undefined}
                           onCut={protectWriting ? (event) => event.preventDefault() : undefined}
                         >
                           {block.error && (
-                            <div className="mb-6 rounded-lg border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-xs leading-5 text-[#1B4D3E]">
+                            <div className="mb-6 rounded-lg border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-xs leading-5 text-[#173F4D]">
                               <strong>Erreur de rédaction :</strong> {block.error}
                             </div>
                           )}
@@ -4066,8 +4066,8 @@ export default function App() {
                           ) : (
                             <div className="flex min-h-[420px] items-center justify-center text-center">
                               <div>
-                                <div className="font-playfair text-2xl text-[#1B4D3E]">{block.title}</div>
-                                <div className="mt-3 font-inter text-sm text-[#1B4D3E]/85">
+                                <div className="font-playfair text-2xl text-[#173F4D]">{block.title}</div>
+                                <div className="mt-3 font-inter text-sm text-[#5E6B73]">
                                   Ce bloc attend sa rédaction.
                                 </div>
                                 <button
@@ -4077,7 +4077,7 @@ export default function App() {
                                     setSelectedWritingBlockId(block.id);
                                     void generateBlock(block.id);
                                   }}
-                                  className="mt-5 rounded-full bg-[#1B4D3E] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
+                                  className="mt-5 rounded-full bg-[#173F4D] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
                                 >
                                   {isGenerating ? "Rédaction en cours…" : "Rédiger ce bloc"}
                                 </button>
@@ -4086,7 +4086,7 @@ export default function App() {
                           )}
 
                           {block.footnotes.length > 0 && (
-                            <div className="mt-12 border-t border-[#1B4D3E] pt-5 text-[11px] leading-[1.6]">
+                            <div className="mt-12 border-t border-[#173F4D] pt-5 text-[11px] leading-[1.6]">
                               <div className="mb-2 font-bold">Notes</div>
                               <ol className="list-decimal space-y-1 pl-5">
                                 {block.footnotes.map((note, noteIndex) => <li key={noteIndex}>{note}</li>)}
@@ -4095,7 +4095,7 @@ export default function App() {
                           )}
 
                           {block.sources.some((source) => source?.verified === true) && (
-                            <div className="mt-10 border-t border-[#1B4D3E]/20 pt-5 font-inter text-[11px] leading-[1.6] text-[#1B4D3E]/85">
+                            <div className="mt-10 border-t border-[#173F4D]/20 pt-5 font-inter text-[11px] leading-[1.6] text-[#5E6B73]">
                               <div className="mb-2 font-semibold uppercase tracking-[0.12em]">Sources utilisées</div>
                               <div className="space-y-1">
                                 {block.sources.filter((source) => source?.verified === true).map((source, sourceIndex) => (
@@ -4109,7 +4109,7 @@ export default function App() {
                         </div>
 
                         {!isLast && (
-                          <div className="border-t border-[#1B4D3E]/20 bg-white px-10 py-5 text-center md:px-16">
+                          <div className="border-t border-[#173F4D]/20 bg-white px-10 py-5 text-center md:px-16">
                             <button
                               type="button"
                               disabled={activeBlockId !== null}
@@ -4123,7 +4123,7 @@ export default function App() {
                                 setSelectedWritingBlockId(next.id);
                                 document.getElementById(`writing-block-${next.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                               }}
-                              className="rounded-full border border-[#1B4D3E]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#1B4D3E] hover:bg-[#1B4D3E]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="rounded-full border border-[#173F4D]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#173F4D] hover:bg-[#173F4D]/20 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Bloc suivant · {index + 2}
                             </button>
@@ -4137,15 +4137,15 @@ export default function App() {
             )}
 
 {view !== "project" && view !== "premium" && view !== "writing" && (
-            <section className="rounded-[28px] border border-[#1B4D3E]/10 bg-white p-6 shadow-sm">
+            <section className="rounded-[28px] border border-[#173F4D]/10 bg-white p-6 shadow-sm">
               <h1 className="font-playfair text-3xl">Tableau de bord</h1>
-              <p className="mt-2 font-inter text-sm text-[#1B4D3E]/85">
+              <p className="mt-2 font-inter text-sm text-[#5E6B73]">
                 Préparez un test pour lancer la génération.
               </p>
               <button
                 type="button"
                 onClick={() => setView("project")}
-                className="mt-5 rounded-full bg-[#1B4D3E] px-5 py-3 font-inter text-xs font-semibold text-white"
+                className="mt-5 rounded-full bg-[#173F4D] px-5 py-3 font-inter text-xs font-semibold text-white"
               >
                 Nouveau test
               </button>
@@ -4154,7 +4154,7 @@ export default function App() {
           </main>
         </div>
 
-        <div className="fixed bottom-4 right-4 z-[90] max-w-sm rounded-2xl bg-[#1B4D3E] px-4 py-3 font-inter text-[11px] text-white shadow-xl">
+        <div className="fixed bottom-4 right-4 z-[90] max-w-sm rounded-2xl bg-[#173F4D] px-4 py-3 font-inter text-[11px] text-white shadow-xl">
           MODE ADMINISTRATEUR · PAIEMENT NEUTRALISÉ · ESPACE SÉPARÉ
         </div>
       </div>
@@ -4162,7 +4162,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#1B4D3E]">
+    <div className="studio-shell min-h-screen bg-[#F7F5EF] text-[#173F4D]">
       <style>{`
         .font-playfair { font-family: 'Playfair Display', Georgia, serif; }
         .font-inter { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -4172,7 +4172,7 @@ export default function App() {
         {toasts.map((toast) => (
           <div key={toast.id} className="rounded-xl border bg-white px-4 py-3 text-sm shadow-lg">
             <div className="flex items-start gap-2">
-              <span className={`mt-1 h-2 w-2 rounded-full ${toast.type === "error" ? "bg-[#1B4D3E]" : toast.type === "success" ? "bg-[#1B4D3E]" : "bg-[#1B4D3E]"}`} />
+              <span className={`mt-1 h-2 w-2 rounded-full ${toast.type === "error" ? "bg-[#173F4D]" : toast.type === "success" ? "bg-[#173F4D]" : "bg-[#173F4D]"}`} />
               <span>{toast.message}</span>
             </div>
           </div>
@@ -4180,35 +4180,35 @@ export default function App() {
       </div>
 
       {ownerRoute && ownerSessionValid && (
-        <aside className="fixed bottom-4 right-4 z-[90] w-[min(340px,calc(100vw-2rem))] rounded-[22px] border border-[#1B4D3E]/10 bg-white p-5 shadow-2xl">
+        <aside className="fixed bottom-4 right-4 z-[90] w-[min(340px,calc(100vw-2rem))] rounded-[22px] border border-[#173F4D]/10 bg-white p-5 shadow-2xl">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">Espace propriétaire</div>
-              <div className="mt-1 font-playfair text-xl text-[#1B4D3E]">Tests rapides</div>
+              <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Espace propriétaire</div>
+              <div className="mt-1 font-playfair text-xl text-[#173F4D]">Tests rapides</div>
             </div>
-            <button onClick={handleOwnerLogout} className="rounded-full border border-[#1B4D3E]/10 px-3 py-1.5 font-inter text-[11px]">Quitter</button>
+            <button onClick={handleOwnerLogout} className="rounded-full border border-[#173F4D]/10 px-3 py-1.5 font-inter text-[11px]">Quitter</button>
           </div>
-          <button type="button" onClick={startNewOwnerProject} className="mt-4 w-full rounded-xl bg-[#1B4D3E]/10 px-3 py-3 font-inter text-xs font-semibold text-[#1B4D3E]">Nouveau projet de test</button>
-          <button onClick={() => void generateOwnerFirstProblematic()} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#1B4D3E] font-inter text-xs font-semibold text-white disabled:opacity-50">
+          <button type="button" onClick={startNewOwnerProject} className="mt-4 w-full rounded-xl bg-[#173F4D]/10 px-3 py-3 font-inter text-xs font-semibold text-[#173F4D]">Nouveau projet de test</button>
+          <button onClick={() => void generateOwnerFirstProblematic()} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#173F4D] font-inter text-xs font-semibold text-white disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-white" />}
             Générer une problématique
           </button>
-          <div className="mt-3 rounded-xl bg-[#1B4D3E]/10 p-3 font-inter text-[10px] leading-[1.6] text-[#1B4D3E]">
+          <div className="mt-3 rounded-xl bg-[#173F4D]/10 p-3 font-inter text-[10px] leading-[1.6] text-[#173F4D]">
             Les projets de test peuvent être rédigés et exportés sans paiement.
           </div>
         </aside>
       )}
 
       {ownerRoute && !ownerSessionValid && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#1B4D3E] px-5">
-          <form onSubmit={(event) => { event.preventDefault(); void handleOwnerLogin(); }} className="w-full max-w-md rounded-[26px] bg-white p-7 text-[#1B4D3E] shadow-2xl">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#173F4D] px-5">
+          <form onSubmit={(event) => { event.preventDefault(); void handleOwnerLogin(); }} className="w-full max-w-md rounded-[26px] bg-white p-7 text-[#173F4D] shadow-2xl">
             <BrandLogo className="mx-auto h-16 w-16" />
-            <div className="mt-4 text-center font-inter text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1B4D3E]">Accès privé</div>
-            <h1 className="mt-2 text-center font-playfair text-3xl text-[#1B4D3E]">Espace propriétaire</h1>
-            <p className="mt-3 text-center font-inter text-sm leading-[1.7] text-[#1B4D3E]/85">Accédez aux tests de Trimémo sans paiement réel.</p>
-            <label htmlFor="owner-email" className="mt-6 block font-inter text-xs font-semibold text-[#1B4D3E]/85">E-mail</label>
-            <input id="owner-email" type="email" required autoComplete="username" value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/20 bg-white px-4 font-inter text-sm text-[#1B4D3E] caret-[#1B4D3E] outline-none focus:border-[#1B4D3E] focus:ring-2 focus:ring-[#1B4D3E]/10" />
-            <label htmlFor="owner-password" className="mt-4 block font-inter text-xs font-semibold text-[#1B4D3E]/85">Mot de passe</label>
+            <div className="mt-4 text-center font-inter text-[10px] font-semibold uppercase tracking-[0.2em] text-[#173F4D]">Accès privé</div>
+            <h1 className="mt-2 text-center font-playfair text-3xl text-[#173F4D]">Espace propriétaire</h1>
+            <p className="mt-3 text-center font-inter text-sm leading-[1.7] text-[#5E6B73]">Accédez aux tests de Trimémo sans paiement réel.</p>
+            <label htmlFor="owner-email" className="mt-6 block font-inter text-xs font-semibold text-[#5E6B73]">E-mail</label>
+            <input id="owner-email" type="email" required autoComplete="username" value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[#173F4D]/20 bg-white px-4 font-inter text-sm text-[#173F4D] caret-[#173F4D] outline-none focus:border-[#173F4D] focus:ring-2 focus:ring-[#173F4D]/10" />
+            <label htmlFor="owner-password" className="mt-4 block font-inter text-xs font-semibold text-[#5E6B73]">Mot de passe</label>
             <div className="relative mt-2">
               <input
                 id="owner-password"
@@ -4217,29 +4217,29 @@ export default function App() {
                 value={ownerPassword}
                 onChange={(event) => setOwnerPassword(event.target.value)}
                 autoComplete="current-password"
-                className="h-11 w-full rounded-xl border border-[#1B4D3E]/20 bg-white px-4 pr-12 font-inter text-sm text-[#1B4D3E] caret-[#1B4D3E] outline-none transition focus:border-[#1B4D3E] focus:ring-2 focus:ring-[#1B4D3E]/10"
+                className="h-11 w-full rounded-xl border border-[#173F4D]/20 bg-white px-4 pr-12 font-inter text-sm text-[#173F4D] caret-[#173F4D] outline-none transition focus:border-[#173F4D] focus:ring-2 focus:ring-[#173F4D]/10"
               />
               <button
                 type="button"
                 onClick={() => setShowOwnerPassword((visible) => !visible)}
                 aria-label={showOwnerPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 aria-pressed={showOwnerPassword}
-                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-[#1B4D3E]/85 transition hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4 focus:outline-none focus:ring-2 focus:ring-[#1B4D3E]"
+                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-[#5E6B73] transition hover:underline hover:decoration-[#173F4D] hover:underline-offset-4 focus:outline-none focus:ring-2 focus:ring-[#173F4D]"
               >
                 {showOwnerPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
             {ownerLoginError && <div className="mt-3 rounded-xl bg-[#B42318]/10 p-3 font-inter text-xs text-[#B42318]">{ownerLoginError}</div>}
-            <button type="submit" disabled={ownerBusy} className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#1B4D3E] font-inter text-sm font-semibold text-white disabled:opacity-50">
+            <button type="submit" disabled={ownerBusy} className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#173F4D] font-inter text-sm font-semibold text-white disabled:opacity-50">
               {ownerBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Se connecter"}
             </button>
-            <button type="button" onClick={() => { window.location.href = "/"; }} className="mt-3 w-full font-inter text-xs text-[#1B4D3E]/85">Retour à la plateforme</button>
+            <button type="button" onClick={() => { window.location.href = "/"; }} className="mt-3 w-full font-inter text-xs text-[#5E6B73]">Retour à la plateforme</button>
           </form>
         </div>
       )}
 
       {view !== "dashboard" && (<>
-      <header className={`sticky top-0 z-50 border-b border-white/15 bg-[#1B4D3E] backdrop-blur-xl`}>
+      <header className={`studio-site-header sticky top-0 z-50 border-b border-white/15 bg-[#173F4D] backdrop-blur-xl ${view === "home" ? "studio-header--home" : ""}`}>
         {view !== "home" ? (
           <div className="mx-auto flex min-h-[72px] max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
@@ -4261,8 +4261,8 @@ export default function App() {
             <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-white">mo</span></span>
           </button>
           <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">
-            <button className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
-            <button className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4" onClick={() => navigateToSection("revision-humaine")}>Révision humaine</button>
+            <button className="text-white hover:underline hover:decoration-[#173F4D] hover:underline-offset-4" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
+            <button className="text-white hover:underline hover:decoration-[#173F4D] hover:underline-offset-4" onClick={() => navigateToSection("revision-humaine")}>Révision humaine</button>
             <button className="text-white hover:underline" onClick={() => { ambassadorOrigin.current = "home"; setView("ambassadors"); }}>Ambassadeurs</button>
             {view !== "home" && <button
               onClick={() => {
@@ -4271,7 +4271,7 @@ export default function App() {
                 void loadClientProjects();
               }}
             >
-              <span className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4">Mon projet</span>
+              <span className="text-white hover:underline hover:decoration-[#173F4D] hover:underline-offset-4">Mon projet</span>
             </button>}
           </div>
 
@@ -4293,7 +4293,7 @@ export default function App() {
             {view === "home" && <button onClick={() => { authIntent.current = "dashboard"; setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} className="hidden rounded-lg border border-white px-4 py-2 font-inter text-sm font-semibold text-white sm:inline-flex">Créer un compte</button>}
             <button
               onClick={goToProject}
-              className={`${view === "home" ? "hidden" : "inline-flex"} h-10 items-center gap-2 rounded-full bg-white px-5 font-inter text-[13px] font-medium text-[#1B4D3E]`}
+              className="studio-primary-nav-action inline-flex h-10 items-center gap-2 rounded-full bg-white px-5 font-inter text-[13px] font-medium text-[#173F4D]"
             >
               Commencer <ArrowRight className="h-4 w-4" />
             </button>
@@ -4303,7 +4303,7 @@ export default function App() {
       </header>
 
       {view !== "account" && mobileMenuOpen && (
-        <div className={`sticky top-[72px] z-40 border-b border-white/15 bg-[#1B4D3E] px-6 py-4 shadow-sm md:hidden`}>
+        <div className={`sticky top-[72px] z-40 border-b border-white/15 bg-[#173F4D] px-6 py-4 shadow-sm md:hidden`}>
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
             {view === "home" && <><button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
             <button onClick={() => navigateToSection("revision-humaine")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Révision humaine</button>
@@ -4313,7 +4313,7 @@ export default function App() {
             <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button></>}
             {view === "preview" && preview && canViewClientPreview && (
               <>
-                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#1B4D3E]">Aperçu</div>
+                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#173F4D]">Aperçu</div>
                 {(["problematic","plan","introduction"] as const).map((tab) => (
                   <button key={tab} onClick={() => { setMobileMenuOpen(false); setPreviewTab(tab); }} className="rounded-xl px-4 py-2 text-left hover:bg-white/10">
                     {tab === "problematic" ? "Problématique" : tab === "plan" ? "Plan" : "Introduction"}
@@ -4323,11 +4323,11 @@ export default function App() {
             )}
             {view === "premium" && premium && (
               <>
-                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#1B4D3E]">Problématiques</div>
+                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#173F4D]">Problématiques</div>
                 {premium.problematics.map((item,index) => (
                   <button key={item.id} onClick={() => { setMobileMenuOpen(false); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="rounded-xl px-4 py-2 text-left hover:bg-white/10">Problématique {index+1}</button>
                 ))}
-                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#1B4D3E]">Plans</div>
+                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#173F4D]">Plans</div>
                 {premium.plans.map((plan,index) => (
                   <button key={plan.id} onClick={() => { setMobileMenuOpen(false); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="rounded-xl px-4 py-2 text-left hover:bg-white/10">Plan {index+1}</button>
                 ))}
@@ -4342,41 +4342,41 @@ export default function App() {
       )}
 
       {view === "account" && (
-        <section className="min-h-[72vh] bg-gradient-to-b from-[#1B4D3E]/10 via-white to-[#1B4D3E]/10 px-4 py-8 sm:px-6 sm:py-12">
-          <div className="mx-auto max-w-xl rounded-3xl border border-[#1B4D3E]/10 bg-white p-6 shadow-sm sm:p-9">
-            <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#1B4D3E]">{authIntent.current === "ambassador" ? "Programme Ambassadeurs Trimémo" : "Compte client Trimémo"}</div>
-            <h1 className="mt-3 font-playfair text-3xl font-bold text-[#1B4D3E]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
-            <p className="mt-3 font-inter text-sm leading-6 text-[#1B4D3E]/85">{clientAuthMode === "signup" ? authIntent.current === "ambassador" ? "Si vous avez déjà un compte Trimémo, connectez-vous plutôt : un seul compte suffit pour participer au programme." : "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture du paiement." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
+        <section className="studio-auth min-h-[72vh] bg-gradient-to-b from-[#F7F5EF] via-white to-[#F7F5EF] px-4 py-10 sm:px-6 sm:py-16">
+          <div className="mx-auto max-w-xl rounded-3xl border border-[#173F4D]/10 bg-white p-6 shadow-sm sm:p-9">
+            <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#173F4D]">{authIntent.current === "ambassador" ? "Programme Ambassadeurs Trimémo" : "Compte client Trimémo"}</div>
+            <h1 className="mt-3 font-playfair text-3xl font-bold text-[#173F4D]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
+            <p className="mt-3 font-inter text-sm leading-6 text-[#5E6B73]">{clientAuthMode === "signup" ? authIntent.current === "ambassador" ? "Si vous avez déjà un compte Trimémo, connectez-vous plutôt : un seul compte suffit pour participer au programme." : "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture du paiement." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
             <form className="mt-7 space-y-4" onSubmit={(event) => { event.preventDefault(); void submitClientAuth(); }}>
               {clientAuthMode === "signup" && (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block font-inter text-sm font-medium text-[#1B4D3E]">Prénom
-                    <input type="text" required autoComplete="given-name" value={clientFirstName} onChange={(event) => setClientFirstName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#1B4D3E]/15 px-4 py-3 font-normal outline-none focus:border-[#1B4D3E]" placeholder="Votre prénom" />
+                  <label className="block font-inter text-sm font-medium text-[#173F4D]">Prénom
+                    <input type="text" required autoComplete="given-name" value={clientFirstName} onChange={(event) => setClientFirstName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#173F4D]/15 px-4 py-3 font-normal outline-none focus:border-[#173F4D]" placeholder="Votre prénom" />
                   </label>
-                  <label className="block font-inter text-sm font-medium text-[#1B4D3E]">Nom
-                    <input type="text" required autoComplete="family-name" value={clientLastName} onChange={(event) => setClientLastName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#1B4D3E]/15 px-4 py-3 font-normal outline-none focus:border-[#1B4D3E]" placeholder="Votre nom" />
+                  <label className="block font-inter text-sm font-medium text-[#173F4D]">Nom
+                    <input type="text" required autoComplete="family-name" value={clientLastName} onChange={(event) => setClientLastName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#173F4D]/15 px-4 py-3 font-normal outline-none focus:border-[#173F4D]" placeholder="Votre nom" />
                   </label>
                 </div>
               )}
-              {clientAuthMode !== "reset" && <label className="block font-inter text-sm font-medium text-[#1B4D3E]">Adresse e-mail
-              <input type="email" required autoComplete="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-[#1B4D3E]/15 px-4 py-3 font-normal outline-none focus:border-[#1B4D3E]" placeholder="vous@exemple.com" />
+              {clientAuthMode !== "reset" && <label className="block font-inter text-sm font-medium text-[#173F4D]">Adresse e-mail
+              <input type="email" required autoComplete="email" value={clientEmail} onChange={(event) => setClientEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-[#173F4D]/15 px-4 py-3 font-normal outline-none focus:border-[#173F4D]" placeholder="vous@exemple.com" />
               </label>}
-              {clientAuthMode !== "forgot" && <label className="block font-inter text-sm font-medium text-[#1B4D3E]">{clientAuthMode === "reset" ? "Nouveau mot de passe" : "Mot de passe"}
-                <input type="password" required minLength={8} autoComplete={clientAuthMode === "signup" || clientAuthMode === "reset" ? "new-password" : "current-password"} value={clientPassword} onChange={(event) => setClientPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-[#1B4D3E]/15 px-4 py-3 font-normal outline-none focus:border-[#1B4D3E]" placeholder="8 caractères minimum" />
+              {clientAuthMode !== "forgot" && <label className="block font-inter text-sm font-medium text-[#173F4D]">{clientAuthMode === "reset" ? "Nouveau mot de passe" : "Mot de passe"}
+                <input type="password" required minLength={8} autoComplete={clientAuthMode === "signup" || clientAuthMode === "reset" ? "new-password" : "current-password"} value={clientPassword} onChange={(event) => setClientPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-[#173F4D]/15 px-4 py-3 font-normal outline-none focus:border-[#173F4D]" placeholder="8 caractères minimum" />
               </label>}
               {clientAuthError && <div role="alert" className="rounded-xl bg-[#B42318]/10 p-3 font-inter text-sm text-[#B42318]">{clientAuthError}</div>}
-              {clientAuthNotice && <div role="status" className="rounded-xl bg-[#1B4D3E]/10 p-3 font-inter text-sm text-[#1B4D3E]">{clientAuthNotice}</div>}
-              <button type="submit" disabled={clientAuthBusy || (clientAuthMode === "reset" && !clientRecoveryToken)} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B4D3E] px-5 py-3 font-inter text-sm font-semibold text-white disabled:opacity-60">
+              {clientAuthNotice && <div role="status" className="rounded-xl bg-[#173F4D]/10 p-3 font-inter text-sm text-[#173F4D]">{clientAuthNotice}</div>}
+              <button type="submit" disabled={clientAuthBusy || (clientAuthMode === "reset" && !clientRecoveryToken)} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#173F4D] px-5 py-3 font-inter text-sm font-semibold text-white disabled:opacity-60">
                 {clientAuthBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : clientAuthMode === "signup" ? (authIntent.current === "ambassador" ? "Créer mon compte" : "Créer mon compte et continuer") : clientAuthMode === "login" ? "Se connecter" : clientAuthMode === "forgot" ? "Envoyer le lien de réinitialisation" : "Modifier mon mot de passe"}
               </button>
-              {clientAuthMode === "reset" && !clientRecoveryToken && <p className="font-inter text-sm text-[#1B4D3E]">Ce lien est invalide ou incomplet. Demandez un nouveau lien de réinitialisation.</p>}
+              {clientAuthMode === "reset" && !clientRecoveryToken && <p className="font-inter text-sm text-[#173F4D]">Ce lien est invalide ou incomplet. Demandez un nouveau lien de réinitialisation.</p>}
             </form>
-            {clientAuthMode === "login" && <button type="button" onClick={() => { setClientAuthMode("forgot"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#1B4D3E]">Mot de passe oublié ?</button>}
-            {clientAuthMode === "login" && showConfirmationResend && <button type="button" disabled={clientAuthBusy} onClick={() => void resendClientConfirmation()} className="mt-4 w-full font-inter text-sm text-[#1B4D3E] disabled:opacity-60">Renvoyer le lien de confirmation</button>}
-            {clientAuthMode !== "reset" && <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : clientAuthMode === "login" ? "signup" : "login"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#1B4D3E]">
+            {clientAuthMode === "login" && <button type="button" onClick={() => { setClientAuthMode("forgot"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#173F4D]">Mot de passe oublié ?</button>}
+            {clientAuthMode === "login" && showConfirmationResend && <button type="button" disabled={clientAuthBusy} onClick={() => void resendClientConfirmation()} className="mt-4 w-full font-inter text-sm text-[#173F4D] disabled:opacity-60">Renvoyer le lien de confirmation</button>}
+            {clientAuthMode !== "reset" && <button type="button" onClick={() => { setClientAuthMode(clientAuthMode === "signup" ? "login" : clientAuthMode === "login" ? "signup" : "login"); setClientAuthError(""); setClientAuthNotice(""); }} className="mt-5 w-full font-inter text-sm text-[#173F4D]">
               {clientAuthMode === "signup" ? "J’ai déjà un compte : me connecter" : clientAuthMode === "login" ? "Je n’ai pas encore de compte : m’inscrire" : "Retour à la connexion"}
             </button>}
-            <button type="button" onClick={() => { setPendingPaymentMethod(null); setClientAuthError(""); setClientAuthNotice(""); setView("home"); }} className="mt-4 w-full font-inter text-xs text-[#1B4D3E]/85">Retour à l’accueil</button>
+            <button type="button" onClick={() => { setPendingPaymentMethod(null); setClientAuthError(""); setClientAuthNotice(""); setView("home"); }} className="mt-4 w-full font-inter text-xs text-[#5E6B73]">Retour à l’accueil</button>
           </div>
         </section>
       )}
@@ -4384,46 +4384,46 @@ export default function App() {
             </>)}
 
       {view === "dashboard" && (
-        <section className="min-h-[72vh] bg-[#1B4D3E]/10 px-4 py-6 sm:px-6 sm:py-8">
+        <section className="studio-dashboard min-h-[72vh] bg-[#F7F5EF] px-4 py-8 sm:px-6 sm:py-10">
           <div className="mx-auto max-w-7xl">
-            <div className="rounded-3xl bg-[#1B4D3E] p-5 text-white shadow-lg sm:p-7">
+            <div className="rounded-3xl bg-[#173F4D] p-6 text-white shadow-[0_18px_40px_-26px_rgba(23,63,77,0.5)] sm:p-8">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <div><h1 className="font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/90">{clientNameDisplay && clientNameDisplay !== "Mon compte" ? `Bienvenue, ${clientNameDisplay}. Retrouvez vos projets et suivez leur avancement.` : "Retrouvez vos projets et suivez leur avancement."}</p></div>
+                <div><div className="mb-3 h-1 w-12 rounded-full bg-[#C6A477]" aria-hidden="true"/><h1 className="font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/90">{clientNameDisplay && clientNameDisplay !== "Mon compte" ? `Bienvenue, ${clientNameDisplay}. Retrouvez vos projets et suivez leur avancement.` : "Retrouvez vos projets et suivez leur avancement."}</p></div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <button type="button" onClick={() => { ambassadorOrigin.current = "dashboard"; setMobileMenuOpen(false); setView("ambassadors"); }} className="rounded-full bg-white px-5 py-3 font-inter text-sm font-semibold text-[#1B4D3E] shadow-sm hover:bg-[#E7F1EC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Devenir ambassadeur</button>
+                  <button type="button" onClick={() => { ambassadorOrigin.current = "dashboard"; setMobileMenuOpen(false); setView("ambassadors"); }} className="rounded-full bg-white px-5 py-3 font-inter text-sm font-semibold text-[#173F4D] shadow-sm hover:bg-[#F7F5EF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Devenir ambassadeur</button>
                   <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>
                 </div>
               </div>
             </div>
-            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[#1B4D3E]/20 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[#173F4D]/20 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
               <div>
-                <h2 className="font-inter text-base font-bold text-[#1B4D3E]">Besoin d’aide ?</h2>
-                <p className="mt-1 font-inter text-sm text-[#1B4D3E]/85">Une question sur votre projet, votre paiement ou votre document ? Contactez-nous directement.</p>
+                <h2 className="font-inter text-base font-bold text-[#173F4D]">Besoin d’aide ?</h2>
+                <p className="mt-1 font-inter text-sm text-[#5E6B73]">Une question sur votre projet, votre paiement ou votre document ? Contactez-nous directement.</p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#1B4D3E] px-5 py-2.5 font-inter text-sm font-semibold text-white hover:bg-[#1B4D3E]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E]">Contacter sur WhatsApp</a>
-                <a href="mailto:redacmemo78@gmail.com?subject=Assistance%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#1B4D3E] bg-white px-5 py-2.5 font-inter text-sm font-semibold text-[#1B4D3E] hover:bg-[#1B4D3E]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E]">Envoyer un e-mail</a>
+                <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#173F4D] px-5 py-2.5 font-inter text-sm font-semibold text-white hover:bg-[#173F4D]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F4D]">Contacter sur WhatsApp</a>
+                <a href="mailto:redacmemo78@gmail.com?subject=Assistance%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#173F4D] bg-white px-5 py-2.5 font-inter text-sm font-semibold text-[#173F4D] hover:bg-[#173F4D]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F4D]">Envoyer un e-mail</a>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <button type="button" onClick={() => setClientDashboardTab("documents")} className={`rounded-2xl border border-[#1B4D3E]/20 bg-white p-4 text-left shadow-sm hover:bg-[#1B4D3E]/20 sm:p-5 ${clientDashboardTab==="documents"?"ring-2 ring-[#1B4D3E] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#1B4D3E] sm:text-sm">Mes projets</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#1B4D3E]">{clientProjects.length}</span><span className="mt-1 block font-inter text-[11px] text-[#1B4D3E]/85">Projets enregistrés</span></button>
-              <button type="button" onClick={() => setClientDashboardTab("in_progress")} className={`rounded-2xl border border-[#1B4D3E]/20 bg-[#1B4D3E]/10 p-4 text-left shadow-sm hover:bg-[#1B4D3E]/20 sm:p-5 ${clientDashboardTab==="in_progress"?"ring-2 ring-[#1B4D3E] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#1B4D3E] sm:text-sm">Révisions en cours</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#1B4D3E]">{clientRevisions.filter((r:any)=>r.status==="in_progress").length}</span><span className="mt-1 block font-inter text-[11px] text-[#1B4D3E]/85">Traitement en cours</span></button>
-              <button type="button" onClick={() => setClientDashboardTab("pending")} className={`rounded-2xl border border-[#1B4D3E]/20 bg-[#1B4D3E]/10 p-4 text-left shadow-sm hover:bg-[#1B4D3E]/20 sm:p-5 ${clientDashboardTab==="pending"?"ring-2 ring-[#1B4D3E] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#1B4D3E] sm:text-sm">Révisions en attente</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#1B4D3E]">{clientRevisions.filter((r:any)=>["pending","requested","submitted"].includes(String(r.status||"").toLowerCase())).length}</span><span className="mt-1 block font-inter text-[11px] text-[#1B4D3E]/85">À traiter</span></button>
-              <button type="button" onClick={() => setClientDashboardTab("completed")} className={`rounded-2xl border border-[#1B4D3E]/20 bg-[#1B4D3E]/10 p-4 text-left shadow-sm hover:bg-[#1B4D3E]/20 sm:p-5 ${clientDashboardTab==="completed"?"ring-2 ring-[#1B4D3E] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#1B4D3E] sm:text-sm">Révisions terminées</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#1B4D3E]">{clientRevisions.filter((r:any)=>r.status==="completed").length}</span><span className="mt-1 block font-inter text-[11px] text-[#1B4D3E]/85">Documents livrés</span></button>
+              <button type="button" onClick={() => setClientDashboardTab("documents")} className={`rounded-2xl border border-[#173F4D]/20 bg-white p-4 text-left shadow-sm hover:bg-[#173F4D]/20 sm:p-5 ${clientDashboardTab==="documents"?"ring-2 ring-[#173F4D] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#173F4D] sm:text-sm">Mes projets</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#173F4D]">{clientProjects.length}</span><span className="mt-1 block font-inter text-[11px] text-[#5E6B73]">Projets enregistrés</span></button>
+              <button type="button" onClick={() => setClientDashboardTab("in_progress")} className={`rounded-2xl border border-[#173F4D]/20 bg-[#173F4D]/10 p-4 text-left shadow-sm hover:bg-[#173F4D]/20 sm:p-5 ${clientDashboardTab==="in_progress"?"ring-2 ring-[#173F4D] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#173F4D] sm:text-sm">Révisions en cours</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#173F4D]">{clientRevisions.filter((r:any)=>r.status==="in_progress").length}</span><span className="mt-1 block font-inter text-[11px] text-[#5E6B73]">Traitement en cours</span></button>
+              <button type="button" onClick={() => setClientDashboardTab("pending")} className={`rounded-2xl border border-[#173F4D]/20 bg-[#173F4D]/10 p-4 text-left shadow-sm hover:bg-[#173F4D]/20 sm:p-5 ${clientDashboardTab==="pending"?"ring-2 ring-[#173F4D] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#173F4D] sm:text-sm">Révisions en attente</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#173F4D]">{clientRevisions.filter((r:any)=>["pending","requested","submitted"].includes(String(r.status||"").toLowerCase())).length}</span><span className="mt-1 block font-inter text-[11px] text-[#5E6B73]">À traiter</span></button>
+              <button type="button" onClick={() => setClientDashboardTab("completed")} className={`rounded-2xl border border-[#173F4D]/20 bg-[#173F4D]/10 p-4 text-left shadow-sm hover:bg-[#173F4D]/20 sm:p-5 ${clientDashboardTab==="completed"?"ring-2 ring-[#173F4D] ring-offset-2":""}`}><span className="block font-inter text-xs font-semibold text-[#173F4D] sm:text-sm">Révisions terminées</span><span className="mt-2 block font-playfair text-3xl font-bold text-[#173F4D]">{clientRevisions.filter((r:any)=>r.status==="completed").length}</span><span className="mt-1 block font-inter text-[11px] text-[#5E6B73]">Documents livrés</span></button>
             </div>
-            <div className="mt-6 rounded-3xl border border-[#1B4D3E]/20 bg-white p-5 shadow-sm sm:p-7">
-              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-2xl font-bold text-[#1B4D3E]">{clientDashboardTab==="documents"?"Mes projets et documents":clientDashboardTab==="in_progress"?"Demandes de révision en cours":clientDashboardTab==="pending"?"Demandes de révision en attente":"Révisions terminées et livrées"}</h2><p className="mt-1 font-inter text-sm text-[#1B4D3E]/85">{clientDashboardTab==="documents"?"Retrouvez vos projets et poursuivez votre rédaction.":"Suivez l'avancement et récupérez les documents corrigés."}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{setClientDashboardTab("documents");void loadClientProjects();}} className="rounded-full border border-[#1B4D3E]/15 px-4 py-2 font-inter text-xs font-semibold text-[#1B4D3E] hover:bg-[#1B4D3E]/20">Actualiser</button><button type="button" onClick={startNewClientProject} className="rounded-full bg-[#1B4D3E] px-4 py-2 font-inter text-xs font-semibold text-white">Nouveau projet</button></div></div>
+            <div className="mt-6 rounded-3xl border border-[#173F4D]/20 bg-white p-5 shadow-sm sm:p-7">
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-playfair text-2xl font-bold text-[#173F4D]">{clientDashboardTab==="documents"?"Mes projets et documents":clientDashboardTab==="in_progress"?"Demandes de révision en cours":clientDashboardTab==="pending"?"Demandes de révision en attente":"Révisions terminées et livrées"}</h2><p className="mt-1 font-inter text-sm text-[#5E6B73]">{clientDashboardTab==="documents"?"Retrouvez vos projets et poursuivez votre rédaction.":"Suivez l'avancement et récupérez les documents corrigés."}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{setClientDashboardTab("documents");void loadClientProjects();}} className="rounded-full border border-[#173F4D]/15 px-4 py-2 font-inter text-xs font-semibold text-[#173F4D] hover:bg-[#173F4D]/20">Actualiser</button><button type="button" onClick={startNewClientProject} className="rounded-full bg-[#173F4D] px-4 py-2 font-inter text-xs font-semibold text-white">Nouveau projet</button></div></div>
               {clientDashboardTab === "documents" && (localDraftKeys.length > 0 || Boolean(project.sujet?.trim())) && (
-                <div className="mt-5 rounded-xl border border-[#1B4D3E]/20 p-4 font-inter text-sm text-[#1B4D3E]">
+                <div className="mt-5 rounded-xl border border-[#173F4D]/20 p-4 font-inter text-sm text-[#173F4D]">
                   <p>Reprendre un brouillon conservé sur cet appareil</p>
-                  <p className="mt-1 text-xs text-[#1B4D3E]/85">Retrouvez une copie enregistrée sur cet appareil. Trimémo vérifiera qu’elle appartient bien à votre compte.</p>
+                  <p className="mt-1 text-xs text-[#5E6B73]">Retrouvez une copie enregistrée sur cet appareil. Trimémo vérifiera qu’elle appartient bien à votre compte.</p>
                   {Boolean(project.sujet?.trim()) && <button type="button" onClick={() => { try { archiveCurrentDraft(); pushToast("success", "Copie locale conservée sur cet appareil."); } catch { pushToast("error", "Impossible de conserver la copie : libérez de l’espace sans supprimer le projet."); } }} className="mt-3 rounded-full border px-4 py-2 text-xs">Sauvegarder une copie sur cet appareil</button>}
                   {localDraftKeys.map((key, index) => <button key={key} type="button" disabled={loading} onClick={() => void recoverLocalDraft(key)} className="ml-2 mt-3 rounded-full border px-4 py-2 text-xs disabled:opacity-50">Reprendre une copie locale {index + 1}</button>)}
                 </div>
               )}
-              {clientDashboardTab==="documents"?<div className="mt-5 grid gap-4">{clientProjects.length?clientProjects.map((item)=><article key={item.project_id} className="flex flex-col gap-4 rounded-2xl border border-[#1B4D3E]/20 bg-white p-5 shadow-sm transition hover:border-[#1B4D3E] hover:shadow-md sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={()=>{void openClientProject(item.project_id);}} className="min-w-0 flex-1 text-left"><span className="block font-playfair text-xl font-semibold text-[#1B4D3E]">{item.subject||"Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#1B4D3E]/85">Dernière mise à jour : {item.updated_at?new Date(item.updated_at).toLocaleString("fr-FR"):"Non disponible"}</span><span className="mt-2 inline-block rounded-full bg-[#1B4D3E]/10 px-3 py-2 font-inter text-xs font-semibold text-[#1B4D3E]">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Paiement confirmé":"Paiement non confirmé"}</span></button><button type="button" disabled={loading} onClick={()=>void openHumanRevisionForProject(item)} className="rounded-full border border-[#1B4D3E]/20 px-4 py-3 font-inter text-xs font-semibold text-[#1B4D3E] hover:border-[#1B4D3E] hover:bg-[#1B4D3E]/20 disabled:opacity-50">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Demander une révision humaine":"Révision après rédaction et paiement"}</button></article>):<div className="rounded-2xl border border-dashed border-[#1B4D3E]/20 bg-white p-8 font-inter text-sm text-[#1B4D3E]/85">Aucun projet enregistré pour le moment.</div>}</div>:<div className="mt-5 grid gap-3">{clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?["pending","requested","submitted"].includes(String(r.status||"").toLowerCase()):r.status==="completed").length?clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?["pending","requested","submitted"].includes(String(r.status||"").toLowerCase()):r.status==="completed").map((revision:any)=><article key={revision.id} className={`rounded-2xl border p-4 sm:p-5 ${revision.status==="completed"?"border-[#1B4D3E]/20 bg-[#1B4D3E]/10":revision.status==="in_progress"?"border-[#1B4D3E]/20 bg-[#1B4D3E]/10":"border-[#1B4D3E]/20 bg-[#1B4D3E]/10"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-playfair text-lg font-bold text-[#1B4D3E]">{revision.document_title}</h3><p className="mt-1 font-inter text-xs text-[#1B4D3E]/85">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</p></div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#1B4D3E] px-4 py-2 font-inter text-xs font-semibold text-white">Télécharger le document corrigé</button>}</div></article>):<p className="rounded-xl bg-white p-5 font-inter text-sm text-[#1B4D3E]/85">Aucune demande dans cette catégorie pour le moment.</p>}</div>}
+              {clientDashboardTab==="documents"?<div className="mt-5 grid gap-4">{clientProjects.length?clientProjects.map((item)=><article key={item.project_id} className="flex flex-col gap-4 rounded-2xl border border-[#173F4D]/20 bg-white p-5 shadow-sm transition hover:border-[#173F4D] hover:shadow-md sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={()=>{void openClientProject(item.project_id);}} className="min-w-0 flex-1 text-left"><span className="block font-playfair text-xl font-semibold text-[#173F4D]">{item.subject||"Projet académique"}</span><span className="mt-2 block font-inter text-xs text-[#5E6B73]">Dernière mise à jour : {item.updated_at?new Date(item.updated_at).toLocaleString("fr-FR"):"Non disponible"}</span><span className="mt-2 inline-block rounded-full bg-[#173F4D]/10 px-3 py-2 font-inter text-xs font-semibold text-[#173F4D]">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Paiement confirmé":"Paiement non confirmé"}</span></button><button type="button" disabled={loading} onClick={()=>void openHumanRevisionForProject(item)} className="rounded-full border border-[#173F4D]/20 px-4 py-3 font-inter text-xs font-semibold text-[#173F4D] hover:border-[#173F4D] hover:bg-[#173F4D]/20 disabled:opacity-50">{String(item.payment_status||"").trim().toLowerCase()==="paid"?"Demander une révision humaine":"Révision après rédaction et paiement"}</button></article>):<div className="rounded-2xl border border-dashed border-[#173F4D]/20 bg-white p-8 font-inter text-sm text-[#5E6B73]">Aucun projet enregistré pour le moment.</div>}</div>:<div className="mt-5 grid gap-3">{clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?["pending","requested","submitted"].includes(String(r.status||"").toLowerCase()):r.status==="completed").length?clientRevisions.filter((r:any)=>clientDashboardTab==="in_progress"?r.status==="in_progress":clientDashboardTab==="pending"?["pending","requested","submitted"].includes(String(r.status||"").toLowerCase()):r.status==="completed").map((revision:any)=><article key={revision.id} className={`rounded-2xl border p-4 sm:p-5 ${revision.status==="completed"?"border-[#173F4D]/20 bg-[#173F4D]/10":revision.status==="in_progress"?"border-[#173F4D]/20 bg-[#173F4D]/10":"border-[#173F4D]/20 bg-[#173F4D]/10"}`}><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-playfair text-lg font-bold text-[#173F4D]">{revision.document_title}</h3><p className="mt-1 font-inter text-xs text-[#5E6B73]">{revision.created_at?new Date(revision.created_at).toLocaleString("fr-FR"):""} · {revision.status==="completed"?"Terminée":revision.status==="in_progress"?"En cours":"En attente"}</p></div>{revision.status==="completed"&&<button type="button" onClick={()=>void downloadClientRevision(String(revision.id))} className="rounded-full bg-[#173F4D] px-4 py-2 font-inter text-xs font-semibold text-white">Télécharger le document corrigé</button>}</div></article>):<p className="rounded-xl bg-white p-5 font-inter text-sm text-[#5E6B73]">Aucune demande dans cette catégorie pour le moment.</p>}</div>}
             </div>
-            {revisionModalOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1B4D3E]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title"><form onSubmit={submitHumanRevision} className="max-h-[90vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-8"><div className="flex items-start justify-between gap-4"><div><p className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#1B4D3E]">Assistance humaine</p><h2 id="revision-modal-title" className="mt-2 font-playfair text-2xl font-bold text-[#1B4D3E]">Demande de révision</h2><p className="mt-2 font-inter text-sm text-[#1B4D3E]/85">Document sélectionné : {revisionTargetTitle}</p></div><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-3 py-1 text-[#1B4D3E]/85" aria-label="Fermer">✕</button></div><div className="grid gap-4 sm:grid-cols-2"><label className="block font-inter text-sm font-semibold text-[#1B4D3E]">Niveau de révision<select value={revisionTier} onChange={e=>{const tier=e.target.value as "essential"|"standard"|"deep";setRevisionTier(tier);if(revisionFile)void calculateHumanRevisionQuote(revisionFile,tier);}} className="mt-2 w-full rounded-xl border border-[#1B4D3E]/20 bg-white p-3 text-sm font-normal"><option value="essential">Correction essentielle</option><option value="standard">Révision standard</option><option value="deep">Révision approfondie</option></select><span className="mt-1 block text-xs font-normal text-[#1B4D3E]/85">{revisionTier==="essential"?"Orthographe, grammaire, ponctuation et typographie.":revisionTier==="standard"?"Correction essentielle, reformulation, fluidité et réduction des répétitions.":"Révision standard, restructuration ciblée et contrôle de cohérence méthodologique."}</span></label><div className="rounded-xl border border-[#1B4D3E]/20 bg-white p-4"><div className="font-inter text-sm font-semibold text-[#1B4D3E]">Estimation de votre révision</div>{revisionQuoteLoading?<p className="mt-2 text-sm text-[#1B4D3E]/85">Analyse du document et calcul du devis…</p>:revisionQuote?<div className="mt-3 grid gap-2 text-sm text-[#1B4D3E]"><div className="flex justify-between gap-3"><span>Nombre de pages estimé</span><strong>{revisionPages}</strong></div><div className="flex justify-between gap-3"><span>Tarif par page</span><strong>{revisionQuote.unitPrice.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3 border-t border-[#1B4D3E]/20 pt-2"><span>Coût estimé</span><strong className="text-lg text-[#1B4D3E]">{revisionQuote.estimatedAmount.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3"><span>Délai de livraison estimé</span><strong>{revisionQuote.deliveryLabel}</strong></div></div>:<p className="mt-2 text-sm text-[#1B4D3E]/85">Joignez votre document Word pour afficher le volume, le tarif et le délai de livraison.</p>}</div></div><label className="block font-inter text-sm font-semibold text-[#1B4D3E]">Corrections demandées<textarea required minLength={10} value={revisionInstructions} onChange={e=>setRevisionInstructions(e.target.value)} rows={5} placeholder="Précisez les passages à corriger et les consignes à respecter…" className="mt-2 w-full rounded-xl border border-[#1B4D3E]/20 p-3 text-sm font-normal outline-none focus:border-[#1B4D3E]"/></label><div className="rounded-xl border border-[#1B4D3E]/20 bg-white p-3 text-sm text-[#1B4D3E]/85"><label className="block font-inter text-sm font-semibold text-[#1B4D3E]">Document Word exporté depuis Trimémo<input type="file" required accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={e=>{const file=e.target.files?.[0]||null;setRevisionFile(file);setRevisionQuote(null);setRevisionPages(0);if(file)void calculateHumanRevisionQuote(file,revisionTier);else setRevisionError("");}} className="mt-2 block w-full rounded-xl border border-[#1B4D3E]/20 bg-white p-3 text-sm font-normal file:mr-3 file:rounded-full file:border-0 file:bg-[#1B4D3E]/10 file:px-3 file:py-2 file:text-xs file:font-semibold"/></label><span className="mt-2 block text-xs">Exportez d’abord le document Word final depuis votre projet, puis joignez-le ici. Format accepté : .docx. Taille maximale : 3 Mo.</span>{revisionFile&&<span className="mt-2 block text-xs font-semibold text-[#1B4D3E]">Fichier sélectionné : {revisionFile.name}</span>}</div>{revisionError&&<p role="alert" className="rounded-xl bg-[#1B4D3E]/15 p-3 text-sm text-[#1B4D3E]">{revisionError}</p>}{revisionMessage&&<p role="status" className="rounded-xl bg-[#1B4D3E]/10 p-3 text-sm text-white">{revisionMessage}</p>}<div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-5 py-3 text-sm">Annuler</button><button type="submit" disabled={revisionSubmitting} className="rounded-full bg-[#1B4D3E] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{revisionSubmitting?"Envoi en cours…":"Envoyer la demande"}</button></div></form></div>}
+            {revisionModalOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#173F4D]/60 p-4" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title"><form onSubmit={submitHumanRevision} className="max-h-[90vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl md:p-8"><div className="flex items-start justify-between gap-4"><div><p className="font-inter text-[10px] font-bold uppercase tracking-[0.2em] text-[#173F4D]">Assistance humaine</p><h2 id="revision-modal-title" className="mt-2 font-playfair text-2xl font-bold text-[#173F4D]">Demande de révision</h2><p className="mt-2 font-inter text-sm text-[#5E6B73]">Document sélectionné : {revisionTargetTitle}</p></div><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-3 py-1 text-[#5E6B73]" aria-label="Fermer">✕</button></div><div className="grid gap-4 sm:grid-cols-2"><label className="block font-inter text-sm font-semibold text-[#173F4D]">Niveau de révision<select value={revisionTier} onChange={e=>{const tier=e.target.value as "essential"|"standard"|"deep";setRevisionTier(tier);if(revisionFile)void calculateHumanRevisionQuote(revisionFile,tier);}} className="mt-2 w-full rounded-xl border border-[#173F4D]/20 bg-white p-3 text-sm font-normal"><option value="essential">Correction essentielle</option><option value="standard">Révision standard</option><option value="deep">Révision approfondie</option></select><span className="mt-1 block text-xs font-normal text-[#5E6B73]">{revisionTier==="essential"?"Orthographe, grammaire, ponctuation et typographie.":revisionTier==="standard"?"Correction essentielle, reformulation, fluidité et réduction des répétitions.":"Révision standard, restructuration ciblée et contrôle de cohérence méthodologique."}</span></label><div className="rounded-xl border border-[#173F4D]/20 bg-white p-4"><div className="font-inter text-sm font-semibold text-[#173F4D]">Estimation de votre révision</div>{revisionQuoteLoading?<p className="mt-2 text-sm text-[#5E6B73]">Analyse du document et calcul du devis…</p>:revisionQuote?<div className="mt-3 grid gap-2 text-sm text-[#173F4D]"><div className="flex justify-between gap-3"><span>Nombre de pages estimé</span><strong>{revisionPages}</strong></div><div className="flex justify-between gap-3"><span>Tarif par page</span><strong>{revisionQuote.unitPrice.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3 border-t border-[#173F4D]/20 pt-2"><span>Coût estimé</span><strong className="text-lg text-[#173F4D]">{revisionQuote.estimatedAmount.toLocaleString("fr-FR")} {revisionQuote.currency}</strong></div><div className="flex justify-between gap-3"><span>Délai de livraison estimé</span><strong>{revisionQuote.deliveryLabel}</strong></div></div>:<p className="mt-2 text-sm text-[#5E6B73]">Joignez votre document Word pour afficher le volume, le tarif et le délai de livraison.</p>}</div></div><label className="block font-inter text-sm font-semibold text-[#173F4D]">Corrections demandées<textarea required minLength={10} value={revisionInstructions} onChange={e=>setRevisionInstructions(e.target.value)} rows={5} placeholder="Précisez les passages à corriger et les consignes à respecter…" className="mt-2 w-full rounded-xl border border-[#173F4D]/20 p-3 text-sm font-normal outline-none focus:border-[#173F4D]"/></label><div className="rounded-xl border border-[#173F4D]/20 bg-white p-3 text-sm text-[#5E6B73]"><label className="block font-inter text-sm font-semibold text-[#173F4D]">Document Word exporté depuis Trimémo<input type="file" required accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={e=>{const file=e.target.files?.[0]||null;setRevisionFile(file);setRevisionQuote(null);setRevisionPages(0);if(file)void calculateHumanRevisionQuote(file,revisionTier);else setRevisionError("");}} className="mt-2 block w-full rounded-xl border border-[#173F4D]/20 bg-white p-3 text-sm font-normal file:mr-3 file:rounded-full file:border-0 file:bg-[#173F4D]/10 file:px-3 file:py-2 file:text-xs file:font-semibold"/></label><span className="mt-2 block text-xs">Exportez d’abord le document Word final depuis votre projet, puis joignez-le ici. Format accepté : .docx. Taille maximale : 3 Mo.</span>{revisionFile&&<span className="mt-2 block text-xs font-semibold text-[#173F4D]">Fichier sélectionné : {revisionFile.name}</span>}</div>{revisionError&&<p role="alert" className="rounded-xl bg-[#173F4D]/15 p-3 text-sm text-[#173F4D]">{revisionError}</p>}{revisionMessage&&<p role="status" className="rounded-xl bg-[#173F4D]/10 p-3 text-sm text-white">{revisionMessage}</p>}<div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setRevisionModalOpen(false)} className="rounded-full border px-5 py-3 text-sm">Annuler</button><button type="submit" disabled={revisionSubmitting} className="rounded-full bg-[#173F4D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{revisionSubmitting?"Envoi en cours…":"Envoyer la demande"}</button></div></form></div>}
           </div>
         </section>
       )}
@@ -4437,54 +4437,54 @@ export default function App() {
       )}
 
       {(view === "project" || view === "estimate" || view === "preview" || view === "premium" || view === "writing") && (
-        <main className={`min-h-[calc(100vh-72px)] bg-[#1B4D3E]/10 px-6 py-8 lg:px-8 lg:py-10 ${view === "writing" ? "h-[calc(100vh-72px)] overflow-y-auto overscroll-contain" : ""}`}>
+        <main className={`studio-workspace min-h-[calc(100vh-72px)] bg-[#F7F5EF] px-4 py-8 sm:px-6 lg:px-8 lg:py-10 ${view === "writing" ? "h-[calc(100vh-72px)] overflow-y-auto overscroll-contain" : ""}`}>
           <div className="mx-auto max-w-[1220px]">
             <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-start gap-3">
                 {(
                   <button
                     onClick={() => { setClientProjectFlow(false); setView("dashboard"); void loadClientProjects(); }}
-                    className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#1B4D3E]/10 bg-white"
+                    className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#173F4D]/10 bg-white"
                     aria-label="Retour au tableau de bord"
                   >
                     <ArrowRight className="h-4 w-4 rotate-180" />
                   </button>
                 )}
                 <div>
-                <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#1B4D3E]">Projet académique</div>
+                <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#173F4D]">Projet académique</div>
                 <h2 className="mt-2 font-playfair text-3xl">{view === "project" ? "Définissez votre demande" : view === "estimate" ? "Analyse du projet · Estimation du coût" : view === "preview" ? "Votre aperçu avant paiement" : view === "premium" ? "Vos options premium" : selectedPlan && selectedProblematic ? selectedPlan.title : ""}</h2>
               </div>
-              <div className="font-inter text-xs text-[#1B4D3E]/85">1 page = {WORDS_PER_PAGE} mots</div>
+              
             </div>
 
             {generationError && view === "project" && (
-              <div className="mb-5 rounded-2xl border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-sm leading-6 text-[#1B4D3E]">
+              <div className="mb-5 rounded-2xl border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-sm leading-6 text-[#173F4D]">
                 <strong>Une difficulté est survenue :</strong> {generationError}
               </div>
             )}
 
               {view === "estimate" && estimate && (
               <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
-                <article className="rounded-[24px] border border-[#1B4D3E]/10 bg-white p-7 lg:p-9">
-                  <div className="font-inter text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">Analyse du projet</div>
-                  <h3 className="mt-3 font-playfair text-3xl text-[#1B4D3E]">Estimation du coût</h3>
-                  <p className="mt-4 font-inter text-sm leading-[1.8] text-[#1B4D3E]/85">Trimémo a analysé le sujet, le niveau, les consignes et les documents fournis. Le montant est provisoire et couvre le service automatisé prévu pour le projet, y compris les propositions, les améliorations, les contrôles automatiques et l’aperçu avant paiement. La correction humaine est une prestation distincte, non comprise dans ce prix.</p>
+                <article className="rounded-[24px] border border-[#173F4D]/10 bg-white p-7 lg:p-9">
+                  <div className="font-inter text-[11px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Analyse du projet</div>
+                  <h3 className="mt-3 font-playfair text-3xl text-[#173F4D]">Estimation du coût</h3>
+                  <p className="mt-4 font-inter text-sm leading-[1.8] text-[#5E6B73]">Trimémo a analysé le sujet, le niveau, les consignes et les documents fournis. Le montant est provisoire et couvre le service automatisé prévu pour le projet, y compris les propositions, les améliorations, les contrôles automatiques et l’aperçu avant paiement. La correction humaine est une prestation distincte, non comprise dans ce prix.</p>
                   <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-[#1B4D3E]/10 p-4"><div className="font-inter text-xs text-[#1B4D3E]/85">Type de document</div><div className="mt-1 font-inter text-sm font-semibold text-[#1B4D3E]">{project.typeDoc}</div></div>
-                    <div className="rounded-2xl bg-[#1B4D3E]/10 p-4"><div className="font-inter text-xs text-[#1B4D3E]/85">Niveau académique</div><div className="mt-1 font-inter text-sm font-semibold text-[#1B4D3E]">{project.niveau}</div></div>
-                    <div className="rounded-2xl bg-[#1B4D3E]/10 p-4"><div className="font-inter text-xs text-[#1B4D3E]/85">Volume demandé</div><div className="mt-1 font-inter text-sm font-semibold text-[#1B4D3E]">{estimate.pages} pages · {(estimate.pages * estimate.wordsPerPage).toLocaleString("fr-FR")} mots</div></div>
-                    <div className="rounded-2xl bg-[#1B4D3E]/10 p-4"><div className="font-inter text-xs text-[#1B4D3E]/85">Complexité détectée</div><div className="mt-1 font-inter text-sm font-semibold capitalize text-[#1B4D3E]">{estimate.complexity === "elevee" ? "Élevée" : estimate.complexity}</div></div>
+                    <div className="rounded-2xl bg-[#173F4D]/10 p-4"><div className="font-inter text-xs text-[#5E6B73]">Type de document</div><div className="mt-1 font-inter text-sm font-semibold text-[#173F4D]">{project.typeDoc}</div></div>
+                    <div className="rounded-2xl bg-[#173F4D]/10 p-4"><div className="font-inter text-xs text-[#5E6B73]">Niveau académique</div><div className="mt-1 font-inter text-sm font-semibold text-[#173F4D]">{project.niveau}</div></div>
+                    <div className="rounded-2xl bg-[#173F4D]/10 p-4"><div className="font-inter text-xs text-[#5E6B73]">Volume demandé</div><div className="mt-1 font-inter text-sm font-semibold text-[#173F4D]">{estimate.pages} pages · {(estimate.pages * estimate.wordsPerPage).toLocaleString("fr-FR")} mots</div></div>
+                    <div className="rounded-2xl bg-[#173F4D]/10 p-4"><div className="font-inter text-xs text-[#5E6B73]">Complexité détectée</div><div className="mt-1 font-inter text-sm font-semibold capitalize text-[#173F4D]">{estimate.complexity === "elevee" ? "Élevée" : estimate.complexity}</div></div>
                   </div>
-                  <div className="mt-6 rounded-2xl border border-[#1B4D3E]/10 p-5">
-                    <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Critères pris en compte</div>
-                    <ul className="mt-3 space-y-2 font-inter text-sm leading-[1.7] text-[#1B4D3E]/85">
+                  <div className="mt-6 rounded-2xl border border-[#173F4D]/10 p-5">
+                    <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#5E6B73]">Critères pris en compte</div>
+                    <ul className="mt-3 space-y-2 font-inter text-sm leading-[1.7] text-[#5E6B73]">
                       {(estimate.detectedRequirements || []).map((item, index) => <li key={index}>• {item}</li>)}
                       {(estimate.reasons || []).map((item, index) => <li key={"reason-"+index}>• {item}</li>)}
                     </ul>
                   </div>
-                  {!estimate.countryDetected && <p className="mt-4 rounded-xl bg-[#1B4D3E]/10 p-3 font-inter text-xs leading-[1.6] text-[#1B4D3E]">Le pays n'a pas pu être détecté automatiquement. Le prix utilise provisoirement le marché international. Vérifiez le pays avant le paiement si ce tarif ne correspond pas à votre situation.</p>}
+                  {!estimate.countryDetected && <p className="mt-4 rounded-xl bg-[#173F4D]/10 p-3 font-inter text-xs leading-[1.6] text-[#173F4D]">Le pays n'a pas pu être détecté automatiquement. Le prix utilise provisoirement le marché international. Vérifiez le pays avant le paiement si ce tarif ne correspond pas à votre situation.</p>}
                 </article>
-                <aside className="h-fit rounded-[24px] bg-[#1B4D3E] p-7 text-white lg:sticky lg:top-[98px]">
+                <aside className="h-fit rounded-[24px] bg-[#173F4D] p-7 text-white lg:sticky lg:top-[98px]">
                   <div className="font-inter text-[11px] uppercase tracking-[0.18em] text-white">{estimate.marketLabel}</div>
                   <div className="mt-5 font-inter text-xs text-white/90">Coût approximatif du projet</div>
                   <div className="mt-2 font-playfair text-4xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : estimate.currency === "USD" ? "US$" : estimate.currency}</div>
@@ -4492,7 +4492,7 @@ export default function App() {
                   <div className="mt-3 font-inter text-xs leading-[1.6] text-white/85">Les prix sont exprimés dans la devise du marché Trimémo applicable, qui peut différer de votre monnaie locale. La devise effectivement débitée est précisée avant la confirmation du paiement.</div>
                   {estimate.currency === "XOF" && <div className="mt-3 rounded-xl bg-white/10 p-3 font-inter text-xs leading-[1.6] text-white/90">Si vous payez par PayPal, le montant sera converti en euros selon la parité fixe FCFA/euro : environ {estimate.checkoutAmount} €.</div>}
                   <div className="mt-5 rounded-xl border border-white/15 p-3 font-inter text-xs leading-[1.7] text-white/90">Le montant affiché couvre le document complet. Les mots de l’aperçu sont inclus dans ce prix global : ils ne sont pas gratuits et ne seront pas facturés une seconde fois.</div>
-                  <button onClick={() => void generatePublicProblematics()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white font-inter text-sm font-semibold text-[#1B4D3E] disabled:opacity-50">
+                  <button onClick={() => void generatePublicProblematics()} disabled={loading} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white font-inter text-sm font-semibold text-[#173F4D] disabled:opacity-50">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                     Commencer les problématiques
                   </button>
@@ -4505,41 +4505,41 @@ export default function App() {
 
           {view === "project" && (
               <div className="grid gap-8 lg:grid-cols-[1fr_350px]">
-                <section className="rounded-[24px] border border-[#1B4D3E]/5 bg-white p-7 lg:p-9">
+                <section className="rounded-[24px] border border-[#173F4D]/5 bg-white p-7 lg:p-9">
                   <div className="grid gap-6">
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Sujet exact *</label>
-                      <textarea value={project.sujet} onChange={(e) => setProject({ ...project, sujet: e.target.value })} className="mt-2 min-h-[110px] w-full rounded-[16px] border border-[#1B4D3E]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#1B4D3E]/30" placeholder="Saisissez le sujet tel qu’il vous a été attribué." />
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Sujet exact *</label>
+                      <textarea value={project.sujet} onChange={(e) => setProject({ ...project, sujet: e.target.value })} className="mt-2 min-h-[110px] w-full rounded-[16px] border border-[#173F4D]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#173F4D]/30" placeholder="Saisissez le sujet tel qu’il vous a été attribué." />
                     </div>
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Contexte de recherche</label>
-                      <textarea value={project.contexte} onChange={(e) => setProject({ ...project, contexte: e.target.value })} className="mt-2 min-h-[110px] w-full rounded-[16px] border border-[#1B4D3E]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#1B4D3E]/30" placeholder="Terrain, organisation, population, période, secteur, problématique déjà envisagée, ou toute précision utile. Ne renseignez qu’un pays s’il fait réellement partie du sujet." />
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Contexte de recherche</label>
+                      <textarea value={project.contexte} onChange={(e) => setProject({ ...project, contexte: e.target.value })} className="mt-2 min-h-[110px] w-full rounded-[16px] border border-[#173F4D]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#173F4D]/30" placeholder="Terrain, organisation, population, période, secteur, problématique déjà envisagée, ou toute précision utile. Ne renseignez qu’un pays s’il fait réellement partie du sujet." />
                     </div>
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Problématique personnelle (facultatif)</label>
-                      <textarea value={project.problematiquePersonnelle} onChange={(e) => setProject({ ...project, problematiquePersonnelle: e.target.value })} className="mt-2 min-h-[100px] w-full rounded-[16px] border border-[#1B4D3E]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#1B4D3E]/30" placeholder="Si vous avez déjà une problématique, saisissez-la ici. Elle sera conservée et vérifiée." />
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Problématique personnelle (facultatif)</label>
+                      <textarea value={project.problematiquePersonnelle} onChange={(e) => setProject({ ...project, problematiquePersonnelle: e.target.value })} className="mt-2 min-h-[100px] w-full rounded-[16px] border border-[#173F4D]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#173F4D]/30" placeholder="Si vous avez déjà une problématique, saisissez-la ici. Elle sera conservée et vérifiée." />
                     </div>
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Plan personnel (facultatif)</label>
-                      <textarea value={project.planPersonnel} onChange={(e) => setProject({ ...project, planPersonnel: e.target.value })} className="mt-2 min-h-[120px] w-full rounded-[16px] border border-[#1B4D3E]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#1B4D3E]/30" placeholder="Si vous avez déjà un plan, saisissez-le ici. Il sera utilisé après vérification de sa cohérence." />
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Plan personnel (facultatif)</label>
+                      <textarea value={project.planPersonnel} onChange={(e) => setProject({ ...project, planPersonnel: e.target.value })} className="mt-2 min-h-[120px] w-full rounded-[16px] border border-[#173F4D]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#173F4D]/30" placeholder="Si vous avez déjà un plan, saisissez-le ici. Il sera utilisé après vérification de sa cohérence." />
                     </div>
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Consignes de l’établissement ou du client</label>
-                      <textarea value={project.consignes} onChange={(e) => setProject({ ...project, consignes: e.target.value })} className="mt-2 min-h-[150px] w-full rounded-[16px] border border-[#1B4D3E]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#1B4D3E]/30" placeholder="Collez ici les consignes textuelles, méthodologiques ou de mise en forme." />
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Consignes de l’établissement ou du client</label>
+                      <textarea value={project.consignes} onChange={(e) => setProject({ ...project, consignes: e.target.value })} className="mt-2 min-h-[150px] w-full rounded-[16px] border border-[#173F4D]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#173F4D]/30" placeholder="Collez ici les consignes textuelles, méthodologiques ou de mise en forme." />
                     </div>
                     <div>
                       <div className="flex items-center justify-between gap-4">
-                        <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Documents du projet</label>
-                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#1B4D3E]/10 bg-white px-3 py-2 font-inter text-xs">
+                        <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Documents du projet</label>
+                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#173F4D]/10 bg-white px-3 py-2 font-inter text-xs">
                           <Paperclip className="h-3.5 w-3.5" /> Ajouter des fichiers
                           <input type="file" multiple accept=".pdf,.docx,.txt,.md,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff" onChange={(e) => void handleFiles(e.target.files)} className="hidden" />
                         </label>
                       </div>
-                      <div className="mt-3 rounded-[16px] border border-dashed border-[#1B4D3E]/15 bg-[#FFFFFF] p-5">
-                        <div className="font-inter text-xs text-[#1B4D3E]/85">PDF, DOCX, TXT, Markdown, JPG ou PNG. Les documents et images transmis sont analysés par le moteur OpenAI avec votre demande.</div>
+                      <div className="mt-3 rounded-[16px] border border-dashed border-[#173F4D]/15 bg-[#FFFFFF] p-5">
+                        <div className="font-inter text-xs text-[#5E6B73]">PDF, DOCX, TXT, Markdown, JPG ou PNG. Les documents et images transmis sont analysés par le moteur OpenAI avec votre demande.</div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {project.files.map((file, index) => (
-                            <span key={`${file.name}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-[#1B4D3E]/10 bg-white px-3 py-1.5 font-inter text-[11px]">
+                            <span key={`${file.name}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-[#173F4D]/10 bg-white px-3 py-1.5 font-inter text-[11px]">
                               <FileText className="h-3.5 w-3.5" /> <span className="max-w-[180px] truncate">{file.name}</span>
                               <select value={file.category || "reference"} onChange={(event) => {
                               const category = event.target.value as FileCategory;
@@ -4547,7 +4547,7 @@ export default function App() {
                                 ...current,
                                 files: current.files.map((item, itemIndex) => itemIndex === index ? { ...item, category } : item),
                               }));
-                            }} className="rounded-lg border border-[#1B4D3E]/10 bg-white px-2 py-1 text-[11px]">
+                            }} className="rounded-lg border border-[#173F4D]/10 bg-white px-2 py-1 text-[11px]">
                               <option value="methodology">Méthodologie</option>
                               <option value="instructions">Instructions</option>
                               <option value="context">Contexte</option>
@@ -4563,41 +4563,41 @@ export default function App() {
                   </div>
                 </section>
 
-                <aside className="h-fit rounded-[24px] border border-[#1B4D3E]/5 bg-white p-7 lg:sticky lg:top-[98px]">
+                <aside className="h-fit rounded-[24px] border border-[#173F4D]/5 bg-white p-7 lg:sticky lg:top-[98px]">
                   <div className="font-playfair text-xl">Paramètres du projet</div>
                   <div className="mt-6 space-y-5">
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Niveau *</label>
-                      <select value={project.niveau} onChange={(e) => setProject({ ...project, niveau: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#1B4D3E]/10 bg-white px-4 font-inter text-sm">
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Niveau *</label>
+                      <select value={project.niveau} onChange={(e) => setProject({ ...project, niveau: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#173F4D]/10 bg-white px-4 font-inter text-sm">
                         <option value="">Sélectionnez un niveau</option>
                         <option>Licence 1</option><option>Licence 2</option><option>Licence 3</option>
                         <option>Master 1</option><option>Master 2</option><option>Doctorat</option><option>Autre</option>
                       </select>
                     </div>
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Domaine *</label>
-                      <select value={project.domaine} onChange={(e) => setProject({ ...project, domaine: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#1B4D3E]/10 bg-white px-4 font-inter text-sm">
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Domaine *</label>
+                      <select value={project.domaine} onChange={(e) => setProject({ ...project, domaine: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#173F4D]/10 bg-white px-4 font-inter text-sm">
                         <option value="">Sélectionnez un domaine</option>
                         {domainOptions.map((domain) => <option key={domain} value={domain}>{domain}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Type de document *</label>
-                      <select value={project.typeDoc} onChange={(e) => setProject({ ...project, typeDoc: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#1B4D3E]/10 bg-white px-4 font-inter text-sm">
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Type de document *</label>
+                      <select value={project.typeDoc} onChange={(e) => setProject({ ...project, typeDoc: e.target.value })} className="mt-2 h-11 w-full rounded-[12px] border border-[#173F4D]/10 bg-white px-4 font-inter text-sm">
                         <option value="">Sélectionnez un type</option>
                         <option>Mémoire</option><option>Thèse</option><option>Rapport</option><option>Dissertation</option><option>Devoir</option><option>Article scientifique</option><option>Autre</option>
                       </select>
                     </div>
                     <div>
-                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Nombre de pages</label>
+                      <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Nombre de pages</label>
                       <input type="number" min={1} max={maxPagesForFormula(project.formula)} value={project.pages || ""} onChange={(e) => {
                         const raw = e.target.value;
                         setProject({ ...project, pages: raw === "" ? 0 : Math.min(maxPagesForFormula(project.formula), Number(raw)) });
-                      }} className="mt-2 h-11 w-full rounded-[12px] border border-[#1B4D3E]/10 px-4 font-inter text-sm" />
-                      <div className="mt-2 font-inter text-[11px] text-[#1B4D3E]/85">Objectif de rédaction : {targetWords.toLocaleString("fr-FR")} mots</div>
+                      }} className="mt-2 h-11 w-full rounded-[12px] border border-[#173F4D]/10 px-4 font-inter text-sm" />
+                      <div className="mt-2 font-inter text-[11px] text-[#5E6B73]">Objectif de rédaction : {targetWords.toLocaleString("fr-FR")} mots</div>
                     </div>
                   </div>
-                  <button onClick={() => void analyzeProject()} disabled={loading} className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1B4D3E] font-inter text-sm font-medium text-white disabled:opacity-50">
+                  <button onClick={() => void analyzeProject()} disabled={loading} className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#173F4D] font-inter text-sm font-medium text-white disabled:opacity-50">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-white" />}
                     Analyser le projet et estimer le coût
                   </button>
@@ -4607,22 +4607,22 @@ export default function App() {
 
             {view === "preview" && preview && !ownerRoute && canViewClientPreview && (
             <section
-              className="mb-7 mx-auto max-w-[900px] select-none rounded-lg border border-[#1B4D3E]/10 bg-[#1B4D3E]/10 p-3 sm:p-8"
+              className="mb-7 mx-auto max-w-[900px] select-none rounded-lg border border-[#173F4D]/10 bg-[#173F4D]/10 p-3 sm:p-8"
               onCopy={(event) => event.preventDefault()}
               onCut={(event) => event.preventDefault()}
               onContextMenu={(event) => event.preventDefault()}
             >
-              <div className="mx-auto bg-white px-6 py-10 text-[#1B4D3E] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "11pt", lineHeight: 1.55, fontWeight: 400 }}>
+              <div className="mx-auto bg-white px-6 py-10 text-[#173F4D] shadow-lg sm:px-14 sm:py-16" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "11pt", lineHeight: 1.55, fontWeight: 400 }}>
                 <div className="mb-8 border-b pb-5 text-center">
-                  <div className="text-xs uppercase tracking-[0.12em] text-[#1B4D3E]/85">Aperçu du document académique</div>
+                  <div className="text-xs uppercase tracking-[0.12em] text-[#5E6B73]">Aperçu du document académique</div>
                   <h2 className="mt-4 text-xl font-bold">{project.sujet || selectedPlan?.title || "Projet académique"}</h2>
-                  <div className="mx-auto mt-4 max-w-[620px] border-t border-b border-[#1B4D3E]/20 py-3 text-left text-sm">
+                  <div className="mx-auto mt-4 max-w-[620px] border-t border-b border-[#173F4D]/20 py-3 text-left text-sm">
                     <div><strong>Problématique :</strong> {preview.problematic.question}</div>
                     <div className="mt-2"><strong>Plan retenu :</strong> {preview.plan.title}</div>
                   </div>
                   <div className="mt-3 text-sm">{academicPreviewSegments().reduce((sum, segment) => sum + segment.words, 0).toLocaleString("fr-FR")} / {previewLimit.toLocaleString("fr-FR")} mots rédigés</div>
                 </div>
-                <section className="mb-10 border-b border-[#1B4D3E]/20 pb-8">
+                <section className="mb-10 border-b border-[#173F4D]/20 pb-8">
                   <h3 className="mb-5 text-center text-base font-bold uppercase tracking-wide">Sommaire</h3>
                   <div className="space-y-3 text-sm">
                     <div className="font-semibold">Introduction générale</div>
@@ -4652,7 +4652,7 @@ export default function App() {
                 {academicPreviewSegments().map((segment, index) => (
                   <article key={segment.id} className="mb-8">
                     <h3 className={`mb-5 font-bold ${segment.kind === "introduction" ? "text-center text-lg uppercase" : "text-base"}`}>{segment.title}</h3>
-                    <div className="font-normal text-[11pt] leading-[1.55] text-[#1B4D3E]">
+                    <div className="font-normal text-[11pt] leading-[1.55] text-[#173F4D]">
                       {renderAcademicText(
                         segment.content,
                         true
@@ -4660,12 +4660,12 @@ export default function App() {
                     </div>
                   </article>
                 ))}
-                <div className="mt-10 border-t pt-4 text-center text-xs italic text-[#1B4D3E]/85">Fin de l’aperçu. Le paiement permet de poursuivre la rédaction au point d’arrêt.</div>
+                <div className="mt-10 border-t pt-4 text-center text-xs italic text-[#5E6B73]">Fin de l’aperçu. Le paiement permet de poursuivre la rédaction au point d’arrêt.</div>
               </div>
             </section>
           )}
             {view === "preview" && preview && canViewClientPreview && (
-              <section className="mx-auto mt-6 max-w-[900px] rounded-[24px] bg-[#1B4D3E] p-6 text-white sm:p-8">
+              <section className="studio-payment mx-auto mt-6 max-w-[900px] rounded-[24px] border-t-4 border-[#C6A477] bg-[#173F4D] p-6 text-white shadow-[0_18px_38px_-28px_rgba(23,63,77,0.6)] sm:p-8">
                 <div className="text-center">
                   <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-white">Poursuivre le document</div>
                   <h3 className="mt-2 font-playfair text-2xl sm:text-3xl">Votre aperçu est terminé</h3>
@@ -4690,9 +4690,9 @@ export default function App() {
                   )}
                   <div className="mx-auto mt-5 grid max-w-[420px] gap-3">
                     {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
-                      <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-white font-inter text-sm font-semibold text-[#1B4D3E] hover:bg-[#1B4D3E]/10 disabled:opacity-60">
+                      <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-white font-inter text-sm font-semibold text-[#173F4D] hover:bg-[#173F4D]/10 disabled:opacity-60">
                         {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                        <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-[#1B4D3E]">Pay</span><span className="text-[#1B4D3E]">Pal</span></span><span>Payer avec PayPal</span>
+                        <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-[#173F4D]">Pay</span><span className="text-[#173F4D]">Pal</span></span><span>Payer avec PayPal</span>
                       </button>
                     ) : (
                       <button type="button" disabled className="flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-full bg-white/20 font-inter text-sm font-semibold text-white" title="Le prestataire de paiement doit être activé dans la configuration de Trimémo.">
@@ -4720,15 +4720,15 @@ export default function App() {
           {view === "premium" && premium && (
             <section>
               <div className="mb-6">
-                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">
+                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
                   Résultats du projet
                 </div>
-                <h1 className="mt-2 font-playfair text-4xl text-[#1B4D3E]">Problématiques, plans et rédaction</h1>
+                <h1 className="mt-2 font-playfair text-4xl text-[#173F4D]">Problématiques, plans et rédaction</h1>
               </div>
 
               <div className="min-w-0">
                   {generationError && premiumSection === "problematic" && (
-                    <div className="mb-5 rounded-2xl border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-sm leading-6 text-[#1B4D3E]">
+                    <div className="mb-5 rounded-2xl border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-sm leading-6 text-[#173F4D]">
                       <strong>Erreur de génération du plan :</strong> {generationError}
                     </div>
                   )}
@@ -4737,28 +4737,28 @@ export default function App() {
                     const index = Number(premiumNav.replace("problematic-", "") || 0);
                     const item = premium.problematics[index] || premium.problematics[0];
                     return item ? (
-                      <article className="rounded-[24px] border border-[#1B4D3E]/10 bg-white p-7 shadow-sm lg:p-10">
-                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">
+                      <article className="rounded-[24px] border border-[#173F4D]/10 bg-white p-7 shadow-sm lg:p-10">
+                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
                           Problématique {index + 1}
                         </div>
-                        <h2 className="mt-3 font-playfair text-3xl text-[#1B4D3E]">{item.title}</h2>
-                        <p className="mt-6 font-inter text-base leading-[1.9] text-[#1B4D3E]/85">{item.question}</p>
-                        {item.angle && <div className="mt-5 rounded-2xl bg-[#1B4D3E]/10 p-5 font-inter text-sm leading-[1.8] text-[#1B4D3E]/85"><strong>Angle :</strong> {item.angle}</div>}
-                        {item.rationale && <div className="mt-4 rounded-2xl bg-[#1B4D3E]/10 p-5 font-inter text-sm leading-[1.8] text-[#1B4D3E]/85">{item.rationale}</div>}
-                        <div className="mt-6 grid gap-3 rounded-2xl border border-[#1B4D3E]/10 bg-[#1B4D3E]/10 p-4">
-                          <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#1B4D3E]/85">Améliorer ou comparer la problématique</div>
-                          <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#1B4D3E]/10 bg-white px-4 py-3 font-inter text-sm" />
+                        <h2 className="mt-3 font-playfair text-3xl text-[#173F4D]">{item.title}</h2>
+                        <p className="mt-6 font-inter text-base leading-[1.9] text-[#5E6B73]">{item.question}</p>
+                        {item.angle && <div className="mt-5 rounded-2xl bg-[#173F4D]/10 p-5 font-inter text-sm leading-[1.8] text-[#5E6B73]"><strong>Angle :</strong> {item.angle}</div>}
+                        {item.rationale && <div className="mt-4 rounded-2xl bg-[#173F4D]/10 p-5 font-inter text-sm leading-[1.8] text-[#5E6B73]">{item.rationale}</div>}
+                        <div className="mt-6 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-4">
+                          <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#5E6B73]">Améliorer ou comparer la problématique</div>
+                          <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#173F4D]/10 bg-white px-4 py-3 font-inter text-sm" />
                           <div className="flex flex-wrap gap-2">
-                            <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("improve", item, problematicImprovementComments[item.id] || "")} className="rounded-full border border-[#1B4D3E]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#1B4D3E] disabled:opacity-50">Améliorer cette problématique</button>
-                            <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("alternative", item)} className="rounded-full border border-[#1B4D3E]/30 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#1B4D3E] disabled:opacity-50">Proposer une autre</button>
+                            <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("improve", item, problematicImprovementComments[item.id] || "")} className="rounded-full border border-[#173F4D]/15 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#173F4D] disabled:opacity-50">Améliorer cette problématique</button>
+                            <button type="button" disabled={loading || problematicGenerationCount >= 3} onClick={() => void generateProblematicVariant("alternative", item)} className="rounded-full border border-[#173F4D]/30 bg-white px-4 py-2 font-inter text-xs font-semibold text-[#173F4D] disabled:opacity-50">Proposer une autre</button>
                           </div>
-                          <div className="font-inter text-[11px] text-[#1B4D3E]/85">{problematicGenerationCount}/3 propositions utilisées</div>
+                          <div className="font-inter text-[11px] text-[#5E6B73]">{problematicGenerationCount}/3 propositions utilisées</div>
                         </div>
                         <button
                           type="button"
                           disabled={loading}
                           onClick={() => void generatePlansForProblematic(item, ownerSessionValid)}
-                          className="mt-7 rounded-full bg-[#1B4D3E] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          className="mt-7 rounded-full bg-[#173F4D] px-6 py-3 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {loading && selectedProblematic?.id === item.id ? "Génération du plan..." : "Générer un plan"}
                         </button>
@@ -4770,28 +4770,28 @@ export default function App() {
                     const index = Number(premiumNav.replace("plan-", "") || 0);
                     const plan = premium.plans[index] || premium.plans[0];
                     return plan ? (
-                      <article className="rounded-[24px] border border-[#1B4D3E]/10 bg-white p-7 shadow-sm lg:p-10">
-                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">
+                      <article className="rounded-[24px] border border-[#173F4D]/10 bg-white p-7 shadow-sm lg:p-10">
+                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
                           Plan {index + 1}
                         </div>
-                        <h2 className="mt-3 font-playfair text-3xl text-[#1B4D3E]">{plan.title}</h2>
+                        <h2 className="mt-3 font-playfair text-3xl text-[#173F4D]">{plan.title}</h2>
                         <div className="mt-7 space-y-5 font-inter">
                           {plan.parts.map((part) => (
                             <div key={part.id}>
-                              <div className="font-bold uppercase text-[#1B4D3E]">PARTIE {part.number}. {part.title}</div>
+                              <div className="font-bold uppercase text-[#173F4D]">PARTIE {part.number}. {part.title}</div>
                               <div className="mt-3 space-y-3 pl-4">
                                 {part.chapters.map((chapter) => (
                                   <div key={chapter.id}>
-                                    <div className="font-semibold text-[#1B4D3E]">Chapitre {chapter.number}. {chapter.title}</div>
+                                    <div className="font-semibold text-[#173F4D]">Chapitre {chapter.number}. {chapter.title}</div>
                                     <div className="mt-2 space-y-2 pl-5">
                                       {chapter.sections.map((section) => (
                                         <div key={section.id}>
-                                          <div className="text-sm font-semibold text-[#1B4D3E]/90">Section {chapter.number}.{section.number}. {section.title}</div>
+                                          <div className="text-sm font-semibold text-[#173F4D]/90">Section {chapter.number}.{section.number}. {section.title}</div>
                                           {section.subsections.map((subsection) => (
-                                            <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#1B4D3E]/85">
+                                            <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#5E6B73]">
                                               § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
                                               {subsection.internalTitles.map((internal) => (
-                                                <div key={internal.id} className="pl-4 text-[11px] text-[#1B4D3E]/85">{internal.number}. {internal.title}</div>
+                                                <div key={internal.id} className="pl-4 text-[11px] text-[#5E6B73]">{internal.number}. {internal.title}</div>
                                               ))}
                                             </div>
                                           ))}
@@ -4804,18 +4804,18 @@ export default function App() {
                             </div>
                           ))}
                         </div>
-                        <div className="mt-8 grid gap-3 rounded-2xl border border-[#1B4D3E]/10 bg-[#1B4D3E]/10 p-5">
-                          <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#1B4D3E]/85">Validation du plan</div>
+                        <div className="mt-8 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-5">
+                          <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#5E6B73]">Validation du plan</div>
                           <textarea
                             value={planImprovementComments[plan.id] || ""}
                             onChange={(event) => setPlanImprovementComments((current) => ({ ...current, [plan.id]: event.target.value }))}
                             rows={4}
                             placeholder="Décrivez précisément les modifications souhaitées pour améliorer ce plan."
-                            className="w-full rounded-xl border border-[#1B4D3E]/10 bg-white px-4 py-3 font-inter text-sm"
+                            className="w-full rounded-xl border border-[#173F4D]/10 bg-white px-4 py-3 font-inter text-sm"
                           />
                           <div className="flex flex-wrap gap-2">
-                            <button type="button" disabled={loading || planGenerationCount >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#1B4D3E]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#1B4D3E] disabled:opacity-50">Demander une amélioration</button>
-                            <button type="button" disabled={loading || planGenerationCount >= 3 || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#1B4D3E]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#1B4D3E] disabled:opacity-50">Générer un autre plan</button>
+                            <button type="button" disabled={loading || planGenerationCount >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "improve", currentPlan: plan, comments: planImprovementComments[plan.id] || "" })} className="rounded-full border border-[#173F4D]/15 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#173F4D] disabled:opacity-50">Demander une amélioration</button>
+                            <button type="button" disabled={loading || planGenerationCount >= 3 || premium.plans.length >= 3} onClick={() => void generatePlansForProblematic(selectedProblematic || premium.problematics[0], ownerRoute === true, undefined, { action: "alternative" })} className="rounded-full border border-[#173F4D]/30 bg-white px-5 py-3 font-inter text-xs font-semibold text-[#173F4D] disabled:opacity-50">Générer un autre plan</button>
                             <button type="button" disabled={loading} onClick={() => {
                               const problematic = selectedProblematic || premium.problematics[0];
                               if (!problematic) return;
@@ -4825,14 +4825,14 @@ export default function App() {
                               setView("writing");
                               setPremiumSection("writing");
                               pushToast("success", "Plan retenu. Les blocs de rédaction sont prêts.");
-                            }} className="rounded-full bg-[#1B4D3E] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
+                            }} className="rounded-full bg-[#173F4D] px-5 py-3 font-inter text-xs font-semibold text-white disabled:opacity-50">Valider ce plan</button>
                           </div>
-                          {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#1B4D3E]">Plan retenu</div>}
-                          <div className="font-inter text-[11px] text-[#1B4D3E]/85">{planGenerationCount}/3 génération(s) de plan utilisée(s)</div>
+                          {selectedPlan?.id === plan.id && <div className="font-inter text-xs font-semibold text-[#173F4D]">Plan retenu</div>}
+                          <div className="font-inter text-[11px] text-[#5E6B73]">{planGenerationCount}/3 génération(s) de plan utilisée(s)</div>
                         </div>
                       </article>
                     ) : (
-                      <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#1B4D3E]/85">
+                      <div className="rounded-[24px] bg-white p-8 font-inter text-sm text-[#5E6B73]">
                         Aucun plan n’est encore disponible. Sélectionnez une problématique et générez un plan.
                       </div>
                     );
@@ -4843,56 +4843,56 @@ export default function App() {
           )}
           {(view === "writing" || (view === "premium" && premiumSection === "writing")) && (!selectedPlan || !selectedProblematic) && (
             <section className="grid min-h-[60vh] gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-              <aside className="h-fit rounded-2xl border border-[#1B4D3E]/10 bg-white p-4">
-                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">Navigation du projet</div>
+              <aside className="h-fit rounded-2xl border border-[#173F4D]/10 bg-white p-4">
+                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Navigation du projet</div>
                 <nav className="mt-4 space-y-2">
-                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#1B4D3E] hover:bg-[#1B4D3E]/20">1. Problématique</button>
-                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#1B4D3E] hover:bg-[#1B4D3E]/20">2. Plan validé</button>
-                  <button type="button" onClick={() => { const p = selectedPlan || premium?.plans?.[0]; const q = selectedProblematic || premium?.problematics?.[0]; if (p && q) selectPremiumPlan(q, p); }} className="w-full rounded-xl bg-[#1B4D3E] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
+                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">1. Problématique</button>
+                  <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">2. Plan validé</button>
+                  <button type="button" onClick={() => { const p = selectedPlan || premium?.plans?.[0]; const q = selectedProblematic || premium?.problematics?.[0]; if (p && q) selectPremiumPlan(q, p); }} className="w-full rounded-xl bg-[#173F4D] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
                 </nav>
               </aside>
-              <div className="rounded-2xl border border-[#1B4D3E] bg-white p-6 font-inter text-sm leading-6 text-[#1B4D3E]/85">
-                <h2 className="font-playfair text-2xl text-[#1B4D3E]">Préparation de l’espace de rédaction</h2>
+              <div className="rounded-2xl border border-[#173F4D] bg-white p-6 font-inter text-sm leading-6 text-[#5E6B73]">
+                <h2 className="font-playfair text-2xl text-[#173F4D]">Préparation de l’espace de rédaction</h2>
                 <p className="mt-3">Le plan ou la problématique n’a pas été restauré correctement. Utilisez le menu de gauche pour revenir au plan, puis validez-le à nouveau.</p>
-                {generationError && <p className="mt-3 text-[#1B4D3E]">{generationError}</p>}
+                {generationError && <p className="mt-3 text-[#173F4D]">{generationError}</p>}
               </div>
             </section>
           )}
           {(view === "writing" || (view === "premium" && premiumSection === "writing")) && selectedPlan && selectedProblematic && (
               <section className="min-h-full">
                 <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-                  <aside className="h-fit rounded-2xl border border-[#1B4D3E]/10 bg-white p-4 lg:sticky lg:top-5">
-                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">Navigation du projet</div>
+                  <aside className="h-fit rounded-2xl border border-[#173F4D]/10 bg-white p-4 lg:sticky lg:top-5">
+                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Navigation du projet</div>
                     <nav className="mt-4 space-y-2">
-                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); setWritingTab("problematic"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#1B4D3E] hover:bg-[#1B4D3E]/20">1. Problématique</button>
-                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); setWritingTab("plan"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#1B4D3E] hover:bg-[#1B4D3E]/20">2. Plan validé</button>
-                      <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#1B4D3E] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
+                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); setWritingTab("problematic"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">1. Problématique</button>
+                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); setWritingTab("plan"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">2. Plan validé</button>
+                      <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#173F4D] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
                       {ownerRoute || window.sessionStorage.getItem("trimemo_premium_token") ? (
-                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#1B4D3E]/15 px-4 py-3 text-left font-inter text-sm text-[#1B4D3E] hover:bg-[#1B4D3E]/20">Exporter le document</button>
+                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#173F4D]/15 px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">Exporter le document</button>
                       ) : isPreviewReady(blocks, previewLimit) ? (
-                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl bg-[#1B4D3E] px-4 py-3 text-left font-inter text-sm font-semibold text-white hover:bg-[#1B4D3E]/90">Voir l’aperçu</button>
+                        <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl bg-[#173F4D] px-4 py-3 text-left font-inter text-sm font-semibold text-white hover:bg-[#173F4D]/90">Voir l’aperçu</button>
                       ) : (
-                        <div className="rounded-xl border border-[#1B4D3E]/10 px-4 py-3 font-inter text-xs leading-5 text-[#1B4D3E]/85">L’aperçu se débloque à {previewLimit.toLocaleString("fr-FR")} mots au maximum.</div>
+                        <div className="rounded-xl border border-[#173F4D]/10 px-4 py-3 font-inter text-xs leading-5 text-[#5E6B73]">L’aperçu se débloque à {previewLimit.toLocaleString("fr-FR")} mots au maximum.</div>
                       )}
                     </nav>
-                    <div className="mt-5 rounded-xl bg-[#1B4D3E]/10 p-3">
-                      <div className="font-inter text-[11px] text-[#1B4D3E]/85">Progression rédactionnelle</div>
+                    <div className="mt-5 rounded-xl bg-[#173F4D]/10 p-3">
+                      <div className="font-inter text-[11px] text-[#5E6B73]">Progression rédactionnelle</div>
                       <div className="mt-1 font-inter text-sm font-semibold">{totalDoneWords.toLocaleString("fr-FR")} mots rédigés</div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#1B4D3E]/10"><div className="h-full rounded-full bg-[#1B4D3E]" style={{ width: `${previewLimit ? Math.min(100, Math.round(totalDoneWords / previewLimit * 100)) : 0}%` }} /></div>
-                      <div className="mt-1 font-inter text-[10px] text-[#1B4D3E]/85">Aperçu indicatif : {previewLimit.toLocaleString("fr-FR")} mots maximum</div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#173F4D]/10"><div className="h-full rounded-full bg-[#173F4D]" style={{ width: `${previewLimit ? Math.min(100, Math.round(totalDoneWords / previewLimit * 100)) : 0}%` }} /></div>
+                      <div className="mt-1 font-inter text-[10px] text-[#5E6B73]">Aperçu indicatif : {previewLimit.toLocaleString("fr-FR")} mots maximum</div>
                     </div>
                   </aside>
                   <div className="min-w-0">
                 <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
                   <div>
-                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]">Rédaction</div>
-                    <h1 className="mt-2 font-playfair text-4xl text-[#1B4D3E]">{selectedPlan.title}</h1>
-                    <p className="mt-2 font-inter text-sm text-[#1B4D3E]/85">
+                    <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Rédaction</div>
+                    <h1 className="mt-2 font-playfair text-4xl text-[#173F4D]">{selectedPlan.title}</h1>
+                    <p className="mt-2 font-inter text-sm text-[#5E6B73]">
                       Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#1B4D3E] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
+                    <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#173F4D] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
                       {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                     </button>
 
@@ -4907,11 +4907,11 @@ export default function App() {
                       <article
                         key={block.id}
                         id={`writing-block-${block.id}`}
-                        className="mx-auto max-w-[900px] overflow-hidden border border-[#1B4D3E]/20 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+                        className="mx-auto max-w-[900px] overflow-hidden border border-[#173F4D]/20 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
                       >
-                        <div className="border-b border-[#1B4D3E]/20 px-10 py-6 md:px-16">
+                        <div className="border-b border-[#173F4D]/20 px-10 py-6 md:px-16">
                           <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1B4D3E]/85">
+                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5E6B73]">
                               Bloc {index + 1}
                             </div>
                             <button
@@ -4921,19 +4921,19 @@ export default function App() {
                                 setSelectedWritingBlockId(block.id);
                                 void generateBlock(block.id);
                               }}
-                              className="rounded-full bg-[#1B4D3E] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-full bg-[#173F4D] px-5 py-2.5 font-inter text-[11px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {isGenerating ? "Rédaction en cours…" : block.status === "done" ? "Régénérer ce bloc" : "Rédiger ce bloc"}
                             </button>
                           </div>
 
-                          <h2 className="mt-4 font-playfair text-2xl text-[#1B4D3E]">{block.title}</h2>
+                          <h2 className="mt-4 font-playfair text-2xl text-[#173F4D]">{block.title}</h2>
 
-                          <div className="mt-5 border-l-2 border-[#1B4D3E] pl-4">
-                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1B4D3E]/85">
+                          <div className="mt-5 border-l-2 border-[#173F4D] pl-4">
+                            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#5E6B73]">
                               Trame du plan sélectionné
                             </div>
-                            <div className="mt-2 space-y-1 font-inter text-[11px] leading-5 text-[#1B4D3E]/85">
+                            <div className="mt-2 space-y-1 font-inter text-[11px] leading-5 text-[#5E6B73]">
                               {block.structure.map((item, structureIndex) => (
                                 <div key={`${block.id}-structure-${structureIndex}`}>{item}</div>
                               ))}
@@ -4942,13 +4942,13 @@ export default function App() {
                         </div>
 
                         <div
-                          className="min-h-[720px] bg-white px-10 py-14 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#1B4D3E] md:px-[2.5cm] md:py-[2.5cm]"
+                          className="min-h-[720px] bg-white px-10 py-14 font-['Times_New_Roman'] text-[12pt] leading-[1.5] text-[#173F4D] md:px-[2.5cm] md:py-[2.5cm]"
                           style={protectWriting ? { userSelect: "none", WebkitUserSelect: "none" } : undefined}
                           onCopy={protectWriting ? (event) => event.preventDefault() : undefined}
                           onCut={protectWriting ? (event) => event.preventDefault() : undefined}
                         >
                           {block.error && (
-                            <div className="mb-6 rounded-lg border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-xs leading-5 text-[#1B4D3E]">
+                            <div className="mb-6 rounded-lg border border-[#B42318]/30 bg-[#B42318]/10 p-4 font-inter text-xs leading-5 text-[#173F4D]">
                               <strong>Erreur de rédaction :</strong> {block.error}
                             </div>
                           )}
@@ -4958,8 +4958,8 @@ export default function App() {
                           ) : (
                             <div className="flex min-h-[420px] items-center justify-center text-center">
                               <div>
-                                <div className="font-playfair text-2xl text-[#1B4D3E]">{block.title}</div>
-                                <div className="mt-3 font-inter text-sm text-[#1B4D3E]/85">
+                                <div className="font-playfair text-2xl text-[#173F4D]">{block.title}</div>
+                                <div className="mt-3 font-inter text-sm text-[#5E6B73]">
                                   Ce bloc attend sa rédaction.
                                 </div>
                                 <button
@@ -4969,7 +4969,7 @@ export default function App() {
                                     setSelectedWritingBlockId(block.id);
                                     void generateBlock(block.id);
                                   }}
-                                  className="mt-5 rounded-full bg-[#1B4D3E] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
+                                  className="mt-5 rounded-full bg-[#173F4D] px-6 py-3 font-inter text-xs font-semibold text-white disabled:opacity-40"
                                 >
                                   {isGenerating ? "Rédaction en cours…" : "Rédiger ce bloc"}
                                 </button>
@@ -4978,7 +4978,7 @@ export default function App() {
                           )}
 
                           {block.footnotes.length > 0 && (
-                            <div className="mt-12 border-t border-[#1B4D3E] pt-5 text-[11px] leading-[1.6]">
+                            <div className="mt-12 border-t border-[#173F4D] pt-5 text-[11px] leading-[1.6]">
                               <div className="mb-2 font-bold">Notes</div>
                               <ol className="list-decimal space-y-1 pl-5">
                                 {block.footnotes.map((note, noteIndex) => <li key={noteIndex}>{note}</li>)}
@@ -4987,7 +4987,7 @@ export default function App() {
                           )}
 
                           {block.sources.some((source) => source?.verified === true) && (
-                            <div className="mt-10 border-t border-[#1B4D3E]/20 pt-5 font-inter text-[11px] leading-[1.6] text-[#1B4D3E]/85">
+                            <div className="mt-10 border-t border-[#173F4D]/20 pt-5 font-inter text-[11px] leading-[1.6] text-[#5E6B73]">
                               <div className="mb-2 font-semibold uppercase tracking-[0.12em]">Sources utilisées</div>
                               <div className="space-y-1">
                                 {block.sources.filter((source) => source?.verified === true).map((source, sourceIndex) => (
@@ -5001,7 +5001,7 @@ export default function App() {
                         </div>
 
                         {!isLast && (
-                          <div className="border-t border-[#1B4D3E]/20 bg-white px-10 py-5 text-center md:px-16">
+                          <div className="border-t border-[#173F4D]/20 bg-white px-10 py-5 text-center md:px-16">
                             <button
                               type="button"
                               disabled={activeBlockId !== null}
@@ -5010,7 +5010,7 @@ export default function App() {
                                 setSelectedWritingBlockId(next.id);
                                 document.getElementById(`writing-block-${next.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                               }}
-                              className="rounded-full border border-[#1B4D3E]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#1B4D3E] hover:bg-[#1B4D3E]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="rounded-full border border-[#173F4D]/15 bg-white px-6 py-2.5 font-inter text-xs font-semibold text-[#173F4D] hover:bg-[#173F4D]/20 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Bloc suivant · {index + 2}
                             </button>
@@ -5026,11 +5026,11 @@ export default function App() {
             )}
 
             {(view === "premium" || view === "writing") && !premium && loading && (
-              <div className="rounded-[24px] bg-white p-10 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /><div className="mt-3 font-inter text-sm text-[#1B4D3E]/85">Préparation de votre espace académique…</div></div>
+              <div className="rounded-[24px] bg-white p-10 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /><div className="mt-3 font-inter text-sm text-[#5E6B73]">Préparation de votre espace académique…</div></div>
             )}
 
             {(view === "premium" || view === "writing") && !loading && !premium && (
-              <div className="rounded-[24px] border border-[#B42318]/30 bg-[#B42318]/10 p-8 text-center"><LockKeyhole className="mx-auto h-6 w-6 text-[#1B4D3E]" /><div className="mt-3 font-inter text-sm text-[#1B4D3E]">Le déblocage premium doit être confirmé par le serveur de paiement.</div></div>
+              <div className="rounded-[24px] border border-[#B42318]/30 bg-[#B42318]/10 p-8 text-center"><LockKeyhole className="mx-auto h-6 w-6 text-[#173F4D]" /><div className="mt-3 font-inter text-sm text-[#173F4D]">Le déblocage premium doit être confirmé par le serveur de paiement.</div></div>
             )}
           </div>
         </div>

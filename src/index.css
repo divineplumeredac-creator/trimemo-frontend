@@ -2,20 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Identité Trimémo : vert anglais, vert clair et blanc sur tous les écrans. */
+/* Trimémo — Studio académique : design unifié pour le parcours universitaire. */
 :root {
-  --trimemo-vert-principal: #1B4D3E;
-  --trimemo-vert-clair: #E7F1EC;
+  --trimemo-bleu-petrole: #173F4D;
+  --trimemo-ivoire: #F7F5EF;
+  --trimemo-or-doux: #C6A477;
   --trimemo-blanc: #FFFFFF;
+  --trimemo-texte: #27323A;
+  --trimemo-secondaire: #5E6B73;
+  --trimemo-bordure: #E6E1D8;
+  --trimemo-erreur: #B42318;
   color-scheme: light;
 }
 html { scroll-behavior: smooth; }
-body {
-  font-family: Inter, sans-serif;
-  background-color: var(--trimemo-blanc);
-  color: var(--trimemo-vert-principal);
+body { min-width: 320px; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--trimemo-ivoire); color: var(--trimemo-texte); -webkit-font-smoothing: antialiased; }
+.font-playfair { font-family: "Playfair Display", Georgia, serif; }
+.font-inter { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; }
+input,textarea,select { caret-color: var(--trimemo-bleu-petrole); }
+input::placeholder,textarea::placeholder { color: #899298; }
+::selection { background: var(--trimemo-bleu-petrole); color: var(--trimemo-blanc); }
+:focus-visible { outline-color: var(--trimemo-or-doux); outline-offset: 3px; }
+:where(button,a) { transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+:where(button):disabled { cursor: not-allowed; }
+.studio-shell { background: var(--trimemo-ivoire); }
+.studio-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),textarea,select):focus-visible { outline: 2px solid rgba(198,164,119,.65); outline-offset: 1px; border-color: var(--trimemo-or-doux); }
+.studio-site-header { box-shadow: 0 1px 7px rgba(23,63,77,.08); }
+.studio-header--home { background: rgba(247,245,239,.97) !important; border-bottom: 1px solid var(--trimemo-bordure) !important; }
+.studio-header--home :is(button,button > span) { color: var(--trimemo-bleu-petrole) !important; }
+.studio-header--home [aria-label="Logo Trimémo"] { background-color: var(--trimemo-or-doux) !important; }
+.studio-header--home .studio-primary-nav-action { background: var(--trimemo-bleu-petrole) !important; color: #fff !important; box-shadow: 0 6px 18px rgba(23,63,77,.17); }
+.studio-header--home .studio-primary-nav-action:hover { background: #245B6D !important; }
+.studio-header--home .studio-primary-nav-action :is(svg,span) { color: white !important; }
+.studio-header--home button[aria-label="Ouvrir le menu"],.studio-header--home button[aria-label="Fermer le menu"] { border-color: var(--trimemo-bordure) !important; }
+.studio-home .studio-product-preview { isolation: isolate; }
+.studio-home h1,.studio-home h2,.studio-home h3 { text-wrap: balance; }
+.studio-auth > div { border: 1px solid var(--trimemo-bordure); box-shadow: 0 22px 55px -35px rgba(23,63,77,.3); }
+.studio-dashboard,.studio-workspace,.studio-ambassador,.studio-admin { color: var(--trimemo-bleu-petrole); }
+.studio-dashboard article,.studio-dashboard .shadow-sm,.studio-admin .shadow-sm { box-shadow: 0 9px 28px -23px rgba(23,63,77,.34); }
+.studio-workspace > div { max-width: 1280px; }
+.studio-workspace :is(article,aside)[class*="bg-white"] { border-color: var(--trimemo-bordure); }
+.studio-writing-sheet { background: #fff; }
+.studio-document-page { max-width: 100%; color: #111111; font-family: "Times New Roman", Times, serif; box-shadow: inset 0 1px 0 #f1f1f1; }
+.studio-document-page :is(p,li) { color: #111111; line-height: 1.5; overflow-wrap: break-word; }
+.studio-document-page :is(h1,h2,h3,h4,h5) { color: #111111; }
+.studio-admin table th { color: var(--trimemo-bleu-petrole); }
+.studio-admin table td { color: #3F5058; }
+.studio-admin table tbody tr:hover { background: rgba(247,245,239,.62); }
+.studio-ambassador > div > .rounded-3xl { border-color: var(--trimemo-bordure); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } :where(button,a) { transition: none !important; } .studio-home .group:hover { transform: none !important; } }
+@media (max-width: 640px) { .studio-workspace { padding-left: 14px; padding-right: 14px; } .studio-document-page { padding: 26px 18px; } .studio-header--home .studio-primary-nav-action { padding-left: 12px; padding-right: 12px; font-size: 11px; } }
+
+/* Studio académique : davantage de respiration sur les formulaires et les documents. */
+.studio-auth input,.studio-auth select,.studio-auth textarea,
+.studio-workspace input,.studio-workspace select,.studio-workspace textarea {
+  transition: border-color .18s ease,box-shadow .18s ease;
 }
-input, textarea, select { caret-color: var(--trimemo-vert-principal); }
-input::placeholder, textarea::placeholder { color: #1B4D3E99; }
-::selection { background: var(--trimemo-vert-principal); color: var(--trimemo-blanc); }
-:focus-visible { outline-color: var(--trimemo-vert-principal); }
+.studio-payment { scroll-margin-top: 95px; }
+.studio-workspace .studio-writing-sheet > div:first-child { background: #FCFBF8; }
+.studio-admin th { white-space: nowrap; }
+.studio-admin .shadow-sm { border-color: #E6E1D8; }
