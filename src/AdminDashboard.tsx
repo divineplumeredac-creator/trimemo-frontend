@@ -62,6 +62,7 @@ function Progress({value}: {value:number}) { const percent=Math.max(0,Math.min(1
 export default function AdminDashboard({ token, email, onLogout, onOpenWriter }: Props) {
   const [tab,setTab]=useState<Tab>(() => { const saved = new URLSearchParams(window.location.search).get("adminTab"); return tabs.some(item => item.id === saved) ? saved as Tab : "overview"; });
   const [revisionFilter,setRevisionFilter]=useState<"pending"|"in_progress"|"completed">("pending");
+  const [includeHistory,setIncludeHistory]=useState(false);
   const [loading,setLoading]=useState(false);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
@@ -93,10 +94,10 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
     if(!quiet) setLoading(true);
     setError("");
     try {
-      if(target==="overview") setOverview(await api("overview"));
-      if(target==="clients") setClients((await api("clients")).clients||[]);
-      if(target==="projects") setProjects((await api("projects")).projects||[]);
-      if(target==="orders") { const data=await api("orders"); setOrders(data.orders||[]); setRevenue(data.revenue||{by_currency:[],by_month:[]}); }
+      if(target==="overview") setOverview(await api("overview",{includeHistory}));
+      if(target==="clients") setClients((await api("clients",{includeHistory})).clients||[]);
+      if(target==="projects") setProjects((await api("projects",{includeHistory})).projects||[]);
+      if(target==="orders") { const data=await api("orders",{includeHistory}); setOrders(data.orders||[]); setRevenue(data.revenue||{by_currency:[],by_month:[]}); }
       if(target==="revisions") {
         const data=await api("revisions");
         const rows=Array.isArray(data.requests)?data.requests:[];
@@ -112,14 +113,14 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
         setRevisions(rows);
       }
       if(target==="pricing") setSettings((await api("pricing")).settings);
-      if(target==="usage") setUsage(await api("usage"));
-      if(target==="logs") setLogs((await api("logs")).logs||[]);
+      if(target==="usage") setUsage(await api("usage",{includeHistory}));
+      if(target==="logs") setLogs((await api("logs",{includeHistory})).logs||[]);
     } catch(e) {
       setError(e instanceof Error ? e.message : "Chargement impossible.");
     } finally { if(!quiet) setLoading(false); }
-  },[api,tab]);
+  },[api,tab,includeHistory]);
 
-  useEffect(()=>{void refresh(tab); if(tab!=="revisions") void refresh("revisions",true);},[api]);
+  useEffect(()=>{void refresh(tab); if(tab!=="revisions") void refresh("revisions",true);},[api,includeHistory]);
   // Vérifie régulièrement les nouvelles demandes, même lorsque l’administrateur consulte un autre onglet.
   useEffect(()=>{
     const timer=window.setInterval(()=>{void refresh("revisions",true);},20000);
@@ -221,21 +222,36 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
           <Button variant="secondary" disabled={loading} onClick={()=>void refresh(tab)}><RefreshCcw size={16} className={loading?"animate-spin":""}/> Actualiser</Button>
         </div>
 
+        {(["overview","clients","projects","orders","usage","logs"] as Tab[]).includes(tab) && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-[#C6A477]/35 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-xs font-semibold text-[#173F4D]">{includeHistory?"Historique complet — essais inclus":"Suivi commercial — depuis le 16 novembre 2026"}</div>
+              <p className="mt-1 text-xs leading-5 text-[#5E6B73]">{includeHistory?"Les essais antérieurs restent consultables ; ces montants ne constituent pas une preuve d'encaissements réels.":"Le suivi commercial commence le 16 novembre à 00 h, heure du Bénin. Les anciens essais ne sont pas comptabilisés."}</p>
+            </div>
+            <label className="inline-flex shrink-0 cursor-pointer items-center gap-2 text-xs font-semibold text-[#173F4D]">
+              <input type="checkbox" checked={includeHistory} onChange={event=>setIncludeHistory(event.target.checked)} className="h-4 w-4 accent-[#173F4D]" />
+              Afficher l’historique d’avant-lancement
+            </label>
+          </div>
+        )}
+        {tab==="revisions" && (
+          <div className="rounded-xl border border-[#C6A477]/35 bg-[#F7F5EF] px-4 py-3 text-xs leading-5 text-[#5E6B73]">Les demandes de révision antérieures au lancement restent accessibles pour protéger les dossiers clients en cours.</div>
+        )}
         {error&&<div className="flex items-start gap-2 rounded-xl border border-[#B42318]/30 bg-[#B42318]/10 p-4 text-sm text-[#B42318]"><AlertTriangle size={18} className="mt-0.5 shrink-0"/><div>{error}</div></div>}
         {notice&&<div className="flex items-start gap-2 rounded-xl border border-[#173F4D]/20 bg-[#173F4D]/10 p-4 text-sm text-white"><CheckCircle2 size={18} className="mt-0.5 shrink-0"/><div>{notice}</div></div>}
         {loading&&!overview&&tab==="overview"&&<Empty>Chargement des indicateurs…</Empty>}
 
         {tab==="overview"&&overview&&<div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Card title="Comptes clients" value={fmtNumber(summary.clients)} sub="Comptes enregistrés dans Supabase Auth" icon={Users}/>
-            <Card title="Projets" value={fmtNumber(summary.projects)} sub={fmtNumber(summary.activeProjects)+" projet(s) encore incomplet(s)"} icon={FolderOpen} tone="gold"/>
+            <Card title={includeHistory?"Tous les comptes":"Nouveaux comptes"} value={fmtNumber(summary.clients)} sub={includeHistory?"Inscriptions conservées depuis les essais":"Inscriptions depuis le lancement commercial"} icon={Users}/>
+            <Card title={includeHistory?"Tous les projets":"Projets depuis lancement"} value={fmtNumber(summary.projects)} sub={fmtNumber(summary.activeProjects)+" projet(s) encore incomplet(s)"} icon={FolderOpen} tone="gold"/>
             <Card title="Commandes payées" value={fmtNumber(summary.paidOrders)} sub={fmtNumber(summary.pendingOrders)+" en attente de paiement"} icon={CreditCard} tone="green"/>
             <Card title="Erreurs journalisées" value={fmtNumber(summary.errorLogs)} sub={fmtNumber(summary.usage?.errors)+" échec(s) d’appel Claude dans le journal d’usage"} icon={AlertTriangle} tone="red"/>
           </div>
           <section className="rounded-2xl border border-[#173F4D]/20 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2"><CircleDollarSign className="text-[#173F4D]" size={20}/><h2 className="text-lg font-bold">Revenus de la plateforme</h2></div>
+            <div className="flex items-center gap-2"><CircleDollarSign className="text-[#173F4D]" size={20}/><h2 className="text-lg font-bold">{includeHistory?"Historique des revenus (essais inclus)":"Revenus commerciaux depuis le 16 novembre"}</h2></div>
             <p className="mt-1 text-sm text-[#5E6B73]">Montants séparés par devise pour éviter d’additionner des monnaies différentes. Le revenu net affiché tient compte des remboursements enregistrés, avant déduction des commissions du prestataire de paiement.</p>
-            {summary.revenue?.by_currency?.length?<div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{summary.revenue.by_currency.map((row:any)=><div key={row.currency} className="rounded-xl border border-[#173F4D]/20 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-[#5E6B73]">{row.currency}</div><div className="mt-2 text-2xl font-bold">{fmtMoney(row.net,row.currency)}</div><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><div><div className="text-[#5E6B73]">Encaissements bruts</div><strong>{fmtMoney(row.gross,row.currency)}</strong></div><div><div className="text-[#5E6B73]">Remboursements</div><strong>{fmtMoney(row.refunds,row.currency)}</strong></div></div><div className="mt-3 text-xs text-[#5E6B73]">{row.paid_orders} commande(s) payée(s) • {row.refunded_orders} remboursée(s)</div></div>)}</div>:<Empty>Aucun revenu enregistré pour le moment.</Empty>}
+            {summary.revenue?.by_currency?.length?<div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{summary.revenue.by_currency.map((row:any)=><div key={row.currency} className="rounded-xl border border-[#173F4D]/20 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-[#5E6B73]">{row.currency}</div><div className="mt-2 text-2xl font-bold">{fmtMoney(row.net,row.currency)}</div><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><div><div className="text-[#5E6B73]">Encaissements bruts</div><strong>{fmtMoney(row.gross,row.currency)}</strong></div><div><div className="text-[#5E6B73]">Remboursements</div><strong>{fmtMoney(row.refunds,row.currency)}</strong></div></div><div className="mt-3 text-xs text-[#5E6B73]">{row.paid_orders} commande(s) payée(s) • {row.refunded_orders} remboursée(s)</div></div>)}</div>:<Empty>{includeHistory?"Aucun revenu enregistré pour le moment.":"Aucun paiement commercial confirmé depuis le lancement."}</Empty>}
           </section>
           <div className="grid gap-5 xl:grid-cols-2">
             <section className="rounded-2xl border border-[#173F4D]/20 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Consommation Claude</h2><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-[#173F4D]/10 p-4"><div className="text-xs text-[#173F4D]">Total tokens</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.total_tokens)}</div></div><div className="rounded-xl bg-[#173F4D]/15 p-4"><div className="text-xs text-[#173F4D]">Appels enregistrés</div><div className="mt-2 text-xl font-bold">{fmtNumber(summary.usage?.requests)}</div></div></div><p className="mt-3 text-xs leading-5 text-[#5E6B73]">{summary.usage?.cost_coverage ? fmtNumber(summary.usage.cost_coverage)+" appel(s) avec coût estimé renseigné." : "Les prochains appels afficheront leur coût estimé, avec le cache et les recherches web. Les anciens appels restent inchangés."}</p></section>
