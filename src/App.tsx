@@ -593,6 +593,7 @@ export default function App() {
   latestProject.current = project;
   latestBlocks.current = blocks;
   const [clientProjectFlow, setClientProjectFlow] = useState(false);
+  const ambassadorOrigin = useRef<"home" | "dashboard">("home");
   const [view, setView] = useState<"home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" | "ambassadors">(() => { const params = new URLSearchParams(window.location.search); return ["signup", "confirmed"].includes(params.get("account") || "") || params.get("reset-password") === "1" || (params.has("token_hash") && ["email", "signup"].includes(params.get("type") || "")) || (new URLSearchParams(window.location.hash.replace(/^#/, "")).get("type") === "signup" && new URLSearchParams(window.location.hash.replace(/^#/, "")).has("access_token")) ? "account" : ["home", "project", "estimate", "preview", "premium", "writing", "account", "dashboard", "ambassadors"].includes(params.get("view") || "") ? params.get("view") as "home" | "project" | "estimate" | "preview" | "premium" | "writing" | "account" | "dashboard" | "ambassadors" : "home"; });
   const [previewTab, setPreviewTab] = useState<"problematic" | "plan" | "introduction" | "chapter">("problematic");
   const [premiumNav, setPremiumNav] = useState<string>("problematic-0");
@@ -909,7 +910,7 @@ export default function App() {
         project: { ...persistedProject, files: project.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) },
         formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks,
         // Ne jamais sauvegarder l'écran du tableau de bord comme écran de reprise du mémoire.
-        view: view === "dashboard" || view === "account" || view === "home" ? "writing" : view,
+        view: view === "dashboard" || view === "account" || view === "home" || view === "ambassadors" ? "writing" : view,
         previewTab,
         premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments,
         planImprovementComments, problematicGenerationCount, planGenerationCount,
@@ -1556,7 +1557,7 @@ export default function App() {
         const currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
         if (currentSession?.userId !== session.userId || activeOwnedProject.current?.projectId !== project.projectId || latestProject.current !== snapshotProject || latestBlocks.current !== snapshotBlocks) throw new Error("Le projet a changé pendant la sauvegarde. Réessayez de vous déconnecter.");
         const { paidPreviewSnapshot, ...persistedProject } = snapshotProject;
-        const state = { schemaVersion: 2, project: { ...persistedProject, files: snapshotProject.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) }, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks: snapshotBlocks, view: view === "dashboard" || view === "account" || view === "home" ? "writing" : view, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount };
+        const state = { schemaVersion: 2, project: { ...persistedProject, files: snapshotProject.files.map(({ name, type, category }) => ({ name, type, category, content: "" })) }, formula, preview, estimate, premium, selectedProblematic, selectedPlan, blocks: snapshotBlocks, view: view === "dashboard" || view === "account" || view === "home" || view === "ambassadors" ? "writing" : view, previewTab, premiumNav, premiumSection, selectedWritingBlockId, problematicImprovementComments, planImprovementComments, problematicGenerationCount, planGenerationCount };
         const response = await fetch(PROJECT_STATE_API, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + currentSession.token }, body: JSON.stringify({ projectId: snapshotProject.projectId, state }) });
         if (!response.ok || latestProject.current !== snapshotProject || latestBlocks.current !== snapshotBlocks) throw new Error("La dernière sauvegarde n’a pas pu être confirmée. Votre projet reste ouvert ; vérifiez votre connexion et réessayez.");
       }
@@ -4262,7 +4263,7 @@ export default function App() {
           <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">
             <button className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
             <button className="text-white hover:underline hover:decoration-[#1B4D3E] hover:underline-offset-4" onClick={() => navigateToSection("revision-humaine")}>Révision humaine</button>
-            <button className="text-white hover:underline" onClick={() => setView("ambassadors")}>Ambassadeurs</button>
+            <button className="text-white hover:underline" onClick={() => { ambassadorOrigin.current = "home"; setView("ambassadors"); }}>Ambassadeurs</button>
             {view !== "home" && <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -4306,7 +4307,7 @@ export default function App() {
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
             {view === "home" && <><button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
             <button onClick={() => navigateToSection("revision-humaine")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Révision humaine</button>
-            <button onClick={() => {setMobileMenuOpen(false);setView("ambassadors");}} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Devenir ambassadeur</button>
+            <button onClick={() => {setMobileMenuOpen(false);ambassadorOrigin.current="home";setView("ambassadors");}} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Devenir ambassadeur</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon projet</button>
             <button onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Mon compte client</button>
             <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button></>}
@@ -4388,7 +4389,10 @@ export default function App() {
             <div className="rounded-3xl bg-[#1B4D3E] p-5 text-white shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div><h1 className="font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/90">{clientNameDisplay && clientNameDisplay !== "Mon compte" ? `Bienvenue, ${clientNameDisplay}. Retrouvez vos projets et suivez leur avancement.` : "Retrouvez vos projets et suivez leur avancement."}</p></div>
-                <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={() => { ambassadorOrigin.current = "dashboard"; setMobileMenuOpen(false); setView("ambassadors"); }} className="rounded-full bg-white px-5 py-3 font-inter text-sm font-semibold text-[#1B4D3E] shadow-sm hover:bg-[#E7F1EC] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Devenir ambassadeur</button>
+                  <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>
+                </div>
               </div>
             </div>
             <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[#1B4D3E]/20 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
@@ -4424,10 +4428,10 @@ export default function App() {
         </section>
       )}
       {view !== "dashboard" && (<>
-      {view === "ambassadors" && <AmbassadorProgram onBack={() => setView("home")} onLogin={() => { authIntent.current="ambassador"; window.sessionStorage.setItem("trimemo_auth_intent","ambassador"); setClientAuthMode("login"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} onSignup={() => { authIntent.current="ambassador"; window.sessionStorage.setItem("trimemo_auth_intent","ambassador"); setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} />}
+      {view === "ambassadors" && <AmbassadorProgram backLabel={ambassadorOrigin.current === "dashboard" ? "Retour au tableau de bord" : "Retour à l’accueil"} onBack={() => { const origin = ambassadorOrigin.current; ambassadorOrigin.current = "home"; setView(origin); if (origin === "dashboard") void loadClientProjects(); }} onLogin={() => { authIntent.current="ambassador"; window.sessionStorage.setItem("trimemo_auth_intent","ambassador"); setClientAuthMode("login"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} onSignup={() => { authIntent.current="ambassador"; window.sessionStorage.setItem("trimemo_auth_intent","ambassador"); setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} />}
       {view === "home" && (
         <>
-          <MarketingHome onStart={goToProject} onRevision={() => { setClientDashboardTab("documents"); setView("dashboard"); void loadClientProjects(); }} onAmbassadors={() => { setView("ambassadors"); window.scrollTo({top:0,behavior:"smooth"}); }} />
+          <MarketingHome onStart={goToProject} onRevision={() => { setClientDashboardTab("documents"); setView("dashboard"); void loadClientProjects(); }} onAmbassadors={() => { ambassadorOrigin.current = "home"; setView("ambassadors"); window.scrollTo({top:0,behavior:"smooth"}); }} />
 
         </>
       )}
