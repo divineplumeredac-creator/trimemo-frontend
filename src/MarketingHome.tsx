@@ -1,115 +1,185 @@
 import React from 'react';
-import { Check, CheckCircle2, ClipboardList, Eye, FileText, FileUp, Users } from 'lucide-react';
+import { ArrowRight, BookOpen, Check, CheckCircle2, ClipboardList, Eye, FileText, FileUp, GraduationCap, Layers, Mail, ShieldCheck, Users } from 'lucide-react';
 
-export default function MarketingHome({ onStart, onRevision, onAmbassadors }: { onStart: () => void; onRevision: () => void; onAmbassadors: () => void }) {
-  const steps = [
-    { icon: FileText, title: 'Présentez votre projet', description: 'Sujet, niveau d’études, consignes et documents de référence.' },
-    { icon: ClipboardList, title: 'Validez votre direction', description: 'Choisissez votre problématique et validez votre plan.' },
-    { icon: Eye, title: 'Découvrez votre aperçu', description: 'Consultez un aperçu adapté à la taille de votre projet, dans la limite de 2 500 mots.' },
-    { icon: FileUp, title: 'Finalisez votre document', description: 'Payez votre projet, poursuivez la rédaction et exportez en Word.' },
-  ];
-  return <>
-    <section className="bg-gradient-to-b from-white to-[#1B4D3E]/10 px-5 pb-8 pt-12 sm:px-8 lg:pt-16">
-      <div className="mx-auto grid max-w-[1420px] items-center gap-12 lg:grid-cols-2">
-        <div className="font-inter">
-          <p className="text-lg font-bold text-[#1B4D3E] sm:text-xl">Votre assistant IA prompté pour la rédaction académique</p>
-          <h1 className="mt-4 text-4xl font-bold leading-[1.08] tracking-tight text-[#1B4D3E] sm:text-5xl xl:text-6xl">De votre sujet à un <span className="text-[#1B4D3E] underline decoration-[#83AE99] decoration-4 underline-offset-8">mémoire structuré.</span></h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-[#1B4D3E] sm:text-xl">Préparez votre mémoire, rapport ou thèse avec Trimémo : problématique, plan personnalisé, rédaction assistée par IA et export Word.</p>
-          <button onClick={onStart} className="mt-8 rounded-xl bg-[#1B4D3E] px-8 py-4 text-base font-bold text-white shadow-sm hover:bg-[#1B4D3E]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E]">Commencer mon projet</button>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-[#1B4D3E] sm:text-base">Décrivez votre projet, transmettez vos consignes et vos documents de référence.</p>
-        </div>
-        <div aria-label="Illustration de l’espace de rédaction" className="overflow-hidden rounded-2xl border border-[#1B4D3E]/20 bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#1B4D3E]/20 px-5 py-4 font-inter"><span className="text-xl font-bold text-[#1B4D3E]">Trimémo</span><span className="text-sm font-semibold text-[#1B4D3E]">Mon mémoire</span><span className="rounded-lg bg-[#1B4D3E]/10 px-3 py-2 text-xs font-semibold text-[#1B4D3E]">✓ Enregistré</span></div>
-          <div className="grid min-h-[280px] grid-cols-[130px_1fr] sm:grid-cols-[180px_1fr]">
-            <div className="space-y-5 border-r border-[#1B4D3E]/20 bg-[#1B4D3E]/5 p-4 font-inter text-xs font-semibold text-[#1B4D3E]">{['Problématique validée','Plan validé','Rédaction en cours'].map((label,i)=><div key={label} className="flex items-center gap-2"><span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${i===2?'border-2 border-[#1B4D3E]':'bg-[#1B4D3E] text-white'}`}>{i<2&&<Check size={13}/>}</span>{label}</div>)}</div>
-            <div className="p-4 sm:p-6"><div className="mb-5 border-b border-[#1B4D3E]/20 pb-3 font-inter text-xs text-[#1B4D3E]/85">Paragraphe　　B　 I　 U　 ☷</div><h2 className="font-serif text-lg font-bold text-[#1B4D3E] sm:text-xl">INTRODUCTION GÉNÉRALE</h2><p className="mt-4 font-serif text-sm leading-relaxed text-[#1B4D3E]">Ce travail s’inscrit dans une réflexion sur la place de la digitalisation dans le fonctionnement des organisations. Il vise à analyser ses effets sur les pratiques et la coordination.</p><p className="mt-3 font-serif text-sm leading-relaxed text-[#1B4D3E]">Après avoir présenté le contexte et l’intérêt du sujet, nous formulerons la problématique qui guide cette étude.</p><div className="mt-5 text-right font-inter text-xs font-bold text-[#1B4D3E]">▣　Export Word</div></div>
+const ink = '#173F4D';
+const gold = '#C6A477';
+const steps = [
+  { icon: ClipboardList, title: 'Présentez votre projet', description: 'Décrivez votre sujet, votre niveau d’études, vos consignes et vos documents de référence.' },
+  { icon: Layers, title: 'Validez votre problématique et votre plan', description: 'Choisissez votre problématique, ajustez les propositions et validez un plan adapté.' },
+  { icon: Eye, title: 'Découvrez votre aperçu', description: 'Consultez un aperçu proportionnel à votre projet, dans la limite de 2 500 mots, avant de payer.' },
+  { icon: FileUp, title: 'Finalisez votre document', description: 'Après paiement, poursuivez la rédaction et exportez le document au format Word.' },
+];
+const questions = [
+  {
+    question: 'Faut-il savoir écrire des prompts pour utiliser Trimémo ?',
+    answer: 'Non. Les prompts méthodologiques sont déjà intégrés. Vous décrivez votre sujet, votre niveau et vos consignes ; Trimémo vous guide à chaque étape.'
+  },
+  {
+    question: 'Puis-je voir un aperçu avant de payer ?',
+    answer: 'Oui. Vous consultez un aperçu adapté à la taille de votre projet, sans dépasser 2 500 mots. Le paiement intervient avant la rédaction complète.'
+  },
+  {
+    question: 'Puis-je bénéficier d’une révision humaine de mon document ?',
+    answer: 'Oui. Trimémo propose une révision humaine en option, après rédaction. Cette prestation est payante : son tarif dépend du document et du niveau de révision demandé.'
+  },
+  {
+    question: 'Puis-je fournir mon guide méthodologique et mes consignes ?',
+    answer: 'Oui. Vous pouvez transmettre vos consignes et vos documents de référence pour orienter la problématique, le plan et la rédaction.'
+  },
+  {
+    question: 'Puis-je télécharger mon travail en Word ?',
+    answer: 'Oui. Après le paiement et la rédaction complète, vous pouvez exporter votre document au format Word pour le relire et le corriger.'
+  },
+  {
+    question: 'Trimémo garantit-il la validation de mon mémoire ?',
+    answer: 'Non. Trimémo est un assistant de rédaction. Il est important de vérifier les sources, les analyses et la conformité du document aux exigences de votre établissement.'
+  }
+];
+
+function EditorialTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}) {
+  return <div className="mx-auto max-w-3xl text-center">
+    <div className="text-[11px] font-semibold uppercase tracking-[0.21em] text-[#927447]">{eyebrow}</div>
+    <h2 className="mt-3 font-playfair text-3xl font-bold leading-tight text-[#173F4D] sm:text-4xl lg:text-[42px]">{title}</h2>
+    {description && <p className="mt-4 text-sm leading-7 text-[#5E6B73] sm:text-base">{description}</p>}
+  </div>;
+}
+
+function WritingWorkspacePreview(){
+  const nav = ['Projet','Problématique','Plan','Rédaction','Export Word'];
+  return <div className="studio-product-preview relative mx-auto w-full max-w-[675px]" aria-label="Exemple illustratif de l’espace de rédaction Trimémo">
+    <div className="absolute -left-4 -top-5 -z-10 h-44 w-44 rounded-full bg-[#C6A477]/20 blur-3xl"/>
+    <div className="absolute -bottom-7 -right-4 -z-10 h-56 w-56 rounded-full bg-[#173F4D]/15 blur-3xl"/>
+    <div className="overflow-hidden rounded-[22px] border border-[#C9D5D4] bg-white shadow-[0_28px_70px_-30px_rgba(23,63,77,0.45)]">
+      <div className="flex items-center justify-between border-b border-[#E6E1D8] bg-[#FBFAF7] px-4 py-3 sm:px-5">
+        <div className="flex items-center gap-2"><BookOpen size={19} color={gold}/><span className="font-playfair text-lg font-bold text-[#173F4D]">Trimémo</span></div>
+        <span className="hidden text-xs font-medium text-[#5E6B73] sm:block">Mon projet de mémoire</span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-[#E8F2ED] px-2.5 py-1 text-[10px] font-semibold text-[#2B7058]"><CheckCircle2 size={13}/> Enregistré</span>
+      </div>
+      <div className="grid min-h-[360px] grid-cols-[122px_minmax(0,1fr)] sm:grid-cols-[164px_minmax(0,1fr)]">
+        <aside className="bg-[#173F4D] px-2 py-6 text-white sm:px-3">
+          <div className="mb-6 px-2 text-[9px] font-bold uppercase tracking-[0.17em] text-white/60 sm:text-[10px]">Parcours</div>
+          <nav aria-label="Exemple de navigation du projet" className="space-y-1.5">{nav.map((label,index)=><div key={label} className={'flex items-center gap-2 rounded-lg px-2 py-2.5 text-[10px] sm:text-xs '+(index===3?'bg-[#F7F5EF] font-bold text-[#173F4D]':'text-white/85')}><span className={'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border '+(index<3?'border-[#C6A477] bg-[#C6A477] text-[#173F4D]':index===3?'border-[#173F4D]':'border-white/40')}>{index<3?<Check size={12}/>:index===3?'4':''}</span><span>{label}</span></div>)}</nav>
+          <div className="mt-8 h-[1px] bg-white/15"/><div className="mt-3 px-2 text-[10px] text-white/60">Avancement du projet</div>
+          <div className="mx-2 mt-2 h-1.5 overflow-hidden rounded-full bg-white/15"><div className="h-full w-3/5 rounded-full bg-[#C6A477]"/></div>
+        </aside>
+        <div className="min-w-0 bg-[#F2F3F1] p-3 sm:p-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#5E6B73]">Rédaction · Introduction</span>
+            <span className="rounded-md border border-[#C6A477]/60 bg-[#F8F0E2] px-2 py-1 text-[10px] font-semibold text-[#173F4D]">Exporter Word</span>
+          </div>
+          <div className="mx-auto min-h-[290px] max-w-[380px] border border-[#E6E1D8] bg-white px-4 py-6 shadow-[0_10px_30px_-18px_rgba(23,63,77,0.32)] sm:px-7">
+            <div className="font-serif text-center text-[13px] font-bold uppercase text-[#27323A] sm:text-sm">Introduction générale</div>
+            <p className="mt-5 font-serif text-[11px] leading-[1.75] text-[#27323A] sm:text-xs">Dans un contexte de transformations économiques et sociales, la digitalisation occupe une place croissante dans le fonctionnement des organisations.</p>
+            <div className="mt-4 font-serif text-xs font-bold text-[#27323A]">1. Contexte et intérêt du sujet</div>
+            <p className="mt-3 font-serif text-[11px] leading-[1.75] text-[#27323A] sm:text-xs">Ce travail examine les changements induits par les outils numériques dans les pratiques de gestion, la coordination et la création de valeur.</p>
+            <p className="mt-3 font-serif text-[11px] leading-[1.75] text-[#27323A] sm:text-xs">L’analyse vise à éclairer les enjeux méthodologiques et organisationnels associés à cette évolution.</p>
           </div>
         </div>
       </div>
-      <p className="mx-auto mt-10 text-center font-inter text-sm text-[#1B4D3E] sm:text-base">Licence　·　Master　·　Doctorat　　|　　Mémoire　·　Rapport　·　Article　·　Thèse</p>
-    </section>
-    <section aria-labelledby="difference-trimemo" className="bg-[#1B4D3E]/10 px-5 py-10 sm:px-8">
-      <div className="mx-auto max-w-[1420px]">
-        <h2 id="difference-trimemo" className="text-center font-inter text-3xl font-bold text-[#1B4D3E] sm:text-4xl">Pourquoi choisir Trimémo plutôt qu’une IA généraliste ?</h2>
-        <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-base leading-relaxed text-[#1B4D3E]">Une IA généraliste peut vous aider à rédiger, mais obtenir un mémoire bien structuré demande souvent de maîtriser les prompts. <strong>Trimémo intègre déjà des prompts spécialisés, élaborés par un expert en méthodologie académique à partir de son expérience réelle de la rédaction.</strong></p>
-        <div className="mx-auto mt-7 grid max-w-4xl gap-4 md:grid-cols-2">
-          <article className="rounded-xl border border-[#1B4D3E]/20 bg-white p-6">
-            <h3 className="font-inter text-lg font-bold text-[#1B4D3E]">Avec une IA généraliste</h3>
-            <p className="mt-2 font-inter text-sm leading-relaxed text-[#1B4D3E]">Pour cadrer une rédaction académique, vous devez souvent imaginer des prompts précis, les ajuster et organiser vous-même les étapes de travail.</p>
-          </article>
-          <article className="rounded-xl border border-[#1B4D3E]/20 bg-white p-6">
-            <h3 className="font-inter text-lg font-bold text-[#1B4D3E]">Avec Trimémo, les prompts sont déjà intégrés</h3>
-            <p className="mt-2 font-inter text-sm leading-relaxed text-[#1B4D3E]">Décrivez votre projet et vos consignes. Trimémo vous guide avec une méthode spécialisée : problématique, plan, aperçu, rédaction et export Word. <strong>Pas besoin de savoir prompter.</strong></p>
-          </article>
+    </div>
+    <div className="mt-3 text-center text-[11px] text-[#5E6B73]">Aperçu illustratif de l’environnement de travail</div>
+  </div>;
+}
+
+export default function MarketingHome({ onStart, onRevision, onAmbassadors }: { onStart: () => void; onRevision: () => void; onAmbassadors: () => void }) {
+  return <div className="studio-home font-inter text-[#173F4D]">
+    <section className="relative overflow-hidden bg-[#F7F5EF] px-5 pb-20 pt-14 sm:px-8 sm:pt-20 lg:pb-24">
+      <div className="pointer-events-none absolute -right-20 top-4 h-[500px] w-[500px] rounded-full bg-[#E5D6BB]/40 blur-[100px]"/>
+      <div className="relative mx-auto grid max-w-[1340px] items-center gap-14 lg:grid-cols-[0.90fr_1.10fr] lg:gap-12">
+        <div className="max-w-[600px]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#C6A477]/45 bg-white/65 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#927447]"><GraduationCap size={16}/> Votre studio académique</div>
+          <h1 className="mt-7 font-playfair text-[clamp(2.7rem,5vw,4.65rem)] font-bold leading-[1.10] tracking-[-0.035em] text-[#173F4D]">Votre espace académique pour <span className="relative whitespace-nowrap">rédiger <span className="absolute -bottom-1 left-0 h-1 w-full rounded-full bg-[#C6A477]"/></span> avec méthode.</h1>
+          <p className="mt-7 max-w-[570px] text-base leading-[1.85] text-[#5E6B73] sm:text-lg">Trimémo vous accompagne de la problématique au plan, de l’aperçu à la rédaction complète, jusqu’à l’export Word de votre document académique.</p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button type="button" onClick={onStart} className="inline-flex min-h-13 items-center justify-center gap-3 rounded-xl bg-[#173F4D] px-7 py-4 text-sm font-semibold text-white shadow-[0_10px_25px_-13px_rgba(23,63,77,0.75)] transition hover:-translate-y-0.5 hover:bg-[#245B6D] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F4D]">Commencer mon projet <ArrowRight size={17}/></button>
+            <a href="#fonctionnement" className="inline-flex min-h-13 items-center justify-center rounded-xl border border-[#C6A477] bg-transparent px-6 py-4 text-sm font-semibold text-[#173F4D] transition hover:bg-[#EEE3D2]">Découvrir le parcours</a>
+          </div>
+          <p className="mt-4 max-w-lg text-xs leading-6 text-[#67747A]">Décrivez votre projet, transmettez vos consignes et vos documents de référence.</p>
+          <div className="mt-9 flex flex-wrap items-center gap-3 border-t border-[#DED8CD] pt-5 text-xs font-medium text-[#55666E]">
+            <span className="inline-flex items-center gap-2"><GraduationCap size={17} color={gold}/> Licence · Master · Doctorat</span>
+            <span className="hidden h-4 w-px bg-[#C6A477]/70 sm:block"/>
+            <span className="inline-flex items-center gap-2"><BookOpen size={17} color={gold}/> Mémoire · Rapport · Article · Thèse</span>
+          </div>
         </div>
-        <p className="mx-auto mt-4 max-w-3xl text-center font-inter text-xs leading-relaxed text-[#1B4D3E]/85">Trimémo assiste la rédaction : les sources, les analyses et la conformité académique restent à vérifier.</p>
+        <WritingWorkspacePreview/>
       </div>
     </section>
-    <section id="fonctionnement" className="px-5 py-12 sm:px-8"><div className="mx-auto max-w-[1420px]"><h2 className="text-center font-inter text-3xl font-bold text-[#1B4D3E] sm:text-4xl">Un parcours clair, du début à la fin</h2><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{steps.map(({icon:Icon,title,description},i)=><article key={title} className="rounded-xl border border-[#1B4D3E]/20 bg-white p-6"><div className="flex items-center justify-between text-[#1B4D3E]"><Icon size={34}/><span className="rounded-full bg-[#1B4D3E]/10 px-3 py-1 text-sm font-bold">{i+1}</span></div><h3 className="mt-4 font-inter text-lg font-bold text-[#1B4D3E]">{i+1}. {title}</h3><p className="mt-2 font-inter text-sm leading-relaxed text-[#1B4D3E]">{description}</p></article>)}</div>
-      <div id="revision-humaine" className="mt-7 flex flex-wrap items-center gap-5 rounded-2xl bg-[#1B4D3E]/10 p-6"><Users className="text-[#1B4D3E]" size={38}/><div className="flex-1"><h3 className="font-inter text-xl font-bold text-[#1B4D3E]">Besoin d’un regard humain ?</h3><p className="mt-1 font-inter text-sm text-[#1B4D3E]">Faites relire votre document par un professionnel : révision humaine facultative et payante.</p></div><button onClick={onRevision} className="rounded-xl bg-[#1B4D3E] px-6 py-3 font-inter text-sm font-semibold text-white hover:bg-[#1B4D3E]/90">Découvrir la révision</button></div>
-    </div></section>
-    <section id="ambassadeurs" className="bg-white px-5 py-12 sm:px-8">
-      <div className="mx-auto flex max-w-[1420px] flex-col gap-5 rounded-3xl border border-[#1B4D3E]/15 bg-[#E7F1EC] p-7 sm:flex-row sm:items-center sm:justify-between sm:p-10">
-        <div className="max-w-2xl"><span className="text-xs font-bold uppercase tracking-widest text-[#1B4D3E]/80">Phase pilote • 10 places</span>
-          <h2 className="mt-2 text-2xl font-bold text-[#1B4D3E] sm:text-3xl">Devenez ambassadeur Trimémo</h2>
-          <p className="mt-3 text-sm leading-7 text-[#1B4D3E]">Vous êtes étudiant ? Faites connaître Trimémo dans votre université et recevez 10 % des ventes admissibles réalisées grâce à votre lien personnel.</p>
+
+    <section aria-labelledby="difference-trimemo" className="bg-white px-5 py-20 sm:px-8 lg:py-24">
+      <div className="mx-auto max-w-[1190px]">
+        <EditorialTitle eyebrow="Une méthode avant tout" title="Pourquoi choisir Trimémo ?" description="Un accompagnement conçu pour les exigences de la rédaction académique, sans avoir à construire seul une suite de prompts." />
+        <div className="mt-12 grid gap-5 lg:grid-cols-2">
+          <article className="rounded-[24px] border border-[#C6A477]/60 bg-[#FDFBF7] p-7 shadow-[0_15px_40px_-32px_rgba(23,63,77,0.35)] sm:p-9">
+            <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><BookOpen size={28} color={gold}/><h3 className="font-playfair text-2xl font-bold text-[#173F4D]">Avec Trimémo</h3></div><span className="rounded-full bg-[#F4E7D0] px-3 py-1.5 text-[11px] font-semibold text-[#856638]">Pensé pour les études</span></div>
+            <ul className="mt-8 space-y-5">{[
+              'Des prompts méthodologiques déjà structurés pour guider le travail.',
+              'Un parcours complet : problématique, plan, aperçu, rédaction.',
+              'Un aperçu du document avant le paiement.',
+              'Un export Word à relire et à adapter aux consignes de l’établissement.'
+            ].map(item=><li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#485C65]"><span className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#C6A477] text-white"><Check size={14}/></span>{item}</li>)}</ul>
+          </article>
+          <article className="rounded-[24px] border border-[#E3E6E7] bg-[#F5F7F7] p-7 sm:p-9">
+            <div className="flex items-center gap-3"><Layers size={28} color={ink}/><h3 className="font-playfair text-2xl font-bold text-[#173F4D]">Avec une IA généraliste</h3></div>
+            <p className="mt-8 text-sm leading-8 text-[#5E6B73]">Pour obtenir un mémoire bien organisé, vous devez généralement définir vous-même les instructions, construire un déroulement méthodologique et relier les différentes étapes.</p>
+            <div className="mt-6 border-l-[3px] border-[#C6A477] pl-5 text-sm leading-8 text-[#5E6B73]">Trimémo intègre ces étapes dans un parcours académique guidé, élaboré à partir d’une expérience pratique de la rédaction.</div>
+          </article>
         </div>
-        <button onClick={onAmbassadors} className="shrink-0 rounded-xl bg-[#1B4D3E] px-6 py-3 text-sm font-semibold text-white hover:bg-[#1B4D3E]/90">Découvrir le programme</button>
+        <p className="mt-6 text-center text-xs leading-6 text-[#788187]">Trimémo assiste la rédaction : les sources, les analyses et la conformité académique restent à vérifier.</p>
       </div>
     </section>
-    <section aria-labelledby="faq-trimemo" className="bg-[#1B4D3E]/10 px-5 py-12 sm:px-8">
-      <div className="mx-auto max-w-[920px]">
-        <h2 id="faq-trimemo" className="text-center font-inter text-3xl font-bold text-[#1B4D3E] sm:text-4xl">Questions fréquentes</h2>
-        <p className="mt-3 text-center font-inter text-sm text-[#1B4D3E]">Les réponses essentielles avant de commencer votre projet.</p>
-        <div className="mt-7 space-y-3">
-          {[
-            {
-              question: 'Faut-il savoir écrire des prompts pour utiliser Trimémo ?',
-              answer: 'Non. Les prompts méthodologiques sont déjà intégrés. Vous décrivez votre sujet, votre niveau et vos consignes ; Trimémo vous guide à chaque étape.'
-            },
-            {
-              question: 'Puis-je voir un aperçu avant de payer ?',
-              answer: 'Oui. Vous consultez un aperçu adapté à la taille de votre projet, sans dépasser 2 500 mots. Le paiement intervient avant la rédaction complète.'
-            },
-            {
-              question: 'Puis-je bénéficier d’une révision humaine de mon document ?',
-              answer: 'Oui. Trimémo propose une révision humaine en option, après rédaction. Cette prestation est payante : son tarif dépend du document et du niveau de révision demandé.'
-            },
-            {
-              question: 'Puis-je fournir mon guide méthodologique et mes consignes ?',
-              answer: 'Oui. Vous pouvez transmettre vos consignes et vos documents de référence pour orienter la problématique, le plan et la rédaction.'
-            },
-            {
-              question: 'Puis-je télécharger mon travail en Word ?',
-              answer: 'Oui. Après le paiement et la rédaction complète, vous pouvez exporter votre document au format Word pour le relire et le corriger.'
-            },
-            {
-              question: 'Trimémo garantit-il la validation de mon mémoire ?',
-              answer: 'Non. Trimémo est un assistant de rédaction. Il est important de vérifier les sources, les analyses et la conformité du document aux exigences de votre établissement.'
-            }
-          ].map(({ question, answer }) => (
-            <details key={question} className="group rounded-xl border border-[#1B4D3E]/20 bg-white px-5 py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-inter text-sm font-semibold text-[#1B4D3E] sm:text-base">
-                <span>{question}</span>
-                <span aria-hidden="true" className="shrink-0 text-2xl font-normal text-[#1B4D3E] transition-transform group-open:rotate-45">+</span>
-              </summary>
-              <p className="mt-3 pr-6 font-inter text-sm leading-relaxed text-[#1B4D3E]">{answer}</p>
-            </details>
-          ))}
+
+    <section id="fonctionnement" className="scroll-mt-24 bg-[#F7F5EF] px-5 py-20 sm:px-8 lg:py-24">
+      <div className="mx-auto max-w-[1320px]">
+        <EditorialTitle eyebrow="De l'idée au document" title="Un parcours clair, du début à la fin" description="Avancez étape par étape dans votre travail académique, à votre rythme." />
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{steps.map(({icon:Icon,title,description},index)=><article key={title} className="group relative flex h-full flex-col rounded-[22px] border border-[#E6E1D8] bg-white p-7 transition hover:-translate-y-1 hover:border-[#C6A477] hover:shadow-[0_12px_40px_-27px_rgba(23,63,77,0.4)]">
+          <div className="flex items-start justify-between"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F1E8D8] text-[#173F4D]"><Icon size={22}/></span><span className="font-playfair text-3xl font-bold text-[#C6A477]">0{index+1}</span></div>
+          <h3 className="mt-7 font-playfair text-xl font-bold leading-snug text-[#173F4D]">{title}</h3>
+          <p className="mt-4 text-sm leading-7 text-[#5E6B73]">{description}</p>
+        </article>)}</div>
+        <div className="mt-10 flex justify-center"><button onClick={onStart} className="inline-flex items-center gap-2 rounded-xl bg-[#173F4D] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[#245B6D]">Commencer mon projet <ArrowRight size={17}/></button></div>
+      </div>
+    </section>
+
+    <section id="revision-humaine" className="scroll-mt-24 bg-white px-5 py-16 sm:px-8 lg:py-20">
+      <div className="relative mx-auto max-w-[1320px] overflow-hidden rounded-[28px] bg-[#173F4D] px-7 py-10 text-white sm:px-12 sm:py-12">
+        <div className="pointer-events-none absolute -right-20 -top-36 h-[420px] w-[420px] rounded-full border-[75px] border-[#C6A477]/12"/>
+        <div className="pointer-events-none absolute bottom-0 right-0 h-full w-1/3 bg-gradient-to-l from-[#C6A477]/10 to-transparent"/>
+        <div className="relative grid items-center gap-7 md:grid-cols-[100px_minmax(0,1fr)_auto]">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-[#C6A477]/50 bg-white/5"><Users size={36} color={gold}/></div>
+          <div><span className="text-xs font-semibold uppercase tracking-[0.17em] text-[#E7CF9E]">Un regard complémentaire</span><h2 className="mt-2 font-playfair text-3xl font-bold sm:text-4xl">Révision humaine</h2><p className="mt-4 max-w-2xl text-sm leading-7 text-white/85">Besoin d’un regard expert ? Faites relire votre document par un professionnel. La révision humaine est facultative et fait l’objet d’un devis distinct.</p></div>
+          <button onClick={onRevision} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#E8D3AC] px-6 py-4 text-sm font-bold text-[#173F4D] transition hover:bg-[#F3E2C5]">Découvrir la révision <ArrowRight size={17}/></button>
         </div>
       </div>
     </section>
 
+    <section id="ambassadeurs" className="scroll-mt-24 bg-white px-5 pb-20 pt-2 sm:px-8">
+      <div className="mx-auto grid max-w-[1320px] items-center gap-8 overflow-hidden rounded-[28px] border border-[#E6E1D8] bg-[#F7F5EF] p-7 sm:p-10 lg:grid-cols-[180px_minmax(0,1fr)_auto] lg:gap-10">
+        <div className="flex h-32 w-full items-center justify-center rounded-2xl border border-[#C6A477]/35 bg-[#EEE4D4] lg:h-44"><GraduationCap size={70} color="#9A7846" strokeWidth={1.3}/></div>
+        <div><span className="inline-flex rounded-full bg-[#EDE0C9] px-3 py-1.5 text-xs font-semibold text-[#886A3D]">Phase pilote · 10 places</span><h2 className="mt-4 font-playfair text-3xl font-bold text-[#173F4D]">Devenez ambassadeur Trimémo</h2><p className="mt-4 max-w-2xl text-sm leading-7 text-[#5E6B73]">Vous êtes étudiant ? Faites connaître Trimémo dans votre université et bénéficiez de 10 % de commission sur les achats confirmés attribués à votre lien.</p></div>
+        <button onClick={onAmbassadors} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#173F4D] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#245B6D]">Découvrir le programme <ArrowRight size={17}/></button>
+      </div>
+    </section>
 
-    <section id="contact" aria-labelledby="contact-trimemo" className="bg-white px-5 py-14 sm:px-8">
-      <div className="mx-auto max-w-[920px] rounded-2xl border border-[#1B4D3E]/20 bg-[#1B4D3E]/10 px-6 py-10 text-center shadow-sm sm:px-10">
-        <h2 id="contact-trimemo" className="font-inter text-3xl font-bold text-[#1B4D3E]">Une question ? Contactez-nous</h2>
-        <p className="mx-auto mt-3 max-w-xl font-inter text-sm leading-relaxed text-[#1B4D3E] sm:text-base">Besoin d’une information sur Trimémo, votre projet ou nos services ? Notre équipe est à votre écoute.</p>
-        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp (nouvel onglet)" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#1B4D3E] px-6 py-3 font-inter text-sm font-semibold text-white transition hover:bg-[#1B4D3E]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E] sm:w-auto">Contacter sur WhatsApp</a>
-          <a href="mailto:redacmemo78@gmail.com?subject=Contact%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#1B4D3E] bg-white px-6 py-3 font-inter text-sm font-semibold text-[#1B4D3E] transition hover:bg-[#1B4D3E]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B4D3E] sm:w-auto">Envoyer un e-mail</a>
+    <section aria-labelledby="faq-trimemo" className="bg-[#F7F5EF] px-5 py-20 sm:px-8">
+      <div className="mx-auto max-w-[980px]">
+        <EditorialTitle eyebrow="Des réponses transparentes" title="Questions fréquentes" description="Les informations essentielles pour commencer votre travail en toute clarté."/>
+        <div className="mt-10 space-y-3">{questions.map(({question,answer})=><details key={question} className="group rounded-xl border border-[#E6E1D8] bg-white px-5 py-5 shadow-sm sm:px-7">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold leading-6 text-[#173F4D] sm:text-base"><span>{question}</span><span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F7F5EF] text-xl font-normal text-[#9B7B46] transition-transform group-open:rotate-45">+</span></summary>
+          <p className="mt-4 max-w-[780px] border-t border-[#E6E1D8] pt-4 text-sm leading-7 text-[#5E6B73]">{answer}</p>
+        </details>)}</div>
+      </div>
+    </section>
+
+    <section id="contact" className="scroll-mt-24 bg-white px-5 py-20 sm:px-8" aria-labelledby="contact-trimemo">
+      <div className="mx-auto max-w-[1080px] rounded-[26px] border border-[#E6E1D8] bg-[#FBF9F5] px-6 py-12 text-center sm:px-12">
+        <Mail size={32} color={gold} className="mx-auto"/>
+        <h2 id="contact-trimemo" className="mt-5 font-playfair text-3xl font-bold text-[#173F4D]">Une question ? Contactez-nous</h2>
+        <p className="mx-auto mt-4 max-w-[580px] text-sm leading-7 text-[#5E6B73]">Besoin d’une information sur Trimémo, votre projet ou nos services ? Notre équipe est à votre écoute.</p>
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a href="https://wa.me/447418359309" target="_blank" rel="noopener noreferrer" aria-label="Contacter Trimémo sur WhatsApp (nouvel onglet)" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#173F4D] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245B6D] sm:w-auto">Contacter sur WhatsApp</a>
+          <a href="mailto:redacmemo78@gmail.com?subject=Contact%20Trim%C3%A9mo" aria-label="Envoyer un e-mail à Trimémo" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#C6A477] bg-white px-6 py-3 text-sm font-semibold text-[#173F4D] transition hover:bg-[#F7F5EF] sm:w-auto">Envoyer un e-mail</a>
         </div>
       </div>
     </section>
-  </>;
+  </div>;
 }
