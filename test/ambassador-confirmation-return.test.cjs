@@ -18,3 +18,15 @@ test("les liens expirés affichent une solution sans exposer les jetons",()=>{
  assert.match(src,/setShowConfirmationResend\(true\)/);
  assert.match(src,/linkError/);
 });
+
+test("le parcours ambassadeur est conservé sans paramètre de redirection",()=>{
+ assert.match(src,/confirmedSignupIntent === "ambassador"/);
+ assert.match(src,/data\.user\.signupIntent/);
+});
+test("les anciens liens de confirmation basculent sur le domaine public avant vérification",()=>{
+ const entry=readFileSync("src/main.tsx","utf8");
+ assert.match(entry,/window\.location\.hostname === 'trimemo-frontend\.vercel\.app'/);
+ assert.match(entry,/window\.location\.replace\(/);
+ assert.match(entry,/https:\/\/trimemo-redac\.company/);
+ assert.match(entry,/window\.location\.hash/);
+});
