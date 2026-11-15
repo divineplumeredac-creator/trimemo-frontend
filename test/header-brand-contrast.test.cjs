@@ -17,7 +17,7 @@ test("le menu d'accueil est bleu pétrole avec accent or et logo inverse", () =>
 });
 test("la navigation reste accessible entre tablette et ordinateur",()=>{
   assert.match(app,/className="hidden items-center gap-6 font-inter text-sm text-white lg:flex/);
-  assert.match(app,/className="studio-mobile-menu sticky top-\[72px\]/);
+  assert.match(app,/studio-mobile-menu sticky top-\[72px\]/);
   assert.match(app,/shadow-sm lg:hidden/);
   assert.match(app,/studio-primary-nav-action hidden h-10/);
 });
