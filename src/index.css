@@ -51,3 +51,13 @@ input::placeholder,textarea::placeholder { color: #899298; }
 .studio-ambassador > div > .rounded-3xl { border-color: var(--trimemo-bordure); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } :where(button,a) { transition: none !important; } .studio-home .group:hover { transform: none !important; } }
 @media (max-width: 640px) { .studio-workspace { padding-left: 14px; padding-right: 14px; } .studio-document-page { padding: 26px 18px; } .studio-header--home .studio-primary-nav-action { padding-left: 12px; padding-right: 12px; font-size: 11px; } }
+
+/* Studio académique : davantage de respiration sur les formulaires et les documents. */
+.studio-auth input,.studio-auth select,.studio-auth textarea,
+.studio-workspace input,.studio-workspace select,.studio-workspace textarea {
+  transition: border-color .18s ease,box-shadow .18s ease;
+}
+.studio-payment { scroll-margin-top: 95px; }
+.studio-workspace .studio-writing-sheet > div:first-child { background: #FCFBF8; }
+.studio-admin th { white-space: nowrap; }
+.studio-admin .shadow-sm { border-color: #E6E1D8; }
