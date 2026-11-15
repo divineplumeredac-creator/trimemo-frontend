@@ -27,13 +27,27 @@ input::placeholder,textarea::placeholder { color: #899298; }
 .studio-shell { background: var(--trimemo-ivoire); }
 .studio-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),textarea,select):focus-visible { outline: 2px solid rgba(198,164,119,.65); outline-offset: 1px; border-color: var(--trimemo-or-doux); }
 .studio-site-header { box-shadow: 0 1px 7px rgba(23,63,77,.08); }
-.studio-header--home { background: rgba(247,245,239,.97) !important; border-bottom: 1px solid var(--trimemo-bordure) !important; }
-.studio-header--home :is(button,button > span) { color: var(--trimemo-bleu-petrole) !important; }
-
-.studio-header--home .studio-primary-nav-action { background: var(--trimemo-bleu-petrole) !important; color: #fff !important; box-shadow: 0 6px 18px rgba(23,63,77,.17); }
-.studio-header--home .studio-primary-nav-action:hover { background: #245B6D !important; }
-.studio-header--home .studio-primary-nav-action :is(svg,span) { color: white !important; }
-.studio-header--home button[aria-label="Ouvrir le menu"],.studio-header--home button[aria-label="Fermer le menu"] { border-color: var(--trimemo-bordure) !important; }
+/* Header studio académique : contraste permanent du monogramme et du nom. */
+.studio-site-header { border-bottom: 1px solid rgba(198,164,119,.45) !important; }
+.studio-header--home {
+  background: rgba(23,63,77,.985) !important;
+  border-bottom: 2px solid var(--trimemo-or-doux) !important;
+}
+.studio-site-header .studio-brand-wordmark { color: #FFFFFF !important; }
+.studio-header--home .studio-primary-nav-action {
+  background: #E8D3AC !important;
+  color: #173F4D !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.16);
+}
+.studio-header--home .studio-primary-nav-action:hover { background: #F5E3C1 !important; }
+.studio-header--home .studio-primary-nav-action :is(svg,span) { color: #173F4D !important; }
+.studio-header--home button[aria-label="Ouvrir le menu"],
+.studio-header--home button[aria-label="Fermer le menu"] { border-color: rgba(255,255,255,.5) !important; }
+.studio-site-header :is(button,a):focus-visible {
+  outline: 2px solid var(--trimemo-or-doux);
+  outline-offset: 3px;
+}
+.studio-mobile-menu { max-height: calc(100vh - 72px); overflow-y: auto; }
 .studio-home .studio-product-preview { isolation: isolate; }
 .studio-home h1,.studio-home h2,.studio-home h3 { text-wrap: balance; }
 .studio-auth > div { border: 1px solid var(--trimemo-bordure); box-shadow: 0 22px 55px -35px rgba(23,63,77,.3); }

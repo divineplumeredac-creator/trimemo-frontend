@@ -4233,7 +4233,7 @@ export default function App() {
           <div className="mx-auto flex min-h-[72px] max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <BrandLogo className="h-12 w-12" light />
-              <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-white">mo</span></span>
+              <span className="studio-brand-wordmark font-playfair text-xl font-semibold tracking-tight text-white sm:text-2xl">Trimémo</span>
             </div>
             <div className="flex items-center gap-2">
             {view !== "account" && <button type="button" onClick={() => setMobileMenuOpen(value => !value)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-white md:hidden" aria-label={mobileMenuOpen ? "Fermer la navigation du projet" : "Ouvrir la navigation du projet"} aria-expanded={mobileMenuOpen}>{mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>}
@@ -4246,10 +4246,10 @@ export default function App() {
         ) : (
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
           <button onClick={() => setView("home")} className="flex items-center gap-3" aria-label="Retour à l’accueil">
-            <BrandLogo className="h-12 w-12" />
-            <span className="font-playfair text-2xl font-semibold tracking-tight text-white">Trimé<span className="text-white">mo</span></span>
+            <BrandLogo className="h-11 w-11 sm:h-12 sm:w-12" light />
+            <span className="studio-brand-wordmark font-playfair text-xl font-semibold tracking-tight text-white sm:text-2xl">Trimémo</span>
           </button>
-          <div className="hidden items-center gap-8 font-inter text-sm text-white md:flex">
+          <div className="hidden items-center gap-6 font-inter text-sm text-white lg:flex xl:gap-8">
             <button className="text-white hover:underline hover:decoration-[#173F4D] hover:underline-offset-4" onClick={() => navigateToSection("fonctionnement")}>{view === "home" ? "Comment ça marche" : "Fonctionnement"}</button>
             <button className="text-white hover:underline hover:decoration-[#173F4D] hover:underline-offset-4" onClick={() => navigateToSection("revision-humaine")}>Révision humaine</button>
             <button className="text-white hover:underline" onClick={() => { ambassadorOrigin.current = "home"; setView("ambassadors"); }}>Ambassadeurs</button>
@@ -4267,7 +4267,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen((value) => !value)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-white md:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-white lg:hidden"
               aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -4275,14 +4275,14 @@ export default function App() {
 
             <button
               onClick={() => { setMobileMenuOpen(false); setView("dashboard"); void loadClientProjects(); }}
-              className="hidden rounded-full border border-white/25 px-4 py-2 font-inter text-[12px] text-white sm:inline-flex"
+              className="hidden rounded-full border border-white/25 px-4 py-2 font-inter text-[12px] text-white lg:inline-flex"
             >
               {view === "home" ? "Se connecter" : "Mon compte"}
             </button>
-            {view === "home" && <button onClick={() => { authIntent.current = "dashboard"; setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} className="hidden rounded-lg border border-white px-4 py-2 font-inter text-sm font-semibold text-white sm:inline-flex">Créer un compte</button>}
+            {view === "home" && <button onClick={() => { authIntent.current = "dashboard"; setClientAuthMode("signup"); setClientAuthError(""); setClientAuthNotice(""); setView("account"); }} className="hidden rounded-lg border border-white px-4 py-2 font-inter text-sm font-semibold text-white lg:inline-flex">Créer un compte</button>}
             <button
               onClick={goToProject}
-              className="studio-primary-nav-action inline-flex h-10 items-center gap-2 rounded-full bg-white px-5 font-inter text-[13px] font-medium text-[#173F4D]"
+              className="studio-primary-nav-action hidden h-10 items-center gap-2 rounded-full bg-white px-5 font-inter text-[13px] font-semibold text-[#173F4D] sm:inline-flex"
             >
               Commencer <ArrowRight className="h-4 w-4" />
             </button>
@@ -4292,7 +4292,7 @@ export default function App() {
       </header>
 
       {view !== "account" && mobileMenuOpen && (
-        <div className={`sticky top-[72px] z-40 border-b border-white/15 bg-[#173F4D] px-6 py-4 shadow-sm md:hidden`}>
+        <div className={`studio-mobile-menu sticky top-[72px] z-40 border-b border-[#C6A477]/50 bg-[#173F4D] px-6 py-4 shadow-sm lg:hidden`}>
           <div className="flex flex-col gap-1 font-inter text-sm text-white">
             {view === "home" && <><button onClick={() => navigateToSection("fonctionnement")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Fonctionnement</button>
             <button onClick={() => navigateToSection("revision-humaine")} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Révision humaine</button>
@@ -4302,7 +4302,7 @@ export default function App() {
             <button onClick={() => { setMobileMenuOpen(false); authIntent.current = "dashboard"; setClientAuthMode("signup"); setView("account"); }} className="rounded-xl px-4 py-3 text-left hover:bg-white/10">Créer un compte</button></>}
             {view === "preview" && preview && canViewClientPreview && (
               <>
-                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#173F4D]">Aperçu</div>
+                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#E8D3AC]">Aperçu</div>
                 {(["problematic","plan","introduction"] as const).map((tab) => (
                   <button key={tab} onClick={() => { setMobileMenuOpen(false); setPreviewTab(tab); }} className="rounded-xl px-4 py-2 text-left hover:bg-white/10">
                     {tab === "problematic" ? "Problématique" : tab === "plan" ? "Plan" : "Introduction"}
@@ -4312,11 +4312,11 @@ export default function App() {
             )}
             {view === "premium" && premium && (
               <>
-                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#173F4D]">Problématiques</div>
+                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#E8D3AC]">Problématiques</div>
                 {premium.problematics.map((item,index) => (
                   <button key={item.id} onClick={() => { setMobileMenuOpen(false); setPremiumSection("problematic"); setPremiumNav("problematic-"+index); setSelectedProblematic(item); }} className="rounded-xl px-4 py-2 text-left hover:bg-white/10">Problématique {index+1}</button>
                 ))}
-                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#173F4D]">Plans</div>
+                <div className="mt-2 border-t border-white/10 pt-2 text-[10px] uppercase tracking-[0.18em] text-[#E8D3AC]">Plans</div>
                 {premium.plans.map((plan,index) => (
                   <button key={plan.id} onClick={() => { setMobileMenuOpen(false); setPremiumSection("plan"); setPremiumNav("plan-"+index); setSelectedPlan(plan); }} className="rounded-xl px-4 py-2 text-left hover:bg-white/10">Plan {index+1}</button>
                 ))}
