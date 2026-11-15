@@ -3330,7 +3330,7 @@ export default function App() {
                 event.preventDefault();
                 void handleOwnerLogin();
               }}
-              className="w-full rounded-[28px] bg-white p-7 shadow-2xl"
+              className="w-full rounded-[28px] bg-white p-7 text-[#1B4D3E] shadow-2xl"
             >
               <div className="flex justify-center">
                 <BrandLogo className="h-16 w-16" />
@@ -3345,16 +3345,17 @@ export default function App() {
                 Espace séparé de la plateforme publique pour tester les générations sans paiement.
               </p>
 
-              <label className="mt-6 block font-inter text-xs font-semibold text-[#1B4D3E]/85">
+              <label htmlFor="owner-email" className="mt-6 block font-inter text-xs font-semibold text-[#1B4D3E]/85">
                 E-mail administrateur
               </label>
               <input
+                id="owner-email"
                 type="email"
                 required
                 value={ownerEmail}
                 onChange={(event) => setOwnerEmail(event.target.value)}
                 autoComplete="username"
-                className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/10 px-4 font-inter text-sm outline-none focus:border-[#1B4D3E]/30"
+                className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/20 bg-white px-4 font-inter text-sm text-[#1B4D3E] caret-[#1B4D3E] outline-none focus:border-[#1B4D3E] focus:ring-2 focus:ring-[#1B4D3E]/10"
               />
 
               <label
@@ -3371,7 +3372,7 @@ export default function App() {
                   value={ownerPassword}
                   onChange={(event) => setOwnerPassword(event.target.value)}
                   autoComplete="current-password"
-                  className="h-11 w-full rounded-xl border border-[#1B4D3E]/10 px-4 pr-12 font-inter text-sm outline-none focus:border-[#1B4D3E]/30"
+                  className="h-11 w-full rounded-xl border border-[#1B4D3E]/20 bg-white px-4 pr-12 font-inter text-sm text-[#1B4D3E] caret-[#1B4D3E] outline-none focus:border-[#1B4D3E] focus:ring-2 focus:ring-[#1B4D3E]/10"
                 />
                 <button
                   type="button"
@@ -4197,13 +4198,13 @@ export default function App() {
 
       {ownerRoute && !ownerSessionValid && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#1B4D3E] px-5">
-          <form onSubmit={(event) => { event.preventDefault(); void handleOwnerLogin(); }} className="w-full max-w-md rounded-[26px] bg-white p-7 shadow-2xl">
+          <form onSubmit={(event) => { event.preventDefault(); void handleOwnerLogin(); }} className="w-full max-w-md rounded-[26px] bg-white p-7 text-[#1B4D3E] shadow-2xl">
             <BrandLogo className="mx-auto h-16 w-16" />
             <div className="mt-4 text-center font-inter text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1B4D3E]">Accès privé</div>
             <h1 className="mt-2 text-center font-playfair text-3xl text-[#1B4D3E]">Espace propriétaire</h1>
             <p className="mt-3 text-center font-inter text-sm leading-[1.7] text-[#1B4D3E]/85">Accédez aux tests de Trimémo sans paiement réel.</p>
-            <label className="mt-6 block font-inter text-xs font-semibold text-[#1B4D3E]/85">E-mail</label>
-            <input type="email" required value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/10 px-4 font-inter text-sm" />
+            <label htmlFor="owner-email" className="mt-6 block font-inter text-xs font-semibold text-[#1B4D3E]/85">E-mail</label>
+            <input id="owner-email" type="email" required autoComplete="username" value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[#1B4D3E]/20 bg-white px-4 font-inter text-sm text-[#1B4D3E] caret-[#1B4D3E] outline-none focus:border-[#1B4D3E] focus:ring-2 focus:ring-[#1B4D3E]/10" />
             <label htmlFor="owner-password" className="mt-4 block font-inter text-xs font-semibold text-[#1B4D3E]/85">Mot de passe</label>
             <div className="relative mt-2">
               <input
@@ -4213,7 +4214,7 @@ export default function App() {
                 value={ownerPassword}
                 onChange={(event) => setOwnerPassword(event.target.value)}
                 autoComplete="current-password"
-                className="h-11 w-full rounded-xl border border-[#1B4D3E]/10 px-4 pr-12 font-inter text-sm outline-none transition focus:border-[#1B4D3E]/30 focus:ring-2 focus:ring-[#1B4D3E]/10"
+                className="h-11 w-full rounded-xl border border-[#1B4D3E]/20 bg-white px-4 pr-12 font-inter text-sm text-[#1B4D3E] caret-[#1B4D3E] outline-none transition focus:border-[#1B4D3E] focus:ring-2 focus:ring-[#1B4D3E]/10"
               />
               <button
                 type="button"
