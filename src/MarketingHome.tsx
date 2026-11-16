@@ -46,7 +46,7 @@ function EditorialTitle({eyebrow,title,description}:{eyebrow:string;title:string
 
 function WritingWorkspacePreview(){
   const nav = ['Projet','Problématique','Plan','Rédaction','Export Word'];
-  return <div className="studio-product-preview relative mx-auto w-full max-w-[675px]" aria-label="Exemple illustratif de l’espace de rédaction Trimémo">
+  return <div data-nosnippet="true" className="studio-product-preview relative mx-auto w-full max-w-[675px]" aria-label="Exemple illustratif de l’espace de rédaction Trimémo">
     <div className="absolute -left-4 -top-5 -z-10 h-44 w-44 rounded-full bg-[#C6A477]/20 blur-3xl"/>
     <div className="absolute -bottom-7 -right-4 -z-10 h-56 w-56 rounded-full bg-[#173F4D]/15 blur-3xl"/>
     <div className="overflow-hidden rounded-[22px] border border-[#C9D5D4] bg-white shadow-[0_28px_70px_-30px_rgba(23,63,77,0.45)]">
@@ -88,7 +88,7 @@ export default function MarketingHome({ onStart, onRevision, onAmbassadors }: { 
       <div className="relative mx-auto grid max-w-[1340px] items-center gap-14 lg:grid-cols-[0.90fr_1.10fr] lg:gap-12">
         <div className="max-w-[600px]">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#C6A477]/45 bg-white/65 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#927447]"><GraduationCap size={16}/> Votre studio académique</div>
-          <h1 className="mt-7 font-playfair text-[clamp(2.7rem,5vw,4.65rem)] font-bold leading-[1.10] tracking-[-0.035em] text-[#173F4D]">Votre espace académique pour <span className="relative whitespace-nowrap">rédiger <span className="absolute -bottom-1 left-0 h-1 w-full rounded-full bg-[#C6A477]"/></span> avec méthode.</h1>
+          <h1 className="mt-7 font-playfair text-[clamp(2.7rem,5vw,4.65rem)] font-bold leading-[1.10] tracking-[-0.035em] text-[#173F4D]">Rédigez votre mémoire <span className="relative whitespace-nowrap">avec méthode<span className="absolute -bottom-1 left-0 h-1 w-full rounded-full bg-[#C6A477]"/></span>.</h1>
           <p className="mt-7 max-w-[570px] text-base leading-[1.85] text-[#5E6B73] sm:text-lg">Mémoire, rapport de stage ou thèse : Trimémo vous accompagne de la problématique au plan, de l’aperçu à la rédaction assistée, jusqu’à l’export Word de votre document académique.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <button type="button" onClick={onStart} className="inline-flex min-h-13 items-center justify-center gap-3 rounded-xl bg-[#173F4D] px-7 py-4 text-sm font-semibold text-white shadow-[0_10px_25px_-13px_rgba(23,63,77,0.75)] transition hover:-translate-y-0.5 hover:bg-[#245B6D] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F4D]">Commencer mon projet <ArrowRight size={17}/></button>
