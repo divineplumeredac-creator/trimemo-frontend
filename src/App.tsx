@@ -3435,10 +3435,8 @@ export default function App() {
             <div className="flex items-center gap-3">
               <BrandLogo className="h-11 w-11" light />
               <div>
-                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
-                  Administration
-                </div>
-                <div className="font-playfair text-2xl font-semibold">
+
+<div className="font-playfair text-2xl font-semibold">
                   Tableau de bord propriétaire
                 </div>
               </div>
@@ -3509,8 +3507,7 @@ export default function App() {
           </div>
         )}
           <aside className="hidden min-h-[calc(100vh-72px)] w-[245px] shrink-0 border-r border-[#173F4D]/10 bg-white p-5 lg:block">
-            <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Navigation</div>
-            <nav className="mt-5 space-y-2">
+            <nav aria-label="Navigation du projet" className="mt-2 space-y-1">
               <button
                 type="button"
                 onClick={startNewOwnerProject}
@@ -4309,12 +4306,12 @@ export default function App() {
       )}
 
       {view === "account" && (
-        <section className="studio-auth min-h-[72vh] bg-gradient-to-b from-[#F7F5EF] via-white to-[#F7F5EF] px-4 py-10 sm:px-6 sm:py-16">
-          <div className="mx-auto max-w-xl rounded-3xl border border-[#173F4D]/10 bg-white p-6 shadow-sm sm:p-9">
-            <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#173F4D]">{authIntent.current === "ambassador" ? "Programme Ambassadeurs Trimémo" : "Compte client Trimémo"}</div>
+        <section className="studio-auth bg-gradient-to-b from-[#F7F5EF] via-white to-[#F7F5EF] px-4 py-6 sm:px-6 sm:py-10">
+          <div className="mx-auto max-w-xl rounded-3xl border border-[#173F4D]/10 bg-white p-5 shadow-sm sm:p-7">
+            {authIntent.current === "ambassador" && <p className="text-sm font-medium text-[#5E6B73]">Programme Ambassadeurs Trimémo</p>}
             <h1 className="mt-3 font-playfair text-3xl font-bold text-[#173F4D]">{clientAuthMode === "signup" ? "Créez votre compte" : clientAuthMode === "login" ? "Connectez-vous" : clientAuthMode === "forgot" ? "Mot de passe oublié" : "Choisissez un nouveau mot de passe"}</h1>
             <p className="mt-3 font-inter text-sm leading-6 text-[#5E6B73]">{clientAuthMode === "signup" ? authIntent.current === "ambassador" ? "Si vous avez déjà un compte Trimémo, connectez-vous plutôt : un seul compte suffit pour participer au programme." : "Créez votre compte avec votre prénom, votre nom, votre adresse e-mail et un mot de passe. Votre projet sera enregistré avant l’ouverture du paiement." : clientAuthMode === "login" ? "Connectez-vous pour retrouver vos projets et poursuivre votre travail." : clientAuthMode === "forgot" ? "Saisissez l’adresse e-mail associée à votre compte. Si un compte correspond, vous recevrez un lien de réinitialisation." : "Saisissez un nouveau mot de passe d’au moins 8 caractères."}</p>
-            <form className="mt-7 space-y-4" onSubmit={(event) => { event.preventDefault(); void submitClientAuth(); }}>
+            <form className="mt-5 space-y-3" onSubmit={(event) => { event.preventDefault(); void submitClientAuth(); }}>
               {clientAuthMode === "signup" && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block font-inter text-sm font-medium text-[#173F4D]">Prénom
@@ -4351,11 +4348,11 @@ export default function App() {
             </>)}
 
       {view === "dashboard" && (
-        <section className="studio-dashboard min-h-[72vh] bg-[#F7F5EF] px-4 py-8 sm:px-6 sm:py-10">
+        <section className="studio-dashboard bg-[#F7F5EF] px-4 py-5 sm:px-6 sm:py-7">
           <div className="mx-auto max-w-7xl">
-            <div className="rounded-3xl bg-[#173F4D] p-6 text-white shadow-[0_18px_40px_-26px_rgba(23,63,77,0.5)] sm:p-8">
+            <div className="rounded-3xl bg-[#173F4D] p-5 text-white shadow-[0_18px_40px_-26px_rgba(23,63,77,0.5)] sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <div><div className="mb-3 h-1 w-12 rounded-full bg-[#C6A477]" aria-hidden="true"/><h1 className="font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/90">{clientNameDisplay && clientNameDisplay !== "Mon compte" ? `Bienvenue, ${clientNameDisplay}. Retrouvez vos projets et suivez leur avancement.` : "Retrouvez vos projets et suivez leur avancement."}</p></div>
+                <div><h1 className="font-playfair text-3xl font-bold text-white sm:text-4xl">Mon tableau de bord</h1><p className="mt-2 font-inter text-sm text-white/90">{clientNameDisplay && clientNameDisplay !== "Mon compte" ? `Bienvenue, ${clientNameDisplay}. Retrouvez vos projets et suivez leur avancement.` : "Retrouvez vos projets et suivez leur avancement."}</p></div>
                 <div className="flex flex-wrap items-center gap-3">
                   <button type="button" onClick={() => { ambassadorOrigin.current = "dashboard"; setMobileMenuOpen(false); setView("ambassadors"); }} className="rounded-full bg-white px-5 py-3 font-inter text-sm font-semibold text-[#173F4D] shadow-sm hover:bg-[#F7F5EF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Devenir ambassadeur</button>
                   <button type="button" disabled={clientLogoutBusy || loading} onClick={() => void logoutClient()} className="rounded-full border border-white/30 px-5 py-3 font-inter text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60">{clientLogoutBusy ? "Sauvegarde…" : "Déconnexion"}</button>
@@ -4430,7 +4427,6 @@ export default function App() {
                   </button>
                 )}
                 <div>
-                {view !== "writing" && <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-[#173F4D]">Projet académique</div>}
                 <h2 className="mt-1 font-playfair text-2xl sm:text-3xl">{view === "project" ? "Définissez votre demande" : view === "estimate" ? "Analyse du projet · Estimation du coût" : view === "preview" ? "Votre aperçu avant paiement" : view === "premium" ? "Vos options premium" : selectedPlan && selectedProblematic ? "Rédaction" : ""}</h2>
               </div>
               
@@ -4444,8 +4440,7 @@ export default function App() {
 
               {view === "estimate" && estimate && (
               <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
-                <article className="rounded-[24px] border border-[#173F4D]/10 bg-white p-7 lg:p-9">
-                  <div className="font-inter text-[11px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Analyse du projet</div>
+                <article className="rounded-[24px] border border-[#173F4D]/10 bg-white p-5 lg:p-7">
                   <h3 className="mt-3 font-playfair text-3xl text-[#173F4D]">Estimation du coût</h3>
                   <p className="mt-4 font-inter text-sm leading-[1.8] text-[#5E6B73]">Trimémo a analysé le sujet, le niveau, les consignes et les documents fournis. Le montant est provisoire et couvre le service automatisé prévu pour le projet, y compris les propositions, les améliorations, les contrôles automatiques et l’aperçu avant paiement. La correction humaine est une prestation distincte, non comprise dans ce prix.</p>
                   <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -4646,7 +4641,6 @@ export default function App() {
             {view === "preview" && preview && canViewClientPreview && (
               <section className="studio-payment mx-auto mt-6 max-w-[900px] rounded-[24px] border-t-4 border-[#C6A477] bg-[#173F4D] p-6 text-white shadow-[0_18px_38px_-28px_rgba(23,63,77,0.6)] sm:p-8">
                 <div className="text-center">
-                  <div className="font-inter text-[11px] uppercase tracking-[0.2em] text-white">Poursuivre le document</div>
                   <h3 className="mt-2 font-playfair text-2xl sm:text-3xl">Votre aperçu est terminé</h3>
                   <p className="mx-auto mt-3 max-w-[650px] font-inter text-sm leading-6 text-white/90">Le paiement débloque la suite de la rédaction au point d’arrêt, en conservant la problématique et le plan choisis.</p>
                   {estimate && (
@@ -4699,10 +4693,7 @@ export default function App() {
           {view === "premium" && premium && (
             <section>
               <div className="mb-6">
-                <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
-                  Résultats du projet
-                </div>
-                <h1 className="mt-2 font-playfair text-4xl text-[#173F4D]">Problématiques, plans et rédaction</h1>
+<h1 className="mt-2 font-playfair text-4xl text-[#173F4D]">Problématiques, plans et rédaction</h1>
               </div>
 
               <div className="min-w-0">
