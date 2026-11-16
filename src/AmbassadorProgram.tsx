@@ -64,22 +64,22 @@ export default function AmbassadorProgram({onBack,onLogin,onSignup,backLabel="Re
   try{await navigator.clipboard.writeText(referralLink);setNotice("Lien copié.");}
   catch{setNotice("Sélectionnez et copiez le lien affiché.");}
  };
- return <main className="studio-ambassador min-h-[76vh] bg-[#F7F5EF] px-4 py-12 font-inter text-[#173F4D] sm:px-6">
+ return <main className="studio-ambassador bg-[#F7F5EF] px-4 py-6 font-inter text-[#173F4D] sm:px-6 sm:py-9">
   <div className="mx-auto max-w-[1050px]">
-   <button type="button" onClick={onBack} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold hover:underline"><ArrowLeft size={17}/> {backLabel}</button>
-   <div className="rounded-3xl bg-[#173F4D] p-8 text-white shadow-[0_20px_50px_-32px_rgba(23,63,77,0.5)] sm:p-12">
+   <button type="button" onClick={onBack} className="mb-4 inline-flex items-center gap-2 text-sm font-semibold hover:underline"><ArrowLeft size={17}/> {backLabel}</button>
+   <div className="rounded-3xl bg-[#173F4D] p-6 text-white shadow-[0_20px_50px_-32px_rgba(23,63,77,0.5)] sm:p-8">
     <span className="text-xs font-bold uppercase tracking-widest text-[#E7D0A8]">Première sélection • 10 places</span>
     <h1 className="mt-3 text-3xl font-bold sm:text-4xl">Programme Ambassadeurs Trimémo</h1>
     <p className="mt-4 max-w-2xl leading-7 text-white/90">Faites découvrir Trimémo autour de vous et gagnez 10 % sur chaque achat confirmé grâce à votre lien personnel.</p>
    </div>
-   <div className="my-7 grid gap-4 md:grid-cols-3">
+   <div className="my-4 grid gap-3 md:grid-cols-3">
     {[
      ["1. Postulez","Présentez-vous et indiquez votre établissement."],
      ["2. Partagez","Une fois accepté, partagez votre lien Trimémo autour de vous."],
      ["3. Gagnez 10 %","Recevez une commission sur les achats confirmés grâce à votre lien."]
-    ].map(([title,description])=><article key={title} className="rounded-2xl border border-[#173F4D]/15 bg-white p-6"><h2 className="font-bold">{title}</h2><p className="mt-2 text-sm leading-6">{description}</p></article>)}
+    ].map(([title,description])=><article key={title} className="rounded-2xl border border-[#173F4D]/15 bg-white p-5"><h2 className="font-bold">{title}</h2><p className="mt-2 text-sm leading-6">{description}</p></article>)}
    </div>
-   <div className="rounded-3xl border border-[#173F4D]/15 bg-white p-6 shadow-sm sm:p-9">
+   <div className="rounded-3xl border border-[#173F4D]/15 bg-white p-5 shadow-sm sm:p-7">
     <h2 className="text-2xl font-bold">Mon espace ambassadeur</h2>
     {!token?<div className="mt-4"><p className="max-w-2xl text-sm leading-7">Vous avez déjà un compte Trimémo ? Utilisez-le pour rejoindre le programme Ambassadeurs. Il n’est pas nécessaire de vous inscrire une deuxième fois.</p><div className="mt-5 flex flex-wrap gap-3"><button onClick={onLogin} className="rounded-xl bg-[#173F4D] px-6 py-3 font-semibold text-white">Se connecter</button><button onClick={onSignup} className="rounded-xl border border-[#173F4D] bg-white px-6 py-3 font-semibold text-[#173F4D]">Créer un compte</button></div></div>
     :busy&&!profile?<p className="mt-4 text-sm">Chargement de votre candidature…</p>
