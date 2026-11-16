@@ -6,8 +6,9 @@ const gold = '#C6A477';
 const steps = [
   { icon: ClipboardList, title: 'Présentez votre projet', description: 'Décrivez votre sujet, votre niveau d’études, vos consignes et vos documents de référence.' },
   { icon: Layers, title: 'Validez votre problématique et votre plan', description: 'Choisissez votre problématique, ajustez les propositions et validez un plan adapté.' },
-  { icon: Eye, title: 'Découvrez votre aperçu', description: 'Consultez un aperçu proportionnel à votre projet, dans la limite de 2 500 mots, avant de payer.' },
-  { icon: FileUp, title: 'Finalisez votre document', description: 'Après paiement, poursuivez la rédaction et exportez le document au format Word.' },
+  { icon: FileText, title: 'Rédigez progressivement', description: 'Lancez la rédaction selon le plan validé : Trimémo développe votre document étape par étape, jusqu’à l’aperçu.' },
+  { icon: Eye, title: 'Découvrez votre aperçu', description: 'Consultez un aperçu adapté à la taille de votre projet, dans la limite de 2 500 mots, avant de payer.' },
+  { icon: FileUp, title: 'Finalisez votre document et exportez', description: 'Après paiement, poursuivez la rédaction complète et exportez votre document au format Word.' },
 ];
 const questions = [
   {
@@ -131,7 +132,7 @@ export default function MarketingHome({ onStart, onRevision, onAmbassadors }: { 
     <section id="fonctionnement" className="scroll-mt-24 bg-[#F7F5EF] px-5 py-20 sm:px-8 lg:py-24">
       <div className="mx-auto max-w-[1320px]">
         <EditorialTitle eyebrow="De l'idée au document" title="Un parcours clair, du début à la fin" description="Avancez étape par étape dans votre travail académique, à votre rythme." />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{steps.map(({icon:Icon,title,description},index)=><article key={title} className="group relative flex h-full flex-col rounded-[22px] border border-[#E6E1D8] bg-white p-7 transition hover:-translate-y-1 hover:border-[#C6A477] hover:shadow-[0_12px_40px_-27px_rgba(23,63,77,0.4)]">
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">{steps.map(({icon:Icon,title,description},index)=><article key={title} className="group relative flex h-full flex-col rounded-[22px] border border-[#E6E1D8] bg-white p-7 transition hover:-translate-y-1 hover:border-[#C6A477] hover:shadow-[0_12px_40px_-27px_rgba(23,63,77,0.4)]">
           <div className="flex items-start justify-between"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F1E8D8] text-[#173F4D]"><Icon size={22}/></span><span className="font-playfair text-3xl font-bold text-[#C6A477]">0{index+1}</span></div>
           <h3 className="mt-7 font-playfair text-xl font-bold leading-snug text-[#173F4D]">{title}</h3>
           <p className="mt-4 text-sm leading-7 text-[#5E6B73]">{description}</p>
