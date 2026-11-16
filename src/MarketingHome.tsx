@@ -89,7 +89,7 @@ export default function MarketingHome({ onStart, onRevision, onAmbassadors }: { 
         <div className="max-w-[600px]">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#C6A477]/45 bg-white/65 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#927447]"><GraduationCap size={16}/> Votre studio académique</div>
           <h1 className="mt-7 font-playfair text-[clamp(2.7rem,5vw,4.65rem)] font-bold leading-[1.10] tracking-[-0.035em] text-[#173F4D]">Votre espace académique pour <span className="relative whitespace-nowrap">rédiger <span className="absolute -bottom-1 left-0 h-1 w-full rounded-full bg-[#C6A477]"/></span> avec méthode.</h1>
-          <p className="mt-7 max-w-[570px] text-base leading-[1.85] text-[#5E6B73] sm:text-lg">Trimémo vous accompagne de la problématique au plan, de l’aperçu à la rédaction complète, jusqu’à l’export Word de votre document académique.</p>
+          <p className="mt-7 max-w-[570px] text-base leading-[1.85] text-[#5E6B73] sm:text-lg">Mémoire, rapport de stage ou thèse : Trimémo vous accompagne de la problématique au plan, de l’aperçu à la rédaction assistée, jusqu’à l’export Word de votre document académique.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <button type="button" onClick={onStart} className="inline-flex min-h-13 items-center justify-center gap-3 rounded-xl bg-[#173F4D] px-7 py-4 text-sm font-semibold text-white shadow-[0_10px_25px_-13px_rgba(23,63,77,0.75)] transition hover:-translate-y-0.5 hover:bg-[#245B6D] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F4D]">Commencer mon projet <ArrowRight size={17}/></button>
             <a href="#fonctionnement" className="inline-flex min-h-13 items-center justify-center rounded-xl border border-[#C6A477] bg-transparent px-6 py-4 text-sm font-semibold text-[#173F4D] transition hover:bg-[#EEE3D2]">Découvrir le parcours</a>
@@ -157,6 +157,26 @@ export default function MarketingHome({ onStart, onRevision, onAmbassadors }: { 
         <div className="flex h-32 w-full items-center justify-center rounded-2xl border border-[#C6A477]/35 bg-[#EEE4D4] lg:h-44"><GraduationCap size={70} color="#9A7846" strokeWidth={1.3}/></div>
         <div><span className="inline-flex rounded-full bg-[#EDE0C9] px-3 py-1.5 text-xs font-semibold text-[#886A3D]">Phase pilote · 10 places</span><h2 className="mt-4 font-playfair text-3xl font-bold text-[#173F4D]">Devenez ambassadeur Trimémo</h2><p className="mt-4 max-w-2xl text-sm leading-7 text-[#5E6B73]">Vous êtes étudiant ? Faites connaître Trimémo dans votre université et bénéficiez de 10 % de commission sur les achats confirmés attribués à votre lien.</p></div>
         <button onClick={onAmbassadors} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#173F4D] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#245B6D]">Découvrir le programme <ArrowRight size={17}/></button>
+      </div>
+    </section>
+
+    <section id="guides-methodologiques" className="scroll-mt-24 bg-[#FBFAF7] px-5 py-20 sm:px-8" aria-labelledby="guides-methodologiques-titre">
+      <div className="mx-auto max-w-[1200px]">
+        <EditorialTitle eyebrow="Ressources gratuites" title="Guides pour rédiger un mémoire avec méthode" description="Des conseils concrets pour définir votre sujet, construire votre plan et préparer votre document académique avant d’utiliser Trimémo."/>
+        <div className="mt-12 grid gap-5 md:grid-cols-2">
+          {[
+            {url:'/guides/rediger-un-memoire.html',title:'Comment rédiger un mémoire ?',description:'Du choix du sujet à la relecture finale : les étapes pour conduire un travail structuré.'},
+            {url:'/guides/problematique-de-memoire.html',title:'Formuler une problématique de mémoire',description:'Transformer un thème général en question de recherche précise et exploitable.'},
+            {url:'/guides/plan-de-memoire.html',title:'Construire un plan de mémoire',description:'Organiser parties, chapitres et sections autour d’une progression argumentative.'},
+            {url:'/guides/rapport-de-stage.html',title:'Rédiger un rapport de stage',description:'Présenter son entreprise, ses missions, ses analyses et son bilan professionnel.'}
+          ].map(item => <a key={item.url} href={item.url} className="group block rounded-[22px] border border-[#E3E6E7] bg-white p-7 shadow-sm transition hover:border-[#C6A477] hover:shadow-md">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#927447]"><BookOpen size={17}/> Guide académique</div>
+            <h3 className="mt-4 font-playfair text-xl font-bold text-[#173F4D]">{item.title}</h3>
+            <p className="mt-3 text-sm leading-7 text-[#5E6B73]">{item.description}</p>
+            <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#173F4D]">Lire le guide <ArrowRight size={16} className="transition group-hover:translate-x-1"/></span>
+          </a>)}
+        </div>
+        <p className="mt-8 text-center text-sm leading-7 text-[#5E6B73]">Trimémo est un outil d’assistance. La vérification des sources, les choix méthodologiques et la conformité aux consignes de votre établissement restent essentiels.</p>
       </div>
     </section>
 
