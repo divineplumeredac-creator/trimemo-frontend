@@ -205,20 +205,16 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
         </div>
       </div>
     </header>
-    <div className="mx-auto grid max-w-[1600px] gap-5 px-3 py-5 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:px-8">
+    <div className="mx-auto grid max-w-[1600px] gap-4 px-3 py-4 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:px-8">
       <aside className="h-fit rounded-2xl border border-[#173F4D]/20 bg-white p-2 shadow-sm lg:sticky lg:top-[88px]">
-        <div className="hidden px-3 pb-3 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#5E6B73] lg:block">Administration</div>
         <nav className="flex gap-1 overflow-x-auto lg:flex-col">
-          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#173F4D] text-white shadow-sm":"text-[#5E6B73] hover:bg-[#173F4D]/5 hover:text-[#173F4D]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span>{item.id==="revisions"&&<span className={"ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold "+(tab===item.id?"bg-white/20 text-white":revisions.some((r:any)=>r.status==="pending")?"bg-[#173F4D]/15 text-[#173F4D]":"bg-[#173F4D]/5 text-[#5E6B73]")}>{revisions.filter((r:any)=>r.status==="pending").length}</span>}{item.id==="revisions"&&newRevisionIds.length>0&&<span className={"rounded-full px-2 py-0.5 text-[10px] font-bold "+(tab===item.id?"bg-white/20 text-white":"bg-[#173F4D] text-white")}>Nouveau</span>}</button>;})}
+          {tabs.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>selectTab(item.id)} className={"flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition "+(tab===item.id?"bg-[#173F4D] text-white shadow-sm":"text-[#5E6B73] hover:bg-[#173F4D]/5 hover:text-[#173F4D]")}><Icon size={17}/><span className="whitespace-nowrap">{item.label}</span>{item.id==="revisions"&&<span className={"ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold "+(tab===item.id?"bg-white/20 text-white":revisions.some((r:any)=>r.status==="pending")?"bg-[#173F4D]/15 text-[#173F4D]":"bg-[#173F4D]/5 text-[#5E6B73]")}>{revisions.filter((r:any)=>r.status==="pending").length}</span>}{item.id==="revisions"&&newRevisionIds.length>0&&<span className={"rounded-full px-2 py-0.5 text-[10px] font-bold "+(tab===item.id?"bg-white/20 text-white":"bg-[#173F4D] text-white")}>Nouveau</span>}</button>;})}
         </nav>
-        <div className="mt-4 hidden rounded-xl bg-[#173F4D]/10 p-3 text-xs leading-5 text-[#5E6B73] lg:block">
-          Les données clients, paiements et journaux sont chargés depuis le serveur sécurisé. Les secrets PayPal et Claude ne sont jamais transmis à l’interface.
-        </div>
       </aside>
 
-      <main className="min-w-0 space-y-5">
+      <main className="min-w-0 space-y-4">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-          <div><div className="text-xs font-bold uppercase tracking-[0.18em] text-[#173F4D]">Centre de contrôle</div><h1 className="mt-1 text-2xl font-bold sm:text-3xl">{tabs.find(item=>item.id===tab)?.label}</h1><p className="mt-2 text-sm text-[#5E6B73]">Pilotez vos clients, vos projets et les paiements Trimémo.</p></div>
+          <div><h1 className="text-2xl font-bold sm:text-3xl">{tabs.find(item=>item.id===tab)?.label}</h1></div>
           <Button variant="secondary" disabled={loading} onClick={()=>void refresh(tab)}><RefreshCcw size={16} className={loading?"animate-spin":""}/> Actualiser</Button>
         </div>
 
