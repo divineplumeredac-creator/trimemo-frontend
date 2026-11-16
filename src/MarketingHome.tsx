@@ -7,7 +7,7 @@ const steps = [
   { icon: ClipboardList, title: 'Présentez votre projet', description: 'Décrivez votre sujet, votre niveau d’études, vos consignes et vos documents de référence.' },
   { icon: Layers, title: 'Validez votre problématique et votre plan', description: 'Choisissez votre problématique, ajustez les propositions et validez un plan adapté.' },
   { icon: FileText, title: 'Rédigez progressivement', description: 'Lancez la rédaction selon le plan validé : Trimémo développe votre document étape par étape, jusqu’à l’aperçu.' },
-  { icon: Eye, title: 'Découvrez votre aperçu', description: 'Consultez un aperçu adapté à la taille de votre projet, dans la limite de 2 500 mots, avant de payer.' },
+  { icon: Eye, title: 'Découvrez votre aperçu et payez', description: 'Consultez un aperçu adapté à la taille de votre projet (2 500 mots maximum), puis effectuez le paiement pour poursuivre la rédaction complète.' },
   { icon: FileUp, title: 'Finalisez votre document et exportez', description: 'Après paiement, poursuivez la rédaction complète et exportez votre document au format Word.' },
 ];
 const questions = [
