@@ -7,7 +7,7 @@ const steps = [
   { icon: ClipboardList, title: 'Présentez votre projet', description: 'Décrivez votre sujet, votre niveau d’études, vos consignes et vos documents de référence.' },
   { icon: Layers, title: 'Validez votre problématique et votre plan', description: 'Choisissez votre problématique, ajustez les propositions et validez un plan adapté.' },
   { icon: FileText, title: 'Rédigez progressivement', description: 'Lancez la rédaction selon le plan validé : Trimémo développe votre document étape par étape, jusqu’à l’aperçu.' },
-  { icon: Eye, title: 'Découvrez votre aperçu et payez', description: 'Consultez un aperçu adapté à la taille de votre projet (2 500 mots maximum), puis effectuez le paiement pour poursuivre la rédaction complète.' },
+  { icon: Eye, title: 'Découvrez votre aperçu et payez', description: 'Consultez un aperçu adapté à votre projet, puis effectuez le paiement pour poursuivre la rédaction complète.' },
   { icon: FileUp, title: 'Finalisez votre document et exportez', description: 'Après paiement, poursuivez la rédaction complète et exportez votre document au format Word.' },
 ];
 const questions = [
@@ -17,7 +17,7 @@ const questions = [
   },
   {
     question: 'Puis-je voir un aperçu avant de payer ?',
-    answer: 'Oui. Vous consultez un aperçu adapté à la taille de votre projet, sans dépasser 2 500 mots. Le paiement intervient avant la rédaction complète.'
+    answer: 'Oui. Vous découvrez un aperçu de votre document avant de payer. Le paiement intervient uniquement lorsque vous décidez de poursuivre la rédaction complète.'
   },
   {
     question: 'Puis-je bénéficier d’une révision humaine de mon document ?',
