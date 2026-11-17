@@ -6,7 +6,7 @@ import {
   Users, Wallet, Search,
 } from "lucide-react";
 
-type Tab = "overview" | "clients" | "projects" | "orders" | "revisions" | "ambassadors" | "pricing" | "usage" | "logs" | "incidents";
+type Tab = "overview" | "clients" | "projects" | "orders" | "revisions" | "ambassadors" | "pricing" | "usage" | "logs" | "incidents" | "followup-unpaid" | "followup-paid";
 type Props = { token: string; email: string; onLogout: () => void; onOpenWriter: () => void };
 
 const API = "/api/admin-console";
@@ -21,6 +21,8 @@ const tabs: Array<{id:Tab;label:string;icon:React.ComponentType<any>}> = [
   { id: "usage", label: "Consommation Claude", icon: Cpu },
   { id: "logs", label: "Erreurs et journaux", icon: Activity },
   { id: "incidents", label: "Clients à prévenir", icon: AlertTriangle },
+  { id: "followup-unpaid", label: "Projets à poursuivre", icon: FolderOpen },
+  { id: "followup-paid", label: "Projets payés à terminer", icon: FileText },
 ];
 const DOC_TYPES = [
   ["devoir", "Devoir"], ["rapport", "Rapport"], ["memoire", "Mémoire"], ["article", "Article"], ["these", "Thèse"],
@@ -82,6 +84,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   const [usage,setUsage]=useState<any>(null);
   const [logs,setLogs]=useState<any[]>([]);
   const [incidents,setIncidents]=useState<any[]>([]);
+  const [followups,setFollowups]=useState<any[]>([]);
   const [search,setSearch]=useState("");
   const [logSeverity,setLogSeverity]=useState("all");
 
@@ -116,6 +119,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       }
       if(target==="pricing") setSettings((await api("pricing")).settings);
       if(target==="usage") setUsage(await api("usage",{includeHistory}));
+      if(target==="followup-unpaid" || target==="followup-paid") setFollowups((await api("followups")).followups||[]);
       if(target==="incidents") setIncidents((await api("incidents")).incidents||[]);
       if(target==="logs") setLogs((await api("logs",{includeHistory})).logs||[]);
     } catch(e) {
@@ -131,6 +135,13 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   },[refresh]);
 
   function selectTab(next:Tab) { const url = new URL(window.location.href); url.searchParams.set("adminTab", next); window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash); setTab(next); setSearch(""); setNotice(""); if(next==="revisions") setNewRevisionIds([]); void refresh(next); }
+  async function sendFollowup(row:any) {
+    if(!window.confirm("Envoyer ce rappel à "+row.email+" pour le projet « "+row.subject+" » ?")) return;
+    setSaving(true);setError("");setNotice("");
+    try{await api("send-followup",{projectId:row.project_id,kind:row.kind});setNotice("Rappel accepté par le service d’e-mail.");await refresh(tab,true);}
+    catch(e){setError(e instanceof Error?e.message:"Envoi impossible.");await refresh(tab,true);}
+    finally{setSaving(false);}
+  }
   async function resolveIncident(row:any) {
     if(!window.confirm("Confirmez-vous que cette panne est résolue ? Le client recevra un e-mail pour reprendre son projet.")) return;
     setSaving(true); setError(""); setNotice("");
@@ -335,6 +346,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
 
         {tab==="ambassadors"&&<AmbassadorAdminPanel token={token}/>}
 
+        {(tab==="followup-unpaid" || tab==="followup-paid") && <section className="space-y-4"><div className="rounded-2xl border border-[#173F4D]/20 bg-white p-5"><h2 className="font-bold">{tab==="followup-paid"?"Projets payés à terminer":"Projets commencés à poursuivre"}</h2><p className="mt-2 text-sm">Projets sans activité depuis au moins 48 heures. Le message est envoyé uniquement lorsque vous cliquez sur « Envoyer le rappel ».</p></div>{followups.filter(row=>row.kind===(tab==="followup-paid"?"paid_incomplete":"unpaid")).length?<TableWrap><thead><tr><Th>Projet</Th><Th>Client</Th><Th>Dernière activité</Th><Th>Action</Th></tr></thead><tbody>{followups.filter(row=>row.kind===(tab==="followup-paid"?"paid_incomplete":"unpaid")).map(row=><tr key={row.project_id}><Td>{row.subject}</Td><Td>{row.email}</Td><Td>{fmtDate(row.last_activity)}</Td><Td><Button disabled={saving} onClick={()=>void sendFollowup(row)}>Envoyer le rappel</Button></Td></tr>)}</tbody></TableWrap>:<Empty>Aucun projet à relancer pour le moment.</Empty>}</section>}
         {tab==="incidents" && <section className="space-y-4"><div className="rounded-2xl border border-[#173F4D]/20 bg-white p-5"><h2 className="font-bold">Clients à prévenir après une panne</h2><p className="mt-2 text-sm">Après avoir vérifié que la panne est résolue, prévenez le client concerné. Les difficultés sont relevées à partir de l’activation de ce suivi.</p></div>{incidents.length?<TableWrap><thead><tr><Th>Date</Th><Th>Étape</Th><Th>Projet / client</Th><Th>Statut</Th><Th>Action</Th></tr></thead><tbody>{incidents.map(row=><tr key={row.id}><Td>{fmtDate(row.created_at)}</Td><Td>{({estimation:"Estimation",problematique:"Problématique",plan:"Plan",redaction:"Rédaction",apercu:"Aperçu"} as Record<string,string>)[row.stage]||row.stage}</Td><Td><div>{row.subject}</div><div className="mt-1 text-xs text-[#5E6B73]">{row.email || shortId(row.project_id)}</div></Td><Td>{({open:"À vérifier",failed:"Envoi à réessayer",sending:"En cours",sent:"E-mail accepté"} as Record<string,string>)[row.status]||row.status}</Td><Td>{["open","failed"].includes(row.status)&&<Button disabled={saving} onClick={()=>void resolveIncident(row)}>Panne résolue : prévenir</Button>}</Td></tr>)}</tbody></TableWrap>:<Empty>Aucune difficulté enregistrée.</Empty>}</section>}
         {tab==="logs"&&<section className="space-y-4">
           <div className="flex flex-col gap-3 rounded-2xl border border-[#173F4D]/20 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-bold">Journaux applicatifs centralisés</h2><p className="mt-1 text-xs text-[#5E6B73]">Erreurs, avertissements et opérations administrateur journalisés par le backend.</p></div><div className="flex gap-2"><select value={logSeverity} onChange={e=>setLogSeverity(e.target.value)} className="h-10 rounded-xl border border-[#173F4D]/20 px-3 text-sm"><option value="all">Tous les niveaux</option><option value="critical">Critique</option><option value="error">Erreur</option><option value="warning">Avertissement</option><option value="info">Information</option><option value="debug">Debug</option></select><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher dans les journaux…" className="h-10 min-w-0 rounded-xl border border-[#173F4D]/20 px-3 text-sm sm:w-64"/></div></div>
