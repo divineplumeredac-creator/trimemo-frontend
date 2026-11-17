@@ -1629,10 +1629,12 @@ export default function App() {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "text/plain",
       "text/markdown",
+      "text/csv",
+      "text/tab-separated-values",
     ];
     const files: FileInput[] = [];
     for (const file of Array.from(fileList)) {
-      if (!allowed.includes(file.type) && !/\.(pdf|docx|txt|md|jpe?g|png|webp|gif|bmp|tiff?)$/i.test(file.name)) {
+      if (!allowed.includes(file.type) && !/\.(pdf|docx|txt|md|csv|tsv|jpe?g|png|webp|gif|bmp|tiff?)$/i.test(file.name)) {
         pushToast("error", `${file.name} n’est pas un format accepté.`);
         continue;
       }
@@ -3748,7 +3750,7 @@ export default function App() {
                     <input
                       type="file"
                       multiple
-                      accept=".pdf,.docx,.txt,.md,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff"
+                      accept=".pdf,.docx,.txt,.md,.csv,.tsv,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff"
                       onChange={(event) => {
                         void handleFiles(event.target.files);
                         event.currentTarget.value = "";
@@ -4506,11 +4508,11 @@ export default function App() {
                         <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Documents du projet</label>
                         <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#173F4D]/10 bg-white px-3 py-2 font-inter text-xs">
                           <Paperclip className="h-3.5 w-3.5" /> Ajouter des fichiers
-                          <input type="file" multiple accept=".pdf,.docx,.txt,.md,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff" onChange={(e) => void handleFiles(e.target.files)} className="hidden" />
+                          <input type="file" multiple accept=".pdf,.docx,.txt,.md,.csv,.tsv,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff" onChange={(e) => void handleFiles(e.target.files)} className="hidden" />
                         </label>
                       </div>
                       <div className="mt-3 rounded-[16px] border border-dashed border-[#173F4D]/15 bg-[#FFFFFF] p-5">
-                        <div className="font-inter text-xs text-[#5E6B73]">PDF, DOCX, TXT, Markdown, JPG ou PNG. Les documents et images transmis sont analysés par le moteur OpenAI avec votre demande.</div>
+                        <div className="font-inter text-xs text-[#5E6B73]">PDF, DOCX, TXT, Markdown, CSV, TSV et images.</div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {project.files.map((file, index) => (
                             <span key={`${file.name}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-[#173F4D]/10 bg-white px-3 py-1.5 font-inter text-[11px]">
