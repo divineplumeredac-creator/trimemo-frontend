@@ -6,7 +6,7 @@ import {
   Users, Wallet, Search,
 } from "lucide-react";
 
-type Tab = "overview" | "clients" | "projects" | "orders" | "revisions" | "ambassadors" | "pricing" | "usage" | "logs";
+type Tab = "overview" | "clients" | "projects" | "orders" | "revisions" | "ambassadors" | "pricing" | "usage" | "logs" | "incidents";
 type Props = { token: string; email: string; onLogout: () => void; onOpenWriter: () => void };
 
 const API = "/api/admin-console";
@@ -20,6 +20,7 @@ const tabs: Array<{id:Tab;label:string;icon:React.ComponentType<any>}> = [
   { id: "pricing", label: "Tarifs et quotas", icon: SlidersHorizontal },
   { id: "usage", label: "Consommation Claude", icon: Cpu },
   { id: "logs", label: "Erreurs et journaux", icon: Activity },
+  { id: "incidents", label: "Clients à prévenir", icon: AlertTriangle },
 ];
 const DOC_TYPES = [
   ["devoir", "Devoir"], ["rapport", "Rapport"], ["memoire", "Mémoire"], ["article", "Article"], ["these", "Thèse"],
@@ -80,6 +81,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   const [settings,setSettings]=useState<any>(null);
   const [usage,setUsage]=useState<any>(null);
   const [logs,setLogs]=useState<any[]>([]);
+  const [incidents,setIncidents]=useState<any[]>([]);
   const [search,setSearch]=useState("");
   const [logSeverity,setLogSeverity]=useState("all");
 
@@ -114,6 +116,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
       }
       if(target==="pricing") setSettings((await api("pricing")).settings);
       if(target==="usage") setUsage(await api("usage",{includeHistory}));
+      if(target==="incidents") setIncidents((await api("incidents")).incidents||[]);
       if(target==="logs") setLogs((await api("logs",{includeHistory})).logs||[]);
     } catch(e) {
       setError(e instanceof Error ? e.message : "Chargement impossible.");
@@ -128,6 +131,13 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
   },[refresh]);
 
   function selectTab(next:Tab) { const url = new URL(window.location.href); url.searchParams.set("adminTab", next); window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash); setTab(next); setSearch(""); setNotice(""); if(next==="revisions") setNewRevisionIds([]); void refresh(next); }
+  async function resolveIncident(row:any) {
+    if(!window.confirm("Confirmez-vous que cette panne est résolue ? Le client recevra un e-mail pour reprendre son projet.")) return;
+    setSaving(true); setError(""); setNotice("");
+    try { await api("incident-resolved",{id:row.id}); setNotice("Notification acceptée par le service d’e-mail."); await refresh("incidents",true); }
+    catch(e){setError(e instanceof Error?e.message:"Notification impossible."); await refresh("incidents",true);}
+    finally{setSaving(false);}
+  }
   async function updateClient(client:any) {
     const next=client.access==="suspended"?"active":"suspended";
     const question=next==="suspended"?"Suspendre ce compte client ?":"Rétablir l’accès de ce client ?";
@@ -325,6 +335,7 @@ export default function AdminDashboard({ token, email, onLogout, onOpenWriter }:
 
         {tab==="ambassadors"&&<AmbassadorAdminPanel token={token}/>}
 
+        {tab==="incidents" && <section className="space-y-4"><div className="rounded-2xl border border-[#173F4D]/20 bg-white p-5"><h2 className="font-bold">Clients à prévenir après une panne</h2><p className="mt-2 text-sm">Après avoir vérifié que la panne est résolue, prévenez le client concerné. Les difficultés sont relevées à partir de l’activation de ce suivi.</p></div>{incidents.length?<TableWrap><thead><tr><Th>Date</Th><Th>Étape</Th><Th>Projet / client</Th><Th>Statut</Th><Th>Action</Th></tr></thead><tbody>{incidents.map(row=><tr key={row.id}><Td>{fmtDate(row.created_at)}</Td><Td>{({estimation:"Estimation",problematique:"Problématique",plan:"Plan",redaction:"Rédaction",apercu:"Aperçu"} as Record<string,string>)[row.stage]||row.stage}</Td><Td><div>{row.subject}</div><div className="mt-1 text-xs text-[#5E6B73]">{row.email || shortId(row.project_id)}</div></Td><Td>{({open:"À vérifier",failed:"Envoi à réessayer",sending:"En cours",sent:"E-mail accepté"} as Record<string,string>)[row.status]||row.status}</Td><Td>{["open","failed"].includes(row.status)&&<Button disabled={saving} onClick={()=>void resolveIncident(row)}>Panne résolue : prévenir</Button>}</Td></tr>)}</tbody></TableWrap>:<Empty>Aucune difficulté enregistrée.</Empty>}</section>}
         {tab==="logs"&&<section className="space-y-4">
           <div className="flex flex-col gap-3 rounded-2xl border border-[#173F4D]/20 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-bold">Journaux applicatifs centralisés</h2><p className="mt-1 text-xs text-[#5E6B73]">Erreurs, avertissements et opérations administrateur journalisés par le backend.</p></div><div className="flex gap-2"><select value={logSeverity} onChange={e=>setLogSeverity(e.target.value)} className="h-10 rounded-xl border border-[#173F4D]/20 px-3 text-sm"><option value="all">Tous les niveaux</option><option value="critical">Critique</option><option value="error">Erreur</option><option value="warning">Avertissement</option><option value="info">Information</option><option value="debug">Debug</option></select><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher dans les journaux…" className="h-10 min-w-0 rounded-xl border border-[#173F4D]/20 px-3 text-sm sm:w-64"/></div></div>
           {filteredLogs.length?<TableWrap><thead><tr><Th>Date</Th><Th>Niveau</Th><Th>Catégorie / action</Th><Th>Message</Th><Th>Route</Th><Th>Code</Th><Th>Acteur</Th></tr></thead><tbody>{filteredLogs.map(row=><tr key={row.id}><Td>{fmtDate(row.created_at)}</Td><Td><Status tone={["critical","error"].includes(row.severity)?"red":row.severity==="warning"?"amber":"neutral"}>{row.severity}</Status></Td><Td><div className="font-semibold">{row.category}</div><div className="mt-1 text-xs text-[#5E6B73]">{row.action}</div></Td><Td className="max-w-[300px] break-words">{row.message}</Td><Td>{row.request_path||"—"}</Td><Td>{row.status_code||"—"}</Td><Td>{row.actor||"system"}</Td></tr>)}</tbody></TableWrap>:<Empty>{loading?"Chargement des journaux…":"Aucun journal ne correspond aux filtres."}</Empty>}
