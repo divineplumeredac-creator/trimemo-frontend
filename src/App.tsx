@@ -30,6 +30,7 @@ const FREE_PREVIEW_API = `${API_BASE_URL}/api/generate-free-preview`;
 const ESTIMATE_API = `${API_BASE_URL}/api/estimate-project`;
 const PROJECT_STATE_API = `${API_BASE_URL}/api/project-state`;
 const BLOCK_API = `${API_BASE_URL}/api/generate-block`;
+const WRITING_PROGRESS_API = `${API_BASE_URL}/api/writing-progress`;
 const PREVIEW_CONTINUATION_API = `${API_BASE_URL}/api/preview-continuation`;
 const WORDS_PER_PAGE = 320;
 function BrandLogo({ className = "", light = false }: { className?: string; light?: boolean }) {
@@ -592,6 +593,7 @@ export default function App() {
   const [writingTab, setWritingTab] = useState<"problematic" | "plan" | "writing" | "preview">("writing");
   const [loading, setLoading] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const [writingProgress, setWritingProgress] = useState("Préparation de votre projet…");
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientAuthMode, setClientAuthMode] = useState<"signup" | "login" | "forgot" | "reset">(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1676,7 +1678,7 @@ export default function App() {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const protectedRoutes = [ESTIMATE_API, PROBLEMATICS_API, PLANS_API, FREE_PREVIEW_API, BLOCK_API];
+      const protectedRoutes = [ESTIMATE_API, PROBLEMATICS_API, PLANS_API, FREE_PREVIEW_API, BLOCK_API, WRITING_PROGRESS_API];
       let headers = init.headers;
       if (!ownerRoute && typeof input === "string" && protectedRoutes.includes(input)) {
         let session: any = null;
@@ -2794,6 +2796,32 @@ export default function App() {
     setView("writing");
   }
 
+  function trackWritingProgress() {
+    const generationId = crypto.randomUUID();
+    let stopped = false, pending = false;
+    setWritingProgress("Préparation de votre projet…");
+    const labels: Record<string,string> = {
+      preparation:"Préparation de votre projet…",
+      writing_search:"Rédaction en cours, avec recherche de sources si nécessaire…",
+      writing:"Rédaction en cours…",
+      verification:"Vérification des sources et du style…",
+      finalisation:"Finalisation du texte…",
+    };
+    const timer = window.setInterval(async () => {
+      if (pending || stopped) return; pending = true;
+      try {
+        const response = await fetchWithTimeout(WRITING_PROGRESS_API, {
+          method:"POST", headers:{"Content-Type":"application/json", ...(ownerRoute ? ownerAuthHeaders() : premiumAuthHeaders())},
+          body:JSON.stringify({project:{projectId:project.projectId}, generationId, ownerMode:ownerRoute === true}),
+        }, 5000);
+        const data = await response.json();
+        if (!stopped && response.ok && labels[data.stage]) setWritingProgress(labels[data.stage]);
+      } catch { /* La rédaction continue même si la progression est indisponible. */ }
+      finally {pending=false;}
+    }, 4000);
+    return {generationId,stop:()=>{stopped=true;window.clearInterval(timer);}};
+  }
+
   async function generateBlock(blockId: string) {
     if (!selectedProblematic || !selectedPlan) {
       const message = "Sélectionnez une problématique et un plan avant de rédiger.";
@@ -2829,6 +2857,7 @@ export default function App() {
       // Un clic rédige un bloc, dans la limite des mots restants de l’aperçu.
       setActiveBlockId(blockId);
       setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "generating", error: undefined } : item));
+      const progress = trackWritingProgress();
       try {
         const preceding = completedBlocks.map((item, index) => ({
           title: item.title,
@@ -2851,6 +2880,7 @@ export default function App() {
             preceding,
             previewBlocks: completedBlocks.map((item) => ({ id: item.id, title: item.title, content: item.content })),
             previewMode: true,
+            generationId: progress.generationId,
             ownerMode: false,
           }),
         }, 240000);
@@ -2885,6 +2915,7 @@ export default function App() {
         setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "pending", error: message } : item));
         pushToast("error", message);
       } finally {
+        progress.stop();
         setActiveBlockId(null);
       }
       return;
@@ -2901,6 +2932,7 @@ export default function App() {
         : item
     ));
 
+    const progress = trackWritingProgress();
     try {
       const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
       const preceding = completedBlocks.map((item, index) => ({
@@ -2926,6 +2958,7 @@ export default function App() {
         kind: block.kind,
         targetWords: block.expectedWords,
         preceding,
+        generationId: progress.generationId,
         ownerMode: ownerRoute === true,
       };
 
@@ -2978,6 +3011,7 @@ export default function App() {
 
       pushToast("error", message);
     } finally {
+      progress.stop();
       setActiveBlockId(null);
     }
   }
@@ -4021,7 +4055,7 @@ export default function App() {
                               {isGenerating ? "Génération en cours…" : block.content ? "Régénérer" : "Générer"}
                             </button>
                           </div>
-                          {isGenerating && <p role="status" className="mt-3 font-inter text-xs leading-5 text-[#5E6B73]">Votre texte est en préparation. Selon les besoins du projet, Trimémo recherche des sources, rédige et effectue des vérifications. Cela peut prendre quelques instants.</p>}
+                          {isGenerating && <p role="status" className="mt-3 font-inter text-xs leading-5 text-[#5E6B73]">{writingProgress}</p>}
                           {block.structure.length > 0 && (
                             <details className="mt-2 font-inter text-xs text-[#5E6B73]">
                               <summary className="w-fit cursor-pointer font-medium">Voir la structure du bloc</summary>
@@ -4897,7 +4931,7 @@ export default function App() {
                               {isGenerating ? "Génération en cours…" : block.content ? "Régénérer" : "Générer"}
                             </button>
                           </div>
-                          {isGenerating && <p role="status" className="mt-3 font-inter text-xs leading-5 text-[#5E6B73]">Votre texte est en préparation. Selon les besoins du projet, Trimémo recherche des sources, rédige et effectue des vérifications. Cela peut prendre quelques instants.</p>}
+                          {isGenerating && <p role="status" className="mt-3 font-inter text-xs leading-5 text-[#5E6B73]">{writingProgress}</p>}
                           {block.structure.length > 0 && (
                             <details className="mt-2 font-inter text-xs text-[#5E6B73]">
                               <summary className="w-fit cursor-pointer font-medium">Voir la structure du bloc</summary>
