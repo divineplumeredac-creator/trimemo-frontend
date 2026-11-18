@@ -54,6 +54,7 @@ function BrandLogo({ className = "", light = false }: { className?: string; ligh
 }
 
 const OWNER_AUTH_API = `${API_BASE_URL}/api/owner-auth`;
+const OWNER_PROJECTS_API = `${API_BASE_URL}/api/owner-projects`;
 const CLIENT_ACCOUNT_API = `${API_BASE_URL}/api/client-account`;
 const EXPORT_API = `${API_BASE_URL}/api/export`;
 // Adresse configurée dans Vercel avec VITE_CONTACT_EMAIL.
@@ -654,6 +655,12 @@ export default function App() {
   const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : "trimemo_state_v5_public";
   const [ownerSessionValid, setOwnerSessionValid] = useState(false);
   const [ownerShowWriter, setOwnerShowWriter] = useState(false);
+  const [ownerProjectsOpen, setOwnerProjectsOpen] = useState(false);
+  const [ownerProjects, setOwnerProjects] = useState<any[]>([]);
+  const [ownerProjectsBusy, setOwnerProjectsBusy] = useState(false);
+  const [ownerProjectsError, setOwnerProjectsError] = useState("");
+  const ownerSaveQueue = useRef<Promise<void>>(Promise.resolve());
+  const ownerProjectVersions = useRef<Record<string,string>>({});
   const [ownerEmail, setOwnerEmail] = useState(() => {
     try { return window.sessionStorage.getItem("trimemo_owner_email") || ""; } catch { return ""; }
   });
@@ -1805,8 +1812,44 @@ export default function App() {
     setShowOwnerPassword(false);
   }
 
-  function startNewOwnerProject() {
-    if (!ownerSessionValid || loading) return;
+  function ownerSnapshot() {
+    return {project,formula,preview,estimate,premium,selectedProblematic,selectedPlan,blocks:blocks.map(block=>block.status==="generating"?{...block,status:"pending"}:block),view,previewTab,premiumNav,premiumSection,selectedWritingBlockId,problematicImprovementComments,planImprovementComments,problematicGenerationCount,planGenerationCount};
+  }
+  async function ownerProjectsRequest(action:string, data:Record<string,unknown>={}) {
+    const response=await fetch(OWNER_PROJECTS_API,{method:"POST",headers:{"Content-Type":"application/json",...ownerAuthHeaders()},body:JSON.stringify({action,...data})});
+    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||"Enregistrement impossible.");return result;
+  }
+  function saveOwnerProject() {
+    if(!ownerRoute || !ownerSessionValid || !String(project.sujet||"").trim()) return ownerSaveQueue.current;
+    const snapshot=ownerSnapshot();
+    ownerSaveQueue.current=ownerSaveQueue.current.catch(()=>{}).then(async()=>{const id=snapshot.project.projectId; const result=await ownerProjectsRequest("save",{projectId:id,state:snapshot,version:ownerProjectVersions.current[id]||null}); ownerProjectVersions.current[id]=result.version;});
+    return ownerSaveQueue.current;
+  }
+  useEffect(()=>{
+    if(!ownerRoute || !ownerSessionValid || !ownerShowWriter || ownerProjectsOpen || !String(project.sujet||"").trim())return;
+    const timer=window.setTimeout(()=>{void saveOwnerProject().then(()=>setOwnerProjectsError("")).catch(()=>setOwnerProjectsError("L’enregistrement du projet a échoué. Vérifiez votre connexion."));},2000);
+    return ()=>window.clearTimeout(timer);
+  },[ownerRoute,ownerSessionValid,ownerShowWriter,ownerProjectsOpen,project,formula,preview,estimate,premium,selectedProblematic,selectedPlan,blocks,view,previewTab,premiumNav,premiumSection,selectedWritingBlockId,problematicImprovementComments,planImprovementComments,problematicGenerationCount,planGenerationCount]);
+  async function openOwnerProjects() {
+    setOwnerProjectsBusy(true);setOwnerProjectsError("");
+    try{
+      const data=await ownerProjectsRequest("list");let rows=Array.isArray(data.projects)?data.projects:[];
+      const exists=rows.some((item:any)=>item.project_id===project.projectId);
+      if(ownerShowWriter || (!exists && String(project.sujet||"").trim())) { await saveOwnerProject(); const refreshed=await ownerProjectsRequest("list"); rows=Array.isArray(refreshed.projects)?refreshed.projects:[]; }
+      setOwnerProjects(rows);setOwnerProjectsOpen(true);
+    } catch(e){setOwnerProjectsError(e instanceof Error?e.message:"Impossible de charger vos projets.");setOwnerProjectsOpen(true);}
+    finally{setOwnerProjectsBusy(false);}
+  }
+  async function resumeOwnerProject(id:string) {
+    setOwnerProjectsBusy(true);setOwnerProjectsError("");
+    try{const data=await ownerProjectsRequest("get",{projectId:id});ownerProjectVersions.current[id]=data.version;const x=data.state;if(!x?.project)throw new Error("Projet introuvable.");
+      setProject(x.project);setFormula(x.formula||"MASTER");setPreview(x.preview||null);setEstimate(x.estimate||null);setPremium(x.premium||null);setSelectedProblematic(x.selectedProblematic||null);setSelectedPlan(x.selectedPlan||null);setBlocks(Array.isArray(x.blocks)?x.blocks.map((b:any)=>b.status==="generating"?{...b,status:"pending"}:b):[]);setSelectedWritingBlockId(x.selectedWritingBlockId||null);setPreviewTab(x.previewTab||"problematic");setPremiumNav(x.premiumNav||"problematic-0");setPremiumSection(x.premiumSection||"problematic");setProblematicImprovementComments(x.problematicImprovementComments||{});setPlanImprovementComments(x.planImprovementComments||{});setProblematicGenerationCount(Number(x.problematicGenerationCount)||0);setPlanGenerationCount(Number(x.planGenerationCount)||0);setView(["project","premium","writing","preview"].includes(x.view)?x.view:"project");setOwnerProjectsOpen(false);setOwnerShowWriter(true);
+    }catch(e){setOwnerProjectsError(e instanceof Error?e.message:"Impossible de reprendre le projet.");}finally{setOwnerProjectsBusy(false);}
+  }
+  async function startNewOwnerProject() {
+    if (!ownerSessionValid || loading || activeBlockId) return;
+    try { if (ownerShowWriter) await saveOwnerProject(); } catch { setOwnerProjectsError("Le projet actuel n’a pas pu être enregistré. Réessayez avant d’en créer un autre."); setOwnerProjectsOpen(true); return; }
+    setOwnerProjectsOpen(false);
     setProject({
       projectId: createProjectId(), formula: "MASTER", sujet: "", domaine: "", contexte: "",
       problematiquePersonnelle: "", planPersonnel: "", consignes: "", niveau: "",
@@ -3456,12 +3499,16 @@ export default function App() {
       );
     }
 
+    if (ownerProjectsOpen) {
+      return <div className="min-h-screen bg-[#173F4D]/10 px-5 py-8 text-[#173F4D]"><div className="mx-auto max-w-4xl"><div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="font-playfair text-3xl font-semibold">Mes projets de rédaction</h1><p className="mt-2 text-sm">Retrouvez vos projets et poursuivez votre travail.</p></div><button type="button" onClick={()=>{setOwnerProjectsOpen(false);setOwnerShowWriter(false);}} className="rounded-full border px-4 py-2 text-sm">Tableau de bord</button></div>{ownerProjectsError&&<p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{ownerProjectsError}</p>}<div className="mt-6 flex gap-3"><button disabled={ownerProjectsBusy} type="button" onClick={()=>void startNewOwnerProject()} className="rounded-full bg-[#173F4D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">Nouveau projet</button><button disabled={ownerProjectsBusy} type="button" onClick={()=>void openOwnerProjects()} className="rounded-full border px-5 py-3 text-sm">Actualiser</button></div><div className="mt-6 space-y-3">{ownerProjects.map(item=><button key={item.project_id} type="button" disabled={ownerProjectsBusy} onClick={()=>void resumeOwnerProject(item.project_id)} className="block w-full rounded-2xl border bg-white p-5 text-left shadow-sm hover:border-[#173F4D]"><span className="block text-lg font-semibold">{item.subject}</span><span className="mt-2 block text-xs text-[#5E6B73]">Dernière modification : {new Date(item.updated_at).toLocaleString("fr-FR")} · Reprendre</span></button>)}{!ownerProjectsBusy&&!ownerProjects.length&&<p className="rounded-2xl border border-dashed bg-white p-6 text-sm">Aucun projet enregistré pour le moment.</p>}</div></div></div>;
+    }
+
     if (!ownerShowWriter) {
       const ownerToken = window.sessionStorage.getItem("trimemo_owner_session") || "";
       return <AdminDashboard
         token={ownerToken}
         email={ownerEmail || "Propriétaire Trimémo"}
-        onOpenWriter={startNewOwnerProject}
+        onOpenWriter={() => { void openOwnerProjects(); }}
         onLogout={() => { handleOwnerLogout(); window.location.href = "/"; }}
       />;
     }
@@ -3493,10 +3540,12 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setOwnerShowWriter(false)}
+                disabled={Boolean(activeBlockId)}
                 className="rounded-full border border-white/60 px-4 py-2 font-inter text-xs font-semibold text-white"
               >
                 Tableau de bord
               </button>
+              <button type="button" disabled={Boolean(activeBlockId)} onClick={()=>void openOwnerProjects()} className="rounded-full border border-white/20 px-4 py-2 font-inter text-xs font-semibold disabled:opacity-50">Mes projets</button>
               <button
                 type="button"
                 onClick={startNewOwnerProject}
@@ -3523,6 +3572,7 @@ export default function App() {
           </div>
         </div>
 
+        {ownerProjectsError && <p role="alert" className="mx-auto max-w-[1280px] bg-red-50 px-5 py-3 text-sm text-red-700">{ownerProjectsError}</p>}
         <div className="mx-auto flex max-w-[1280px]">
         {mobileMenuOpen && (
           <div className="border-b border-[#173F4D]/10 bg-white px-5 py-4 lg:hidden">
