@@ -4021,6 +4021,7 @@ export default function App() {
                               {isGenerating ? "Génération en cours…" : block.content ? "Régénérer" : "Générer"}
                             </button>
                           </div>
+                          {isGenerating && <p role="status" className="mt-3 font-inter text-xs leading-5 text-[#5E6B73]">Votre texte est en préparation. Selon les besoins du projet, Trimémo recherche des sources, rédige et effectue des vérifications. Cela peut prendre quelques instants.</p>}
                           {block.structure.length > 0 && (
                             <details className="mt-2 font-inter text-xs text-[#5E6B73]">
                               <summary className="w-fit cursor-pointer font-medium">Voir la structure du bloc</summary>
@@ -4896,6 +4897,7 @@ export default function App() {
                               {isGenerating ? "Génération en cours…" : block.content ? "Régénérer" : "Générer"}
                             </button>
                           </div>
+                          {isGenerating && <p role="status" className="mt-3 font-inter text-xs leading-5 text-[#5E6B73]">Votre texte est en préparation. Selon les besoins du projet, Trimémo recherche des sources, rédige et effectue des vérifications. Cela peut prendre quelques instants.</p>}
                           {block.structure.length > 0 && (
                             <details className="mt-2 font-inter text-xs text-[#5E6B73]">
                               <summary className="w-fit cursor-pointer font-medium">Voir la structure du bloc</summary>
