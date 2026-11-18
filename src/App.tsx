@@ -31,6 +31,14 @@ const ESTIMATE_API = `${API_BASE_URL}/api/estimate-project`;
 const PROJECT_STATE_API = `${API_BASE_URL}/api/project-state`;
 const BLOCK_API = `${API_BASE_URL}/api/generate-block`;
 const WRITING_PROGRESS_API = `${API_BASE_URL}/api/writing-progress`;
+
+type WritingStage = "preparation" | "writing_search" | "writing" | "verification" | "finalisation";
+function WritingProgress({stage}:{stage:WritingStage}) {
+  const current = stage === "preparation" ? 0 : stage === "writing" || stage === "writing_search" ? 1 : stage === "verification" ? 2 : 3;
+  const steps = ["Préparation du projet", "Rédaction et recherche de sources si nécessaire", "Vérification des sources et du style", "Finalisation du texte"];
+  return <div role="status" aria-live="polite" className="mt-3 rounded-xl bg-[#173F4D]/5 px-4 py-3 font-inter text-xs leading-5 text-[#173F4D]"><div className="font-semibold">Rédaction en cours</div><ol className="mt-1 space-y-1">{steps.map((label,index)=><li key={label} className={index===current?"font-semibold":"text-[#5E6B73]"}>{index<current?"✓ ":index===current?"• ":"○ "}{label}{index===current?"…":""}</li>)}</ol></div>;
+}
+
 const PREVIEW_CONTINUATION_API = `${API_BASE_URL}/api/preview-continuation`;
 const WORDS_PER_PAGE = 320;
 function BrandLogo({ className = "", light = false }: { className?: string; light?: boolean }) {
@@ -593,7 +601,7 @@ export default function App() {
   const [writingTab, setWritingTab] = useState<"problematic" | "plan" | "writing" | "preview">("writing");
   const [loading, setLoading] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
-  const [writingProgress, setWritingProgress] = useState("Préparation de votre projet…");
+  const [writingProgress, setWritingProgress] = useState<WritingStage>("preparation");
   const [paymentLoading, setPaymentLoading] = useState<"paypal" | "mobile-money" | null>(null);
   const [clientAuthMode, setClientAuthMode] = useState<"signup" | "login" | "forgot" | "reset">(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2799,14 +2807,8 @@ export default function App() {
   function trackWritingProgress() {
     const generationId = crypto.randomUUID();
     let stopped = false, pending = false;
-    setWritingProgress("Préparation de votre projet…");
-    const labels: Record<string,string> = {
-      preparation:"Préparation de votre projet…",
-      writing_search:"Rédaction en cours, avec recherche de sources si nécessaire…",
-      writing:"Rédaction en cours…",
-      verification:"Vérification des sources et du style…",
-      finalisation:"Finalisation du texte…",
-    };
+    setWritingProgress("preparation");
+    const stages = new Set<WritingStage>(["preparation", "writing_search", "writing", "verification", "finalisation"]);
     const timer = window.setInterval(async () => {
       if (pending || stopped) return; pending = true;
       try {
@@ -2815,7 +2817,7 @@ export default function App() {
           body:JSON.stringify({project:{projectId:project.projectId}, generationId, ownerMode:ownerRoute === true}),
         }, 5000);
         const data = await response.json();
-        if (!stopped && response.ok && labels[data.stage]) setWritingProgress(labels[data.stage]);
+        if (!stopped && response.ok && stages.has(data.stage)) setWritingProgress(data.stage);
       } catch { /* La rédaction continue même si la progression est indisponible. */ }
       finally {pending=false;}
     }, 4000);
@@ -4044,7 +4046,7 @@ export default function App() {
                             <h2 className="font-playfair text-xl font-semibold leading-snug text-[#173F4D]">{block.title}</h2>
                             <button
                               type="button"
-                              aria-label={`${block.content ? "Régénérer" : "Générer"} le bloc : ${block.title}`}
+                              aria-label={`${block.content ? "Rédiger à nouveau" : "Rédiger"} : ${block.title}`}
                               disabled={isGenerating || (activeBlockId !== null && activeBlockId !== block.id)}
                               onClick={() => {
                                 setSelectedWritingBlockId(block.id);
@@ -4052,10 +4054,10 @@ export default function App() {
                               }}
                               className="shrink-0 rounded-full bg-[#173F4D] px-5 py-2.5 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {isGenerating ? "Génération en cours…" : block.content ? "Régénérer" : "Générer"}
+                              {isGenerating ? "Rédaction en cours…" : block.content ? "Rédiger à nouveau" : "Rédiger"}
                             </button>
                           </div>
-                          {isGenerating && <p role="status" className="mt-3 font-inter text-xs leading-5 text-[#5E6B73]">{writingProgress}</p>}
+                          {isGenerating && <WritingProgress stage={writingProgress} />}
                           {block.structure.length > 0 && (
                             <details className="mt-2 font-inter text-xs text-[#5E6B73]">
                               <summary className="w-fit cursor-pointer font-medium">Voir la structure du bloc</summary>
@@ -4920,7 +4922,7 @@ export default function App() {
                             <h2 className="font-playfair text-xl font-semibold leading-snug text-[#173F4D]">{block.title}</h2>
                             <button
                               type="button"
-                              aria-label={`${block.content ? "Régénérer" : "Générer"} le bloc : ${block.title}`}
+                              aria-label={`${block.content ? "Rédiger à nouveau" : "Rédiger"} : ${block.title}`}
                               disabled={isGenerating || (activeBlockId !== null && activeBlockId !== block.id)}
                               onClick={() => {
                                 setSelectedWritingBlockId(block.id);
@@ -4928,10 +4930,10 @@ export default function App() {
                               }}
                               className="shrink-0 rounded-full bg-[#173F4D] px-5 py-2.5 font-inter text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {isGenerating ? "Génération en cours…" : block.content ? "Régénérer" : "Générer"}
+                              {isGenerating ? "Rédaction en cours…" : block.content ? "Rédiger à nouveau" : "Rédiger"}
                             </button>
                           </div>
-                          {isGenerating && <p role="status" className="mt-3 font-inter text-xs leading-5 text-[#5E6B73]">{writingProgress}</p>}
+                          {isGenerating && <WritingProgress stage={writingProgress} />}
                           {block.structure.length > 0 && (
                             <details className="mt-2 font-inter text-xs text-[#5E6B73]">
                               <summary className="w-fit cursor-pointer font-medium">Voir la structure du bloc</summary>
