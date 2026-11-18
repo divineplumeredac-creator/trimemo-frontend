@@ -2867,6 +2867,18 @@ export default function App() {
     return {generationId,stop:()=>{stopped=true;window.clearInterval(timer);}};
   }
 
+  async function saveWritingStateBeforeGeneration() {
+    if (ownerRoute) { await saveOwnerProject(); return; }
+    if (cloudSaveTimer.current) { clearTimeout(cloudSaveTimer.current); cloudSaveTimer.current = null; }
+    await cloudSaveQueue.current;
+    const session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+    if (!session?.token || activeOwnedProject.current?.userId !== session.userId || activeOwnedProject.current?.projectId !== project.projectId) throw new Error("Reconnectez-vous à votre projet avant de continuer.");
+    const {paidPreviewSnapshot, ...persistedProject} = project;
+    const state={schemaVersion:2,project:{...persistedProject,files:project.files.map(({name,type,category})=>({name,type,category,content:""}))},formula,preview,estimate,premium,selectedProblematic,selectedPlan,blocks,view,previewTab,premiumNav,premiumSection,selectedWritingBlockId,problematicImprovementComments,planImprovementComments,problematicGenerationCount,planGenerationCount};
+    const response=await fetch(PROJECT_STATE_API,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.token},body:JSON.stringify({projectId:project.projectId,state})});
+    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||"Impossible d’enregistrer le projet avant la rédaction.");
+  }
+
   async function generateBlock(blockId: string) {
     if (!selectedProblematic || !selectedPlan) {
       const message = "Sélectionnez une problématique et un plan avant de rédiger.";
@@ -2882,6 +2894,11 @@ export default function App() {
       return;
     }
 
+    const blockIndex = blocks.findIndex((item) => item.id === blockId);
+    if (blocks.slice(0, blockIndex).some((item) => item.status !== "done" || !String(item.content || "").trim())) {
+      pushToast("info", "Rédigez d’abord les blocs précédents dans l’ordre du plan.");
+      return;
+    }
     if (block.status === "generating") return;
     if (!ownerRoute && !(window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) {
       const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
@@ -2904,10 +2921,11 @@ export default function App() {
       setBlocks((current) => current.map((item) => item.id === blockId ? { ...item, status: "generating", error: undefined } : item));
       const progress = trackWritingProgress();
       try {
-        const preceding = completedBlocks.map((item, index) => ({
+        await saveWritingStateBeforeGeneration();
+        const earlierBlocks = blocks.slice(0, blockIndex).filter(item => item.status === "done" && item.content.trim());
+        const preceding = earlierBlocks.map((item, index) => ({
           title: item.title,
-          // Conserver tout l'historique des titres ; texte complet pour les trois derniers blocs.
-          content: index >= completedBlocks.length - 3 ? item.content : String(item.content || "").slice(0, 1200),
+          content: index >= earlierBlocks.length - 3 ? item.content : String(item.content || "").slice(0, 1200),
           sources: item.sources || [],
         }));
         const response = await fetchWithTimeout(BLOCK_API, {
@@ -2979,7 +2997,8 @@ export default function App() {
 
     const progress = trackWritingProgress();
     try {
-      const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
+      await saveWritingStateBeforeGeneration();
+      const completedBlocks = blocks.slice(0, blockIndex).filter((item) => item.status === "done" && item.content.trim());
       const preceding = completedBlocks.map((item, index) => ({
         title: item.title,
         // L'historique complet des titres évite de répéter les unités déjà traitées.
@@ -4085,6 +4104,7 @@ export default function App() {
                   {blocks.map((block, index) => {
                     const isLast = index === blocks.length - 1;
                     const isGenerating = block.status === "generating";
+                    const blockedByPrevious = blocks.slice(0,index).some(item => item.status !== "done" || !String(item.content || "").trim());
                     return (
                       <article
                         key={block.id}
@@ -4097,7 +4117,8 @@ export default function App() {
                             <button
                               type="button"
                               aria-label={`${block.content ? "Rédiger à nouveau" : "Rédiger"} : ${block.title}`}
-                              disabled={isGenerating || (activeBlockId !== null && activeBlockId !== block.id)}
+                              disabled={isGenerating || blockedByPrevious || (activeBlockId !== null && activeBlockId !== block.id)}
+                              title={blockedByPrevious ? "Rédigez d’abord les blocs précédents." : undefined}
                               onClick={() => {
                                 setSelectedWritingBlockId(block.id);
                                 void generateBlock(block.id);
@@ -4108,6 +4129,7 @@ export default function App() {
                             </button>
                           </div>
                           {isGenerating && <WritingProgress stage={writingProgress} />}
+                          {blockedByPrevious && <p className="mt-2 font-inter text-xs text-[#5E6B73]">Rédigez d’abord les blocs précédents.</p>}
                           {block.structure.length > 0 && (
                             <details className="mt-2 font-inter text-xs text-[#5E6B73]">
                               <summary className="w-fit cursor-pointer font-medium">Voir la structure du bloc</summary>
@@ -4961,6 +4983,7 @@ export default function App() {
                   {blocks.map((block, index) => {
                     const isLast = index === blocks.length - 1;
                     const isGenerating = block.status === "generating";
+                    const blockedByPrevious = blocks.slice(0,index).some(item => item.status !== "done" || !String(item.content || "").trim());
                     return (
                       <article
                         key={block.id}
@@ -4973,7 +4996,8 @@ export default function App() {
                             <button
                               type="button"
                               aria-label={`${block.content ? "Rédiger à nouveau" : "Rédiger"} : ${block.title}`}
-                              disabled={isGenerating || (activeBlockId !== null && activeBlockId !== block.id)}
+                              disabled={isGenerating || blockedByPrevious || (activeBlockId !== null && activeBlockId !== block.id)}
+                              title={blockedByPrevious ? "Rédigez d’abord les blocs précédents." : undefined}
                               onClick={() => {
                                 setSelectedWritingBlockId(block.id);
                                 void generateBlock(block.id);
@@ -4984,6 +5008,7 @@ export default function App() {
                             </button>
                           </div>
                           {isGenerating && <WritingProgress stage={writingProgress} />}
+                          {blockedByPrevious && <p className="mt-2 font-inter text-xs text-[#5E6B73]">Rédigez d’abord les blocs précédents.</p>}
                           {block.structure.length > 0 && (
                             <details className="mt-2 font-inter text-xs text-[#5E6B73]">
                               <summary className="w-fit cursor-pointer font-medium">Voir la structure du bloc</summary>
