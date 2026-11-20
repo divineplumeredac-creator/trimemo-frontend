@@ -17,7 +17,6 @@ import {
   Paperclip,
   Search,
   Sparkles,
-  WalletCards,
   X,
 } from "lucide-react";
 
@@ -4750,57 +4749,82 @@ export default function App() {
             </section>
           )}
             {view === "preview" && preview && canViewClientPreview && (
-              <section className="studio-payment mx-auto mt-6 max-w-[900px] rounded-[24px] border-t-4 border-[#C6A477] bg-[#173F4D] p-6 text-white shadow-[0_18px_38px_-28px_rgba(23,63,77,0.6)] sm:p-8">
-                <div className="text-center">
-                  <h3 className="mt-2 font-playfair text-2xl sm:text-3xl">Votre aperçu est terminé</h3>
-                  <p className="mx-auto mt-3 max-w-[650px] font-inter text-sm leading-6 text-white/90">Le paiement débloque la suite de la rédaction au point d’arrêt, en conservant la problématique et le plan choisis.</p>
+              <section aria-labelledby="payment-heading" className="studio-payment mx-auto mt-6 max-w-[900px] rounded-[24px] border border-[#E6E1D8] border-t-4 border-t-[#C6A477] bg-[#FCFBF8] p-4 text-[#173F4D] shadow-[0_18px_38px_-28px_rgba(23,63,77,0.45)] sm:p-8">
+                <div className="mx-auto max-w-[700px]">
+                  <div className="text-center">
+                    <h3 id="payment-heading" className="font-playfair text-2xl font-semibold sm:text-3xl">Votre aperçu est prêt</h3>
+                    <p className="mx-auto mt-3 max-w-[610px] font-inter text-sm leading-6 text-[#465B64]">Après paiement, poursuivez la rédaction à partir du point d’arrêt, avec la problématique et le plan choisis.</p>
+                  </div>
                   {estimate && (
-                    <div className="mx-auto mt-5 max-w-[560px] rounded-2xl border border-white/15 bg-white/5 p-4 text-left">
-                      <div className="font-inter text-xs font-semibold uppercase tracking-wide text-white">Récapitulatif de l’analyse initiale</div>
-                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 font-inter text-xs leading-5">
-                        <div><dt className="text-white/90">Document</dt><dd className="font-semibold text-white">{estimate.documentType || project.typeDoc}</dd></div>
-                        <div><dt className="text-white/90">Niveau</dt><dd className="font-semibold text-white">{estimate.level || project.niveau}</dd></div>
-                        <div><dt className="text-white/90">Volume demandé</dt><dd className="font-semibold text-white">{estimate.pages || project.pages} pages</dd></div>
-                        <div><dt className="text-white/90">Complexité évaluée</dt><dd className="font-semibold text-white">{estimate.complexity || "À confirmer"}</dd></div>
-                      </dl>
-                      {estimate.reasons?.length > 0 && <div className="mt-4"><div className="font-inter text-[11px] font-semibold text-white/90">Éléments pris en compte</div><ul className="mt-2 list-disc space-y-1 pl-5 font-inter text-xs leading-5 text-white/90">{estimate.reasons.map((reason, i) => <li key={"estimate-reason-"+i}>{reason}</li>)}</ul></div>}
-                      {estimate.detectedRequirements?.length > 0 && <div className="mt-3"><div className="font-inter text-[11px] font-semibold text-white/90">Exigences détectées</div><ul className="mt-2 list-disc space-y-1 pl-5 font-inter text-xs leading-5 text-white/90">{estimate.detectedRequirements.map((item, i) => <li key={"estimate-requirement-"+i}>{item}</li>)}</ul></div>}
-                      <div className="mt-5 border-t border-white/15 pt-4">
-                        <div className="font-inter text-xs text-white/90">Montant estimé pour terminer et exporter le document complet</div>
-                        <div className="mt-1 font-playfair text-2xl">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : estimate.currency === "USD" ? "US$" : estimate.currency}</div>
-                        <p className="mt-2 font-inter text-xs leading-5 text-white/90">Ce montant couvre l’ensemble du document demandé, y compris les {totalDoneWords.toLocaleString("fr-FR")} mots déjà rédigés pour l’aperçu. Ces mots sont comptabilisés dans le prix global : ils ne sont ni gratuits ni facturés une seconde fois. Après paiement, la rédaction reprend au point d’arrêt et le document complet pourra être exporté.</p>
+                    <div className="mt-6 overflow-hidden rounded-2xl border border-[#E6E1D8] bg-white">
+                      <div className="px-4 pt-5 sm:px-6">
+                        <h4 className="font-inter text-base font-bold">Comment votre tarif est calculé</h4>
+                        <p className="mt-1 font-inter text-sm leading-6 text-[#53656D]">Le tarif tient compte des caractéristiques de votre projet.</p>
+                      </div>
+                      <div className="px-4 py-4 sm:px-6">
+                        <table className="w-full table-fixed border-collapse text-left font-inter text-sm leading-5">
+                          <caption className="sr-only">Éléments utilisés pour calculer le tarif de votre projet</caption>
+                          <thead><tr className="border-b border-[#E6E1D8] text-xs uppercase tracking-wide text-[#53656D]"><th scope="col" className="w-1/2 py-3 pr-3 font-semibold">Élément</th><th scope="col" className="py-3 font-semibold">Votre projet</th></tr></thead>
+                          <tbody className="divide-y divide-[#EEEAE3]">
+                            <tr><th scope="row" className="py-3 pr-3 font-medium text-[#53656D]">Type de document</th><td className="break-words py-3 font-semibold">{project.typeDoc || estimate.documentType}</td></tr>
+                            <tr><th scope="row" className="py-3 pr-3 font-medium text-[#53656D]">Niveau académique</th><td className="break-words py-3 font-semibold">{project.niveau || estimate.level}</td></tr>
+                            <tr><th scope="row" className="py-3 pr-3 font-medium text-[#53656D]">Volume demandé</th><td className="py-3 font-semibold">{estimate.pages || project.pages} pages</td></tr>
+                            <tr><th scope="row" className="py-3 pr-3 font-medium text-[#53656D]">Complexité évaluée</th><td className="py-3 font-semibold capitalize">{estimate.complexity === "elevee" ? "Élevée" : estimate.complexity || "À confirmer"}</td></tr>
+                          </tbody>
+                        </table>
+                        <details className="mt-2 rounded-xl border border-[#E6E1D8] bg-[#FCFBF8] px-4 py-3 font-inter text-sm leading-6">
+                          <summary className="cursor-pointer font-semibold text-[#173F4D]">Voir le détail de l’analyse et du tarif</summary>
+                          <p className="mt-3 text-[#53656D]">Tarif de base : {estimate.baseRate} {estimate.currency === "XOF" ? "FCFA" : estimate.currency} par page × coefficient de niveau {estimate.levelCoefficient} × coefficient de complexité {estimate.complexityCoefficient}.</p>
+                          {estimate.reasons?.length > 0 && <div className="mt-3"><div className="font-semibold">Éléments pris en compte</div><ul className="mt-1 list-disc space-y-1 pl-5 text-[#53656D]">{estimate.reasons.map((reason, i) => <li key={"estimate-reason-"+i}>{reason}</li>)}</ul></div>}
+                          {estimate.detectedRequirements?.length > 0 && <div className="mt-3"><div className="font-semibold">Exigences détectées</div><ul className="mt-1 list-disc space-y-1 pl-5 text-[#53656D]">{estimate.detectedRequirements.map((item, i) => <li key={"estimate-requirement-"+i}>{item}</li>)}</ul></div>}
+                        </details>
+                      </div>
+                      <div className="border-t border-[#E6E1D8] bg-[#F7F5EF] px-4 py-5 sm:px-6">
+                        <div className="font-inter text-sm font-semibold">Montant pour l’ensemble du document</div>
+                        <div className="mt-1 font-playfair text-3xl font-bold text-[#173F4D]">{estimate.formattedAmount} {estimate.currency === "XOF" ? "FCFA" : estimate.currency === "EUR" ? "€" : estimate.currency === "CAD" ? "CA$" : estimate.currency === "CHF" ? "CHF" : estimate.currency === "USD" ? "US$" : estimate.currency}</div>
+                        <p className="mt-2 font-inter text-sm leading-6 text-[#465B64]">Ce montant couvre l’ensemble du document demandé, y compris la partie déjà rédigée dans votre aperçu.</p>
                       </div>
                     </div>
                   )}
-                  <div className="mx-auto mt-5 grid max-w-[420px] gap-3">
-                    {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
-                      <button onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full bg-white font-inter text-sm font-semibold text-[#173F4D] hover:bg-[#173F4D]/10 disabled:opacity-60">
-                        {paymentLoading === "paypal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                        <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-[#173F4D]">Pay</span><span className="text-[#173F4D]">Pal</span></span><span>Payer avec PayPal</span>
-                      </button>
-                    ) : (
-                      <button type="button" disabled className="flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-full bg-white/20 font-inter text-sm font-semibold text-white" title="Le prestataire de paiement doit être activé dans la configuration de Trimémo.">
-                        <LockKeyhole className="h-4 w-4" />
-                        <span aria-label="PayPal" className="inline-flex items-center font-bold italic"><span className="text-white">Pay</span><span className="text-white">Pal</span></span><span>Payer avec PayPal</span>
-                      </button>
-                    )}
-                    {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() !== "true" && String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() !== "true" && (
-                      <p className="text-center font-inter text-xs leading-5 text-white/90">Le paiement n’est pas encore activé. La configuration du prestataire est nécessaire pour encaisser les paiements.</p>
-                    )}
-                    {(FEDAPAY_SANDBOX_ENABLED || String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true") && (
-                      <button onClick={() => void startPayment("mobile-money")} disabled={paymentLoading !== null} className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 font-inter text-sm font-semibold text-white disabled:opacity-60">
-                        {paymentLoading === "mobile-money" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WalletCards className="h-4 w-4" />}
-                        Payer par Mobile Money
-                      </button>
-                    )}
-                    <p className="text-center font-inter text-xs leading-5 text-white/90">Mobile Money via FedaPay : MTN MoMo, Moov Money, Celtiis Cash et autres réseaux selon votre pays. Le choix du réseau se fait sur la page sécurisée FedaPay.</p>
+                  <div className="mt-6 rounded-2xl bg-[#173F4D]/5 p-4 sm:p-5">
+                    <h4 className="font-inter text-sm font-bold">Après paiement, vous pourrez :</h4>
+                    <ul className="mt-3 space-y-2 font-inter text-sm leading-6 text-[#334D57]">
+                      <li className="flex gap-2"><Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-[#173F4D]"/>Poursuivre la rédaction à partir du point d’arrêt</li>
+                      <li className="flex gap-2"><Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-[#173F4D]"/>Conserver votre problématique et votre plan</li>
+                      <li className="flex gap-2"><Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-[#173F4D]"/>Exporter le document une fois la rédaction terminée</li>
+                    </ul>
+                  </div>
+                  <div className="mt-6">
+                    <h4 className="text-center font-inter text-base font-bold">Choisissez votre moyen de paiement</h4>
+                    <div className="mx-auto mt-4 grid max-w-[560px] gap-3">
+                      {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" ? (
+                        <button type="button" onClick={() => void startPayment("paypal")} disabled={paymentLoading !== null} className="flex min-h-[58px] flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-2xl border border-[#C6A477] bg-white px-4 py-3 font-inter text-sm font-bold text-[#173F4D] hover:bg-[#F7F5EF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F4D] disabled:opacity-60">
+                          {paymentLoading === "paypal" ? <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" /> : <img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-wordmark-color.svg" alt="" className="h-5 w-auto" />}
+                          <span>Payer avec PayPal</span>
+                        </button>
+                      ) : (
+                        <button type="button" disabled className="flex min-h-[58px] cursor-not-allowed items-center justify-center gap-3 rounded-2xl border border-[#E6E1D8] bg-white px-4 py-3 font-inter text-sm font-semibold text-[#53656D] opacity-70">
+                          <img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-wordmark-color.svg" alt="" className="h-5 w-auto" /><span>PayPal indisponible</span>
+                        </button>
+                      )}
+                      {estimate?.currency === "XOF" && String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() === "true" && <p className="text-center font-inter text-xs leading-5 text-[#53656D]">Avec PayPal, le montant est converti en euros : environ {estimate.checkoutAmount} €.</p>}
+                      {(FEDAPAY_SANDBOX_ENABLED || String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() === "true") && (
+                        <div>
+                          <button type="button" onClick={() => void startPayment("mobile-money")} disabled={paymentLoading !== null} className="flex min-h-[58px] w-full items-center justify-center gap-2 rounded-2xl border border-[#173F4D] bg-[#173F4D] px-4 py-3 font-inter text-sm font-bold text-white hover:bg-[#245664] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F4D] disabled:opacity-60">
+                            {paymentLoading === "mobile-money" && <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" />}
+                            Payer par Mobile Money
+                          </button>
+                          <p className="mt-2 text-center font-inter text-xs leading-5 text-[#53656D]">Vous choisirez votre réseau sur la page de paiement.</p>
+                        </div>
+                      )}
+                      {String(import.meta.env.VITE_PAYPAL_ENABLED || "").toLowerCase() !== "true" && !FEDAPAY_SANDBOX_ENABLED && String(import.meta.env.VITE_MOBILE_MONEY_ENABLED || "").toLowerCase() !== "true" && <p className="text-center font-inter text-sm text-[#53656D]">Le paiement est momentanément indisponible. Veuillez réessayer plus tard.</p>}
+                    </div>
                   </div>
                 </div>
               </section>
             )}
 
-            
-          
+
           {view === "premium" && premium && (
             <section>
               <div className="mb-6">
