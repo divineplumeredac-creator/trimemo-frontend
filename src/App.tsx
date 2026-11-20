@@ -677,6 +677,8 @@ export default function App() {
   const cloudLoadStarted = useRef(false);
   const creatingProject = useRef(false);
   const activeOwnedProject = useRef<{projectId:string; userId:string} | null>(null);
+  // Suspend autosaves until the project owner has been revalidated on return.
+  const paymentReturnRestoring = useRef(["paypal_cancelled", "fedapay_cancelled", "fedapay"].includes(new URLSearchParams(window.location.search).get("payment") || ""));
   // Un aperçu local ne prouve jamais l'appartenance du document au compte :
   // seul un projet ouvert après vérification du serveur peut être affiché.
   const canViewClientPreview = (() => {
@@ -907,7 +909,7 @@ export default function App() {
     try { cloudSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
     // Les invités conservent leur travail localement. La sauvegarde cloud exige un compte lié.
     // L'espace propriétaire conserve sa persistance locale et ne passe pas par l'API client.
-    if (!cloudHydrated.current || !filesHydrated.current || ownerRoute || !cloudSession?.token || !cloudSession?.userId || activeOwnedProject.current?.projectId !== project.projectId || activeOwnedProject.current?.userId !== cloudSession.userId || !String(project.sujet || "").trim()) return;
+    if (paymentReturnRestoring.current || !cloudHydrated.current || !filesHydrated.current || ownerRoute || !cloudSession?.token || !cloudSession?.userId || activeOwnedProject.current?.projectId !== project.projectId || activeOwnedProject.current?.userId !== cloudSession.userId || !String(project.sujet || "").trim()) return;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(async () => {
       const { paidPreviewSnapshot, ...persistedProject } = project;
@@ -982,6 +984,7 @@ export default function App() {
   // Refuser les aperçus issus d'une ancienne session, d'une URL directe
   // (?view=preview) ou d'un état local non vérifié côté serveur.
   useEffect(() => {
+    if (paymentReturnRestoring.current) return;
     if (view !== "preview" || canViewClientPreview) return;
     setPendingPaymentMethod(null);
     let hasSession = false;
@@ -1010,7 +1013,7 @@ export default function App() {
     // L'espace de rédaction doit rester visible après validation du plan.
     // Le verrouillage commercial intervient au moment de poursuivre après l'aperçu,
     // jamais en effaçant les blocs ni en redirigeant la vue dès son ouverture.
-    if (ownerRoute && !ownerSessionValid) return;
+    if ((ownerRoute && !ownerSessionValid) || paymentReturnRestoring.current) return;
     try {
       window.localStorage.setItem(stateStorageKey, JSON.stringify({
         project: (() => { const { paidPreviewSnapshot, ...persistedProject } = project; return { ...persistedProject, files: [] }; })(),
@@ -1093,27 +1096,9 @@ export default function App() {
     // Certains retours PayPal intégrés ne transmettent pas immédiatement le token dans l'URL.
     // La référence de commande est sauvegardée avant la redirection et sert de reprise sécurisée.
     const id = queryOrderId || (payment === "paypal" ? window.sessionStorage.getItem("trimemo_pending_paypal_order") : payment === "fedapay" ? window.sessionStorage.getItem("trimemo_pending_fedapay_order") : null);
-    if (!payment || payment === "paypal_cancelled" || payment === "fedapay_cancelled") {
-      if (payment === "paypal_cancelled" || payment === "fedapay_cancelled") {
-        window.sessionStorage.removeItem("trimemo_pending_paypal_order");
-        window.sessionStorage.removeItem("trimemo_pending_fedapay_order");
-        pushToast("info", "Paiement annulé. Votre projet est conservé ; vous pouvez reprendre le paiement.");
-        let session: any = null;
-        try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
-        const destination = session?.token ? "preview" : "account";
-        if (session?.token) {
-          setClientEmailDisplay(String(session.email || ""));
-          setClientNameDisplay(String(session.fullName || "Mon compte"));
-        } else {
-          setClientAuthMode("login");
-          setClientAuthNotice("Reconnectez-vous pour retrouver votre projet après l’annulation du paiement.");
-        }
-        setView(destination);
-        const returnUrl = new URL(window.location.href);
-        for (const key of ["payment", "token", "PayerID", "order_id", "transaction_id", "id"]) returnUrl.searchParams.delete(key);
-        returnUrl.searchParams.set("view", destination);
-        window.history.replaceState({}, document.title, returnUrl.pathname + returnUrl.search);
-      }
+    if (!payment) return;
+    if (payment === "paypal_cancelled" || payment === "fedapay_cancelled") {
+      void restoreCancelledPayment();
       return;
     }
     if (!id) {
@@ -1152,24 +1137,11 @@ export default function App() {
         if ((payment === "paypal" || payment === "fedapay") && response.status === 401) { setClientAuthMode("login"); setView("account"); }
         const data = await readApiResponse(response);
         if (payment === "fedapay" && data.status === "CANCELLED") {
-          // FedaPay has verified that this attempt cannot be paid. Keep the
-          // existing preview and draft; never grant premium access.
-          window.sessionStorage.removeItem("trimemo_pending_fedapay_order");
-          pushToast("info", "Paiement annulé ou refusé. Votre projet et son aperçu sont conservés ; vous pouvez réessayer.");
-          let currentSession: any = null;
-          try { currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
-          const destination = currentSession?.token ? "preview" : "account";
-          if (!currentSession?.token) {
-            setClientAuthMode("login");
-            setClientAuthNotice("Reconnectez-vous pour retrouver votre projet et réessayer le paiement.");
-          }
-          setView(destination);
-          const returnUrl = new URL(window.location.href);
-          for (const key of ["payment", "token", "PayerID", "order_id", "transaction_id", "id", "status"]) returnUrl.searchParams.delete(key);
-          returnUrl.searchParams.set("view", destination);
-          window.history.replaceState({}, document.title, returnUrl.pathname + returnUrl.search);
+          // FedaPay has verified that this attempt cannot be paid.
+          await restoreCancelledPayment();
           return;
         }
+
         if (data.status === "PENDING") {
           pushToast("info", "Paiement en cours de confirmation. Aucun montant n'est considéré encaissé avant validation FedaPay.");
           return;
@@ -1177,6 +1149,7 @@ export default function App() {
         if (data.status !== "PAID") {
           throw new Error(data.error || "Le paiement n’a pas été confirmé.");
         }
+        paymentReturnRestoring.current = false;
         if (!data.premium_token) {
           throw new Error("Paiement confirmé, mais le déblocage premium sécurisé n’a pas été délivré.");
         }
@@ -2467,7 +2440,7 @@ export default function App() {
       const fullName=[firstName,lastName].filter(Boolean).join(" ").trim();
       const session = { token: String(data.token), refreshToken: String(data.refresh_token || ""), expiresAt: data.expires_at || null, email: String(data.user.email || clientEmail.trim()), userId: String(data.user.id), fullName };
       setShowConfirmationResend(false);
-      const returningFromPayment = ["paypal", "fedapay"].includes(new URLSearchParams(window.location.search).get("payment") || "");
+      const returningFromPayment = ["paypal", "fedapay", "paypal_cancelled", "fedapay_cancelled"].includes(new URLSearchParams(window.location.search).get("payment") || "");
       if (!returningFromPayment) archiveCurrentDraft();
       activeOwnedProject.current = null;
       window.localStorage.setItem("trimemo_client_session", JSON.stringify(session));
@@ -2532,6 +2505,68 @@ export default function App() {
     finally { setClientAuthBusy(false); }
   }
 
+  async function restoreCancelledPayment() {
+    paymentReturnRestoring.current = true;
+    let session: any = null;
+    try { session = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
+    if (!session?.token || !session?.userId) {
+      setClientAuthMode("login");
+      setClientAuthNotice("Reconnectez-vous pour retrouver votre aperçu et reprendre le paiement.");
+      setView("account");
+      return;
+    }
+    const pending = loadPendingProject(stateStorageKey);
+    const projectId = String(pending?.projectId || "");
+    if (!projectId) {
+      paymentReturnRestoring.current = false;
+      setView("dashboard");
+      pushToast("error", "Le projet n’a pas pu être identifié. Ouvrez-le depuis votre espace client.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(CLIENT_ACCOUNT_API, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"resume", token:session.token, projectId})});
+      const data = await readApiResponse(response);
+      const currentSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null");
+      if (currentSession?.userId !== session.userId || !currentSession?.token) throw new Error("Le compte a changé. Reconnectez-vous au compte associé au projet.");
+      const saved = data.state;
+      if (!saved?.project || String(saved.project.projectId || "") !== projectId) throw new Error("Le projet n’a pas pu être retrouvé. Votre travail reste conservé.");
+      let local: any = null;
+      try { local = JSON.parse(window.localStorage.getItem(stateStorageKey) || "null"); } catch {}
+      const localPreview = local?.preview;
+      const safeLocalPreview = localPreview && isCurrentRemoteSnapshot(projectId, localPreview, saved, local.blocks || []);
+      const remotePreview = saved.preview?.plan?.id === saved.selectedPlan?.id && saved.preview?.problematic?.id === saved.selectedProblematic?.id ? saved.preview : null;
+      const restoredPreview = remotePreview || (safeLocalPreview ? localPreview : null);
+      activeOwnedProject.current = {projectId, userId:session.userId};
+      setProject({...saved.project, projectId, files:Array.isArray(saved.project.files) ? saved.project.files : []});
+      setFormula(saved.formula || saved.project.formula || "MASTER");
+      setEstimate(saved.estimate || null); setPremium(saved.premium || null);
+      setSelectedProblematic(saved.selectedProblematic || null); setSelectedPlan(saved.selectedPlan || null);
+      setBlocks(Array.isArray(saved.blocks) ? saved.blocks : []);
+      setPreview(restoredPreview); setPreviewTab(saved.previewTab || "introduction");
+      setPremiumNav(saved.premiumNav || "writing"); setPremiumSection(saved.premiumSection || "writing");
+      setSelectedWritingBlockId(saved.selectedWritingBlockId || null);
+      setProblematicImprovementComments(saved.problematicImprovementComments || {}); setPlanImprovementComments(saved.planImprovementComments || {});
+      setProblematicGenerationCount(Number(saved.problematicGenerationCount) || 0); setPlanGenerationCount(Number(saved.planGenerationCount) || 0);
+      setClientEmailDisplay(String(session.email || "")); setClientNameDisplay(String(session.fullName || "Mon compte"));
+      paymentReturnRestoring.current = false;
+      window.sessionStorage.removeItem("trimemo_pending_paypal_order");
+      window.sessionStorage.removeItem("trimemo_pending_fedapay_order");
+      const destination = restoredPreview && saved.selectedPlan && saved.selectedProblematic ? "preview" : "writing";
+      const returnUrl = new URL(window.location.href);
+      for (const key of ["payment", "token", "PayerID", "order_id", "transaction_id", "id", "status"]) returnUrl.searchParams.delete(key);
+      returnUrl.searchParams.set("view", destination);
+      window.history.replaceState({}, document.title, returnUrl.pathname + returnUrl.search);
+      setView(destination);
+      pushToast("info", destination === "preview" ? "Paiement annulé. Vous pouvez reprendre votre paiement quand vous le souhaitez." : "Paiement annulé. Votre projet est conservé ; ouvrez son aperçu pour réessayer.");
+    } catch (error) {
+      setClientAuthMode("login");
+      setClientAuthNotice("Reconnectez-vous pour retrouver votre aperçu et reprendre le paiement.");
+      setView("account");
+      pushToast("error", error instanceof Error ? error.message : "Impossible de retrouver votre projet pour le moment.");
+    } finally { setLoading(false); }
+  }
+
   async function startPayment(method: "paypal" | "mobile-money") {
     let clientSession: { token: string; email?: string } | null = null;
     try { clientSession = JSON.parse(window.localStorage.getItem("trimemo_client_session") || "null"); } catch {}
@@ -2568,6 +2603,8 @@ export default function App() {
     setPaymentLoading(method);
     let paymentProject: ProjectData = { ...project, paymentProblematicId: selectedProblematic.id, paymentPlanId: selectedPlan.id, paidPreviewSnapshot: preview || undefined };
     try {
+      // Persist the complete preview before leaving, so cancellation can restore it safely.
+      await saveWritingStateBeforeGeneration();
       if (!preview.chapterOne?.content) {
         // Read back the authenticated cloud copy before leaving the app. A
         // stale or missing copy must not proceed to payment and risk work loss.
