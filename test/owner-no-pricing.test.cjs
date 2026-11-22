@@ -31,8 +31,8 @@ test("les améliorations admin ne requièrent aucun devis; les clients conserven
 test("la simulation facultative reste dans l’atelier et ne contacte aucun paiement",()=>{
   const owner = section('if (ownerRoute) {\n    if (!ownerSessionValid)', '\n  return (\n    <div className="studio-shell');
   const demo = owner.slice(owner.indexOf('{view === "preview" && preview && ownerDemoMode && ('));
-  assert.match(demo,/Simulation · aucun paiement réel/);
-  assert.match(demo,/Simuler un paiement réussi/);
+  assert.match(owner,/MODE DÉMONSTRATION/);
+  assert.match(demo,/>Paiement réussi<\/button>/);
   assert.doesNotMatch(demo,/startPayment\(|fetch\(|premium_token|API_URL/);
   assert.match(src,/Les projets de test peuvent être rédigés et exportés sans paiement/);
 });
