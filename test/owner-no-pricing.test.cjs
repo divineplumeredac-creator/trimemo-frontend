@@ -28,7 +28,11 @@ test("les améliorations admin ne requièrent aucun devis; les clients conserven
   assert.match(estimate,/if \(!data\?\.estimate\?\.pricingQuoteToken\)/);
   assert.equal((src.match(/onClick=\{\(\) => void analyzeProject\(\)\}/g)||[]).length,1);
 });
-test("aucune simulation de paiement dans les tests administrateur",()=>{
-  assert.doesNotMatch(src,/simulateOwnerPayment|Simuler un paiement/);
+test("la simulation facultative reste dans l’atelier et ne contacte aucun paiement",()=>{
+  const owner = section('if (ownerRoute) {\n    if (!ownerSessionValid)', '\n  return (\n    <div className="studio-shell');
+  const demo = owner.slice(owner.indexOf('{view === "preview" && preview && ownerDemoMode && ('));
+  assert.match(demo,/Simulation · aucun paiement réel/);
+  assert.match(demo,/Simuler un paiement réussi/);
+  assert.doesNotMatch(demo,/startPayment\(|fetch\(|premium_token|API_URL/);
   assert.match(src,/Les projets de test peuvent être rédigés et exportés sans paiement/);
 });

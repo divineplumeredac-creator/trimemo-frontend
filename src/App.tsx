@@ -654,6 +654,13 @@ export default function App() {
   const stateStorageKey = ownerRoute ? "trimemo_state_v5_owner" : "trimemo_state_v5_public";
   const [ownerSessionValid, setOwnerSessionValid] = useState(false);
   const [ownerShowWriter, setOwnerShowWriter] = useState(false);
+  // Isolated UI-only demonstration: never creates an order or a premium token.
+  const [ownerDemoMode, setOwnerDemoMode] = useState(false);
+  const [ownerDemoUnlocked, setOwnerDemoUnlocked] = useState(false);
+  const [ownerDemoPayment, setOwnerDemoPayment] = useState<"paypal" | "mobile-money" | null>(null);
+  const [ownerDemoResult, setOwnerDemoResult] = useState("");
+  const [ownerDemoAmount, setOwnerDemoAmount] = useState("");
+  useEffect(() => { setOwnerDemoUnlocked(false); setOwnerDemoPayment(null); setOwnerDemoResult(""); }, [project.projectId]);
   const [ownerProjectsOpen, setOwnerProjectsOpen] = useState(false);
   const [ownerProjects, setOwnerProjects] = useState<any[]>([]);
   const [ownerProjectsBusy, setOwnerProjectsBusy] = useState(false);
@@ -2936,6 +2943,10 @@ export default function App() {
       return;
     }
     if (block.status === "generating") return;
+    if (ownerRoute && ownerDemoMode && !ownerDemoUnlocked && isPreviewReady(blocks, previewLimit)) {
+      await exportDocument();
+      return;
+    }
     if (!ownerRoute && !(window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) {
       const completedBlocks = blocks.filter((item) => item.status === "done" && item.content.trim());
       const completedWords = completedBlocks.reduce((sum, item) => sum + countWords(item.content), 0);
@@ -3316,7 +3327,7 @@ export default function App() {
       pushToast("info", "La récupération de la suite est nécessaire avant l’export. Si elle ne se termine pas, rouvrez le projet ou contactez le support.");
       return;
     }
-    if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) {
+    if ((!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) || (ownerRoute && ownerDemoMode && !ownerDemoUnlocked)) {
       const done = blocks.filter((block) => block.status === "done" && block.content.trim());
       const combined = done.map((block) => block.content).join("\n\n");
       if (countWords(combined) < 1) {
@@ -3582,7 +3593,8 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button type="button" disabled={Boolean(activeBlockId)} aria-pressed={ownerDemoMode} onClick={() => { setOwnerDemoMode(value => !value); setOwnerDemoUnlocked(false); setOwnerDemoPayment(null); setOwnerDemoResult(""); if (view === "preview") setView("writing"); }} className="rounded-full border border-[#E8D3AC] bg-[#E8D3AC] px-4 py-2 font-inter text-xs font-semibold text-[#173F4D] hover:bg-white disabled:opacity-50">{ownerDemoMode ? "Quitter la démonstration" : "Mode démonstration"}</button>
               {premium && (
                 <button
                   type="button"
@@ -4118,7 +4130,7 @@ export default function App() {
                     </p>}
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
-                    {(ownerRoute || (window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) ? (
+                    {((ownerRoute && (!ownerDemoMode || ownerDemoUnlocked)) || (!ownerRoute && window.sessionStorage.getItem("trimemo_premium_token") && window.sessionStorage.getItem("trimemo_premium_project_id") === String(project.projectId))) ? (
                       <button type="button" disabled={loading} onClick={() => { void exportDocument(); }} className="rounded-full bg-[#173F4D] px-5 py-3 font-inter text-xs font-semibold text-white transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
                         {loading ? "Vérification et préparation du document…" : "Exporter le document Word"}
                       </button>
@@ -4226,7 +4238,7 @@ export default function App() {
                               disabled={activeBlockId !== null}
                               onClick={() => {
                                 const next = blocks[index + 1];
-                                if (!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token") && isPreviewReady(blocks, previewLimit)) {
+                                if (((!ownerRoute && !window.sessionStorage.getItem("trimemo_premium_token")) || (ownerRoute && ownerDemoMode && !ownerDemoUnlocked)) && isPreviewReady(blocks, previewLimit)) {
                                   setSelectedWritingBlockId(next.id);
                                   void exportDocument();
                                   return;
@@ -4247,7 +4259,40 @@ export default function App() {
               </section>
             )}
 
-{view !== "project" && view !== "premium" && view !== "writing" && (
+          {view === "preview" && preview && ownerDemoMode && (
+            <section className="mx-auto max-w-[900px] space-y-6 pb-16">
+              <div className="rounded-2xl border border-[#C6A477] bg-[#F7F5EF] p-4 font-inter text-sm text-[#173F4D]" role="status"><strong>Mode démonstration.</strong> Le paiement est fictif et aucune transaction ne sera créée.</div>
+              <div className="rounded-lg border border-[#E6E1D8] bg-white px-6 py-10 shadow-sm sm:px-14" style={{fontFamily:'"Times New Roman", Times, serif'}}>
+                <h1 className="text-center text-xl font-bold">{project.sujet || "Projet académique"}</h1>
+                <div className="mt-5 border-y border-[#E6E1D8] py-4 text-sm"><p><strong>Problématique :</strong> {preview.problematic.question}</p><p className="mt-2"><strong>Plan retenu :</strong> {preview.plan.title}</p></div>
+                <h2 className="mt-8 text-center text-base font-bold uppercase">Sommaire</h2>
+                <div className="mt-4 space-y-2 text-sm"><div className="font-semibold">Introduction générale</div>{preview.plan.parts.map(part=><div key={part.id}><div className="font-bold uppercase">PARTIE {part.number}. {part.title}</div><div className="ml-4 mt-2 space-y-1">{part.chapters.map(chapter=><div key={chapter.id}>Chapitre {chapter.number}. {chapter.title}</div>)}</div></div>)}<div className="font-semibold">Conclusion générale</div></div>
+                {academicPreviewSegments().map(segment=><article key={segment.id} className="mt-8"><h3 className="mb-5 text-base font-bold">{segment.title}</h3><div>{renderAcademicText(segment.content,true)}</div></article>)}
+                <p className="mt-8 border-t pt-4 text-center text-xs italic text-[#5E6B73]">Fin de l’aperçu. Le paiement permet de poursuivre la rédaction au point d’arrêt.</p>
+              </div>
+              <div className="rounded-3xl border border-[#E6E1D8] border-t-4 border-t-[#C6A477] bg-[#FCFBF8] p-5 text-[#173F4D] sm:p-8">
+                <h2 className="text-center font-playfair text-3xl font-semibold">Votre aperçu est prêt</h2>
+                <p className="mx-auto mt-3 max-w-xl text-center text-sm leading-6 text-[#465B64]">Après paiement, poursuivez la rédaction à partir du point d’arrêt, avec la problématique et le plan choisis.</p>
+                <div className="mt-6 overflow-hidden rounded-2xl border border-[#E6E1D8] bg-white p-5">
+                  <h3 className="font-semibold">Comment votre tarif est calculé</h3>
+                  <table className="mt-4 w-full table-fixed text-left text-sm"><caption className="sr-only">Caractéristiques du projet de démonstration</caption><thead><tr className="border-b"><th scope="col" className="w-1/2 py-2">Élément</th><th scope="col" className="py-2">Votre projet</th></tr></thead><tbody className="divide-y"><tr><th scope="row" className="py-3 text-left font-normal">Type de document</th><td className="py-3">{project.typeDoc}</td></tr><tr><th scope="row" className="py-3 text-left font-normal">Niveau académique</th><td className="py-3">{project.niveau}</td></tr><tr><th scope="row" className="py-3 text-left font-normal">Volume demandé</th><td className="py-3">{project.pages} pages</td></tr></tbody></table>
+                  <div className="mt-4 border-t pt-4"><label htmlFor="demo-amount" className="block text-sm font-semibold">Montant fictif pour la démonstration (facultatif)</label><input id="demo-amount" value={ownerDemoAmount} onChange={e=>setOwnerDemoAmount(e.target.value)} maxLength={40} placeholder="Ex. 2 500 FCFA" className="mt-2 w-full max-w-xs rounded-xl border border-[#173F4D]/25 bg-white px-3 py-2 text-sm text-[#173F4D]"/><p className="mt-2 text-xs leading-5 text-[#53656D]">Montant saisi pour la vidéo : il ne constitue pas une estimation du projet.</p></div>
+                </div>
+                <div className="mt-5 rounded-xl bg-[#173F4D]/5 p-4 text-sm leading-6"><strong>Après paiement, vous pourrez :</strong><ul className="mt-2 list-disc space-y-1 pl-5"><li>Poursuivre la rédaction au point d’arrêt</li><li>Conserver votre problématique et votre plan</li><li>Exporter le document une fois la rédaction terminée</li></ul></div>
+                <h3 className="mt-6 text-center font-semibold">Choisissez votre moyen de paiement</h3>
+                <div className="mx-auto mt-4 grid max-w-[560px] gap-3">
+                  <button type="button" onClick={()=>{setOwnerDemoResult("");setOwnerDemoPayment("paypal");}} className="flex min-h-[58px] items-center justify-center gap-3 rounded-2xl border border-[#C6A477] bg-white px-4 py-3 text-sm font-bold hover:bg-[#F7F5EF]"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-wordmark-color.svg" alt="" className="h-5 w-auto"/>Payer avec PayPal</button>
+                  <button type="button" onClick={()=>{setOwnerDemoResult("");setOwnerDemoPayment("mobile-money");}} className="min-h-[58px] rounded-2xl bg-[#173F4D] px-4 py-3 text-sm font-bold text-white hover:bg-[#245664]">Payer par Mobile Money</button>
+                  <p className="text-center text-xs leading-5 text-[#53656D]">Vous choisirez votre réseau sur la page de paiement.</p>
+                </div>
+                {ownerDemoResult && <p role="status" className="mt-4 rounded-xl border border-[#C6A477] bg-white p-3 text-center text-sm">{ownerDemoResult}</p>}
+                <button type="button" onClick={()=>setView("writing")} className="mt-5 w-full text-center text-sm font-semibold underline">Retour à la rédaction</button>
+              </div>
+              {ownerDemoPayment && <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#173F4D]/70 p-4" role="dialog" aria-modal="true" aria-labelledby="demo-dialog-title"><div className="w-full max-w-md rounded-3xl bg-white p-6 text-[#173F4D] shadow-xl"><div className="text-xs font-bold uppercase tracking-wide text-[#8A6138]">Simulation · aucun paiement réel</div><h2 id="demo-dialog-title" className="mt-2 font-playfair text-2xl font-bold">{ownerDemoPayment === "paypal" ? "Paiement PayPal" : "Paiement Mobile Money"}</h2><p className="mt-3 text-sm leading-6">Choisissez le résultat à montrer dans votre vidéo.{ownerDemoAmount.trim() ? ` Montant fictif : ${ownerDemoAmount.trim()}.` : ""}</p><div className="mt-5 grid gap-2"><button type="button" onClick={()=>{setOwnerDemoUnlocked(true);setOwnerDemoPayment(null);setOwnerDemoResult("");setView("writing");pushToast("success","Paiement simulé réussi. Vous pouvez poursuivre la rédaction.");}} className="rounded-xl bg-[#173F4D] px-4 py-3 text-sm font-semibold text-white">Simuler un paiement réussi</button><button type="button" onClick={()=>{setOwnerDemoPayment(null);setOwnerDemoResult("Paiement simulé annulé. Votre aperçu est conservé.");}} className="rounded-xl border border-[#173F4D]/25 px-4 py-3 text-sm font-semibold">Simuler une annulation</button><button type="button" onClick={()=>{setOwnerDemoPayment(null);setOwnerDemoResult("Paiement simulé refusé. Vous pouvez réessayer.");}} className="rounded-xl border border-[#173F4D]/25 px-4 py-3 text-sm font-semibold">Simuler un refus</button><button type="button" onClick={()=>setOwnerDemoPayment(null)} className="py-2 text-sm underline">Fermer</button></div></div></div>}
+            </section>
+          )}
+
+{view !== "project" && view !== "premium" && view !== "writing" && (view !== "preview" || !ownerDemoMode) && (
             <section className="rounded-[28px] border border-[#173F4D]/10 bg-white p-6 shadow-sm">
               <h1 className="font-playfair text-3xl">Tableau de bord</h1>
               <p className="mt-2 font-inter text-sm text-[#5E6B73]">
@@ -4266,7 +4311,7 @@ export default function App() {
         </div>
 
         <div className="fixed bottom-4 right-4 z-[90] max-w-sm rounded-2xl bg-[#173F4D] px-4 py-3 font-inter text-[11px] text-white shadow-xl">
-          MODE ADMINISTRATEUR · PAIEMENT NEUTRALISÉ · ESPACE SÉPARÉ
+          {ownerDemoMode ? "DÉMONSTRATION · PAIEMENT FICTIF" : "MODE ADMINISTRATEUR · PAIEMENT NEUTRALISÉ · ESPACE SÉPARÉ"}
         </div>
       </div>
     );
