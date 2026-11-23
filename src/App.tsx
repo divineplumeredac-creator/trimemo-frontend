@@ -227,6 +227,45 @@ type PremiumOptions = {
   plans: Plan[];
 };
 
+function ProblematicPresentation({item,index}:{item:Problematic;index:number}) {
+  return <div className="font-inter text-[#173F4D]">
+    <div className="text-xs font-bold uppercase tracking-[0.12em] text-[#65747A]">Problématique {index + 1}</div>
+    <h2 className="mt-3 break-words font-playfair text-2xl font-semibold leading-snug sm:text-3xl">{item.title}</h2>
+    <div className="mt-6 rounded-2xl border border-[#DCC9A9] bg-[#FBF8F1] p-5 sm:p-6">
+      <div className="text-xs font-bold uppercase tracking-[0.1em] text-[#735E40]">Question de recherche</div>
+      <p className="mt-3 whitespace-pre-line break-words text-base font-semibold leading-7 text-[#173F4D] sm:text-lg sm:leading-8">{item.question}</p>
+    </div>
+    {(item.angle || item.rationale) && <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      {item.angle && <div className="rounded-2xl border border-[#E6E1D8] bg-[#FCFBF8] p-5"><h3 className="text-sm font-bold">Angle de recherche</h3><p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-[#465B64]">{item.angle}</p></div>}
+      {item.rationale && <div className="rounded-2xl border border-[#E6E1D8] bg-[#FCFBF8] p-5"><h3 className="text-sm font-bold">Pourquoi cette problématique ?</h3><p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-[#465B64]">{item.rationale}</p></div>}
+    </div>}
+  </div>;
+}
+
+function PlanPresentation({plan,index}:{plan:Plan;index:number}) {
+  return <div className="font-inter text-[#173F4D]">
+    <div className="text-xs font-bold uppercase tracking-[0.12em] text-[#65747A]">Plan {index + 1}</div>
+    <h2 className="mt-3 break-words font-playfair text-2xl font-semibold leading-snug sm:text-3xl">{plan.title}</h2>
+    {plan.description && <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-[#465B64]">{plan.description}</p>}
+    <div className="mt-6 space-y-4">
+      <div className="rounded-xl border border-[#E6E1D8] bg-[#FCFBF8] px-4 py-3 text-sm font-bold">{plan.introductionGeneral?.title || "Introduction générale"}</div>
+      {plan.parts.map(part=><section key={part.id} className="overflow-hidden rounded-2xl border border-[#DED8CD] bg-white">
+        <h3 className="bg-[#173F4D] px-4 py-4 text-sm font-bold leading-6 text-white sm:px-5">PARTIE {part.number} · {part.title}</h3>
+        <div className="space-y-4 p-4 sm:p-5">{part.chapters.map(chapter=><section key={chapter.id} className="rounded-xl border border-[#E6E1D8] bg-[#FCFBF8] p-4 sm:p-5">
+          <h4 className="break-words text-sm font-bold leading-6 sm:text-base">Chapitre {chapter.number} · {chapter.title}</h4>
+          {chapter.sections.length > 0 && <div className="mt-3 space-y-3 border-l-2 border-[#C6A477] pl-3 sm:pl-4">{chapter.sections.map(section=><div key={section.id}>
+            <h5 className="break-words text-sm font-semibold leading-6">Section {chapter.number}.{section.number} · {section.title}</h5>
+            {section.subsections.length > 0 && <ul className="mt-2 space-y-2 pl-3 text-sm leading-6 text-[#465B64]">{section.subsections.map(subsection=><li key={subsection.id} className="break-words"><span className="font-medium text-[#173F4D]">{chapter.number}.{section.number}.{subsection.number}</span> {subsection.title}
+              {subsection.internalTitles.length > 0 && <ul className="mt-1 space-y-1 border-l border-[#DED8CD] pl-3">{subsection.internalTitles.map(internal=><li key={internal.id} className="break-words">{internal.number}. {internal.title}</li>)}</ul>}
+            </li>)}</ul>}
+          </div>)}</div>}
+        </section>)}</div>
+      </section>)}
+      <div className="rounded-xl border border-[#E6E1D8] bg-[#FCFBF8] px-4 py-3 text-sm font-bold">{plan.conclusionGeneral?.title || "Conclusion générale"}</div>
+    </div>
+  </div>;
+}
+
 type Toast = {
   id: number;
   type: "error" | "success" | "info";
@@ -4007,21 +4046,7 @@ export default function App() {
                   const item = premium.problematics[index] || premium.problematics[0];
                   return item ? (
                     <article className="rounded-[24px] border border-[#173F4D]/10 bg-white p-7 shadow-sm lg:p-10">
-                      <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
-                        Problématique {index + 1}
-                      </div>
-                      <h2 className="mt-3 font-playfair text-3xl text-[#173F4D]">{item.title}</h2>
-                      <p className="mt-6 font-inter text-base leading-[1.9] text-[#5E6B73]">{item.question}</p>
-                      {item.angle && (
-                        <div className="mt-5 rounded-2xl bg-[#173F4D]/10 p-5 font-inter text-sm leading-[1.8] text-[#5E6B73]">
-                          <strong>Angle :</strong> {item.angle}
-                        </div>
-                      )}
-                      {item.rationale && (
-                        <div className="mt-4 rounded-2xl bg-[#173F4D]/10 p-5 font-inter text-sm leading-[1.8] text-[#5E6B73]">
-                          {item.rationale}
-                        </div>
-                      )}
+                      <ProblematicPresentation item={item} index={index} />
                       <div className="mt-6 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-4">
                         <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#5E6B73]">Améliorer ou comparer la problématique</div>
                         <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#173F4D]/10 bg-white px-4 py-3 font-inter text-sm" />
@@ -4051,38 +4076,8 @@ export default function App() {
                   const index = Number(premiumNav.replace("plan-", "") || 0);
                   const plan = premium.plans[index] || premium.plans[0];
                   return plan ? (
-                    <article>
-                      <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Plan {index + 1}</div>
-                      <h2 className="mt-3 font-playfair text-3xl text-[#173F4D]">{plan.title}</h2>
-                      <div className="mt-7 space-y-5 font-inter">
-                        {plan.parts.map((part) => (
-                          <div key={part.id}>
-                            <div className="font-bold uppercase text-[#173F4D]">PARTIE {part.number}. {part.title}</div>
-                            <div className="mt-3 space-y-3 pl-4">
-                              {part.chapters.map((chapter) => (
-                                <div key={chapter.id}>
-                                  <div className="font-semibold text-[#173F4D]">Chapitre {chapter.number}. {chapter.title}</div>
-                                  <div className="mt-2 space-y-2 pl-5">
-                                    {chapter.sections.map((section) => (
-                                      <div key={section.id}>
-                                        <div className="text-sm font-semibold text-[#173F4D]/90">Section {chapter.number}.{section.number}. {section.title}</div>
-                                        {section.subsections.map((subsection) => (
-                                          <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#5E6B73]">
-                                            § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
-                                            {subsection.internalTitles.map((internal) => (
-                                              <div key={internal.id} className="pl-4 text-[11px] text-[#5E6B73]">{internal.number}. {internal.title}</div>
-                                            ))}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                    <article className="rounded-[24px] border border-[#E6E1D8] bg-white p-5 shadow-sm sm:p-7 lg:p-10">
+                      <PlanPresentation plan={plan} index={index} />
                       <div className="mt-8 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-5">
                         <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#5E6B73]">Validation du plan</div>
                         <textarea
@@ -4909,7 +4904,7 @@ export default function App() {
           {view === "premium" && premium && (
             <section>
               <div className="mb-6">
-<h1 className="mt-2 font-playfair text-4xl text-[#173F4D]">Problématiques, plans et rédaction</h1>
+<h1 className="mt-2 font-playfair text-3xl text-[#173F4D] sm:text-4xl">{premiumSection === "problematic" ? "Votre problématique" : premiumSection === "plan" ? "Votre plan" : "Rédaction"}</h1>
               </div>
 
               <div className="min-w-0">
@@ -4924,14 +4919,8 @@ export default function App() {
                     const item = premium.problematics[index] || premium.problematics[0];
                     return item ? (
                       <article className="rounded-[24px] border border-[#173F4D]/10 bg-white p-7 shadow-sm lg:p-10">
-                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
-                          Problématique {index + 1}
-                        </div>
-                        <h2 className="mt-3 font-playfair text-3xl text-[#173F4D]">{item.title}</h2>
-                        <p className="mt-6 font-inter text-base leading-[1.9] text-[#5E6B73]">{item.question}</p>
-                        {item.angle && <div className="mt-5 rounded-2xl bg-[#173F4D]/10 p-5 font-inter text-sm leading-[1.8] text-[#5E6B73]"><strong>Angle :</strong> {item.angle}</div>}
-                        {item.rationale && <div className="mt-4 rounded-2xl bg-[#173F4D]/10 p-5 font-inter text-sm leading-[1.8] text-[#5E6B73]">{item.rationale}</div>}
-                        <div className="mt-6 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-4">
+                        <ProblematicPresentation item={item} index={index} />
+                      <div className="mt-6 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-4">
                           <div className="font-inter text-xs font-semibold uppercase tracking-wide text-[#5E6B73]">Améliorer ou comparer la problématique</div>
                           <textarea value={problematicImprovementComments[item.id] || ""} onChange={(event) => setProblematicImprovementComments((current) => ({ ...current, [item.id]: event.target.value }))} rows={3} placeholder="Indiquez ce qui doit être précisé ou corrigé." className="w-full rounded-xl border border-[#173F4D]/10 bg-white px-4 py-3 font-inter text-sm" />
                           <div className="flex flex-wrap gap-2">
@@ -4957,40 +4946,8 @@ export default function App() {
                     const plan = premium.plans[index] || premium.plans[0];
                     return plan ? (
                       <article className="rounded-[24px] border border-[#173F4D]/10 bg-white p-7 shadow-sm lg:p-10">
-                        <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">
-                          Plan {index + 1}
-                        </div>
-                        <h2 className="mt-3 font-playfair text-3xl text-[#173F4D]">{plan.title}</h2>
-                        <div className="mt-7 space-y-5 font-inter">
-                          {plan.parts.map((part) => (
-                            <div key={part.id}>
-                              <div className="font-bold uppercase text-[#173F4D]">PARTIE {part.number}. {part.title}</div>
-                              <div className="mt-3 space-y-3 pl-4">
-                                {part.chapters.map((chapter) => (
-                                  <div key={chapter.id}>
-                                    <div className="font-semibold text-[#173F4D]">Chapitre {chapter.number}. {chapter.title}</div>
-                                    <div className="mt-2 space-y-2 pl-5">
-                                      {chapter.sections.map((section) => (
-                                        <div key={section.id}>
-                                          <div className="text-sm font-semibold text-[#173F4D]/90">Section {chapter.number}.{section.number}. {section.title}</div>
-                                          {section.subsections.map((subsection) => (
-                                            <div key={subsection.id} className="mt-1 pl-5 text-xs text-[#5E6B73]">
-                                              § {chapter.number}.{section.number}.{subsection.number} {subsection.title}
-                                              {subsection.internalTitles.map((internal) => (
-                                                <div key={internal.id} className="pl-4 text-[11px] text-[#5E6B73]">{internal.number}. {internal.title}</div>
-                                              ))}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-8 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-5">
+                        <PlanPresentation plan={plan} index={index} />
+                      <div className="mt-8 grid gap-3 rounded-2xl border border-[#173F4D]/10 bg-[#173F4D]/10 p-5">
                           <div className="font-inter text-xs font-semibold uppercase tracking-[0.12em] text-[#5E6B73]">Validation du plan</div>
                           <textarea
                             value={planImprovementComments[plan.id] || ""}
