@@ -96,7 +96,12 @@ type FileInput = {
   category: FileCategory;
 };
 
+const TARGETED_PARTS = ["Introduction générale","Problématique de recherche","Revue de littérature","Cadre conceptuel","Cadre théorique","Méthodologie de recherche","Analyse des résultats","Discussion des résultats","Recommandations","Conclusion générale","Chapitre personnalisé","Autre partie"] as const;
 type ProjectData = {
+  writingMode?: "full_document" | "targeted_writing";
+  targetedParts?: string[];
+  targetedCustomTitle?: string;
+  targetedEvidence?: string;
   projectId: string;
   formula: FormulaId;
   sujet: string;
@@ -172,6 +177,7 @@ type PlanIntroConclusion = {
 };
 
 type Plan = {
+  targetedWriting?: boolean;
   id: string;
   title: string;
   description: string;
@@ -586,6 +592,7 @@ function normalizePlan(value: any, index = 0): Plan {
   };
 
   return {
+    targetedWriting: value?.targetedWriting === true,
     id: String(value?.id || `plan-${index + 1}`),
     title: String(value?.title || value?.titre || `Plan ${index + 1}`),
     description: String(value?.description || value?.descriptionText || "").trim(),
@@ -1285,6 +1292,7 @@ export default function App() {
             // Ne pas remplacer le chapitre partiellement rédigé par un bloc synthétique d'aperçu.
             const recoveryBlocks = remoteRecoveryBlocks.length ? remoteRecoveryBlocks : savedBlocks;
             if (remoteRecoveryBlocks.length && remoteRecoveryBlocks.some(block => !prepared.some(item => item.id === block.id))) throw new Error("Paiement confirmé. La structure du projet sauvegardé a changé ; ouvrez le projet depuis votre espace client pour éviter toute perte.");
+            if (plan.targetedWriting && !recoveryBlocks.length) throw new Error("Paiement confirmé. Rouvrez le projet enregistré depuis votre espace client pour restaurer vos parties sans perte.");
             const restoredBlocks = recoveryBlocks.length
               ? prepared.map((block) => {
                   const savedBlock = recoveryBlocks.find((item) => item.id === block.id);
@@ -2096,6 +2104,24 @@ export default function App() {
     await generatePublicProblematics(undefined, { ...project, pricingQuoteToken: undefined });
   }
 
+  async function startTargetedWriting(activeProject: ProjectData) {
+    const question = activeProject.problematiquePersonnelle.trim();
+    const scope: Problematic = { id: "targeted-scope", title: "Périmètre de rédaction", question: question || (activeProject.targetedParts || []).join(" ; "), rationale: "", angle: "" };
+    const response = await fetchWithTimeout(PLANS_API, {
+      method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", ...premiumAuthHeaders() },
+      body: JSON.stringify({project:projectPayloadWithoutFiles(activeProject),count:1,ownerMode:false,problematic:scope}),
+    },280000);
+    const data = await readApiResponse(response);
+    const raw = data.plans?.[0];
+    if (!raw?.targetedWriting || !raw?.parts?.length) throw new Error("La structure ciblée n’a pas été retournée. Réessayez après avoir vérifié vos consignes.");
+    const plan = normalizePlan(raw,0);
+    setPremium({problematics:[scope],plans:[plan]});
+    setPlanGenerationCount(1);
+    setProblematicGenerationCount(0);
+    selectPremiumPlan(scope,plan);
+    pushToast("success","La structure de vos parties est prête. Vous pouvez commencer la rédaction.");
+  }
+
   async function analyzeProject() {
     if (ownerRoute) {
       await generateOwnerFirstProblematic();
@@ -2112,6 +2138,12 @@ export default function App() {
     if (!Number.isInteger(project.pages) || project.pages < 1 || project.pages > 300) {
       pushToast("error", "Indiquez un volume compris entre 1 et 300 pages.");
       return;
+    }
+    if (project.writingMode === "targeted_writing") {
+      const parts=project.targetedParts || [];
+      if (!parts.length || project.pages < parts.length) { pushToast("error","Sélectionnez les parties à rédiger et prévoyez au moins une page par partie."); return; }
+      if (parts.some(part=>["Chapitre personnalisé","Autre partie"].includes(part)) && !project.targetedCustomTitle?.trim()) { pushToast("error","Indiquez le titre personnalisé."); return; }
+      if (parts.some(part=>["Méthodologie de recherche","Analyse des résultats","Discussion des résultats","Recommandations","Conclusion générale"].includes(part)) && !project.targetedEvidence?.trim() && !project.files.some(file=>["context","source"].includes(file.category))) { pushToast("error","Ajoutez les informations ou les documents nécessaires à la rédaction de cette partie."); return; }
     }
     setGenerationError("");
     setEstimate(null);
@@ -2135,7 +2167,8 @@ export default function App() {
       // L’estimation est calculée et conservée, mais elle reste masquée jusqu’à l’aperçu final.
       setEstimate(analyzedEstimate);
       setProject(analyzedProject);
-      await generatePublicProblematics(analyzedEstimate, analyzedProject);
+      if (analyzedProject.writingMode === "targeted_writing") await startTargetedWriting(analyzedProject);
+      else await generatePublicProblematics(analyzedEstimate, analyzedProject);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible d'analyser le projet.";
       setGenerationError(message);
@@ -2696,6 +2729,18 @@ export default function App() {
   }
 
   function prepareBlocks(plan: Plan) {
+    if (plan.targetedWriting) {
+      const targetedBlocks: Block[] = plan.parts.flatMap(part=>part.chapters.flatMap(chapter=>chapter.sections.map((section,index)=>{
+        const same = section.title.trim().toLocaleLowerCase("fr") === part.title.trim().toLocaleLowerCase("fr");
+        const structure = [...(index===0?[part.title]:[]),...(!same||index!==0?[section.title]:[])];
+        const count = chapter.sections.length;
+        const expectedWords = Math.floor(chapter.wordCount/count)+(index===0?chapter.wordCount%count:0);
+        return {id:section.id,title:index===0?part.title:section.title,expectedWords,content:"",wordCount:0,status:"pending" as const,sources:[],footnotes:[],structure,kind:"section" as const};
+      })));
+      if (!targetedBlocks.length) throw new Error("Structure ciblée vide.");
+      setBlocks(targetedBlocks);
+      return targetedBlocks;
+    }
     const toRoman = (value: number) => {
       const table: Array<[number, string]> = [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
       let rest = Math.max(1, Math.round(value));
@@ -3378,8 +3423,8 @@ export default function App() {
         return;
       }
       const segments = academicPreviewSegments();
-      const intro = segments.find((block) => block.kind === "introduction");
-      const others = segments.filter((block) => block.kind !== "introduction");
+      const intro = selectedPlan.targetedWriting ? segments[0] : segments.find((block) => block.kind === "introduction");
+      const others = selectedPlan.targetedWriting ? segments.slice(1) : segments.filter((block) => block.kind !== "introduction");
       const previewSnapshot: Preview = {
         problematic: selectedProblematic,
         plan: selectedPlan,
@@ -4118,7 +4163,7 @@ export default function App() {
                   <div>
                                         <h1 className="font-playfair text-2xl text-[#173F4D] sm:text-3xl">{selectedPlan.title}</h1>
                     <p className="mt-2 font-inter text-sm text-[#5E6B73]">
-                      Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
+                      {selectedPlan.targetedWriting ? "Rédigez uniquement les parties demandées, dans leur ordre." : "Le mémoire est rédigé dans l’ordre exact du plan sélectionné."}
                     </p>
                     {cloudSaveStatus !== "idle" && <p role="status" aria-live="polite" className={`mt-2 font-inter text-xs ${cloudSaveStatus === "error" ? "text-[#173F4D]" : "text-[#5E6B73]"}`}>
                       {cloudSaveStatus === "saving" ? "Enregistrement de votre document…" : cloudSaveStatus === "saved" ? "Document enregistré dans votre compte." : "Enregistrement interrompu. Gardez cette page ouverte et réessayez."}
@@ -4258,9 +4303,9 @@ export default function App() {
             <section className="mx-auto max-w-[900px] space-y-6 pb-16">
               <div className="rounded-lg border border-[#E6E1D8] bg-white px-6 py-10 shadow-sm sm:px-14" style={{fontFamily:'"Times New Roman", Times, serif'}}>
                 <h1 className="text-center text-xl font-bold">{project.sujet || "Projet académique"}</h1>
-                <div className="mt-5 border-y border-[#E6E1D8] py-4 text-sm"><p><strong>Problématique :</strong> {preview.problematic.question}</p><p className="mt-2"><strong>Plan retenu :</strong> {preview.plan.title}</p></div>
+                <div className="mt-5 border-y border-[#E6E1D8] py-4 text-sm"><p><strong>{preview.plan.targetedWriting ? "Parties commandées :" : "Problématique :"}</strong> {preview.plan.targetedWriting ? preview.plan.parts.map(part=>part.title).join(" ; ") : preview.problematic.question}</p><p className="mt-2"><strong>Structure retenue :</strong> {preview.plan.title}</p></div>
                 <h2 className="mt-8 text-center text-base font-bold uppercase">Sommaire</h2>
-                <div className="mt-4 space-y-2 text-sm"><div className="font-semibold">Introduction générale</div>{preview.plan.parts.map(part=><div key={part.id}><div className="font-bold uppercase">PARTIE {part.number}. {part.title}</div><div className="ml-4 mt-2 space-y-1">{part.chapters.map(chapter=><div key={chapter.id}>Chapitre {chapter.number}. {chapter.title}</div>)}</div></div>)}<div className="font-semibold">Conclusion générale</div></div>
+                <div className="mt-4 space-y-2 text-sm">{!preview.plan.targetedWriting && <div className="font-semibold">Introduction générale</div>}{preview.plan.parts.map(part=><div key={part.id}><div className="font-bold uppercase">PARTIE {part.number}. {part.title}</div><div className="ml-4 mt-2 space-y-1">{part.chapters.map(chapter=><div key={chapter.id}>Chapitre {chapter.number}. {chapter.title}</div>)}</div></div>)}{!preview.plan.targetedWriting && <div className="font-semibold">Conclusion générale</div>}</div>
                 {academicPreviewSegments().map(segment=><article key={segment.id} className="mt-8"><h3 className="mb-5 text-base font-bold">{segment.title}</h3><div>{renderAcademicText(segment.content,true)}</div></article>)}
                 <p className="mt-8 border-t pt-4 text-center text-xs italic text-[#5E6B73]">Fin de l’aperçu. Le paiement permet de poursuivre la rédaction au point d’arrêt.</p>
               </div>
@@ -4667,6 +4712,18 @@ export default function App() {
               <div className="grid gap-8 lg:grid-cols-[1fr_350px]">
                 <section className="rounded-[24px] border border-[#173F4D]/5 bg-white p-7 lg:p-9">
                   <div className="grid gap-6">
+                    <fieldset className="rounded-2xl border border-[#E6E1D8] bg-[#FCFBF8] p-4">
+                      <legend className="px-2 font-inter text-sm font-semibold text-[#173F4D]">Que souhaitez-vous rédiger ?</legend>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {(["full_document","targeted_writing"] as const).map(mode=><label key={mode} className={`cursor-pointer rounded-xl border p-4 ${(project.writingMode||"full_document")===mode?"border-[#173F4D] bg-white":"border-[#E6E1D8]"}`}><input type="radio" name="writing-mode" checked={(project.writingMode||"full_document")===mode} onChange={()=>setProject(current=>({...current,writingMode:mode}))}/><span className="ml-2 font-inter text-sm font-semibold">{mode==="full_document"?"Rédaction intégrale":"Rédaction ciblée"}</span><p className="mt-2 text-xs leading-5 text-[#5E6B73]">{mode==="full_document"?"Rédiger un document complet.":"Commander uniquement les parties nécessaires."}</p></label>)}
+                      </div>
+                    </fieldset>
+                    {project.writingMode==="targeted_writing"&&<fieldset className="rounded-2xl border border-[#E6E1D8] p-4">
+                      <legend className="px-2 font-inter text-sm font-semibold">Parties à rédiger *</legend>
+                      <div className="grid gap-3 sm:grid-cols-2">{TARGETED_PARTS.map(part=><label key={part} className="flex items-start gap-2 rounded-lg bg-[#F7F5EF] p-3 text-sm"><input type="checkbox" checked={(project.targetedParts||[]).includes(part)} onChange={e=>{const checked=e.target.checked;setProject(current=>({...current,targetedParts:checked?[...(current.targetedParts||[]),part]:(current.targetedParts||[]).filter(item=>item!==part)}))}}/>{part}</label>)}</div>
+                      {(project.targetedParts||[]).some(part=>["Chapitre personnalisé","Autre partie"].includes(part))&&<label className="mt-4 block text-sm">Titre personnalisé *<input value={project.targetedCustomTitle||""} onChange={e=>setProject({...project,targetedCustomTitle:e.target.value})} className="mt-2 w-full rounded-xl border p-3"/></label>}
+                      <label className="mt-4 block text-sm">Informations de recherche<textarea rows={4} value={project.targetedEvidence||""} onChange={e=>setProject({...project,targetedEvidence:e.target.value})} placeholder="Objectifs, population, méthodes prévues ou réalisées, résultats et données disponibles selon les parties demandées." className="mt-2 w-full rounded-xl border p-3"/><span className="mt-1 block text-xs text-[#5E6B73]">Pour les parties fondées sur des données ou une méthode, précisez les éléments disponibles ou joignez vos documents.</span></label>
+                    </fieldset>}
                     <div>
                       <label className="font-inter text-[11px] font-semibold uppercase tracking-wide text-[#5E6B73]">Sujet exact *</label>
                       <textarea value={project.sujet} onChange={(e) => setProject({ ...project, sujet: e.target.value })} className="mt-2 min-h-[110px] w-full rounded-[16px] border border-[#173F4D]/10 bg-[#FFFFFF] p-4 font-inter text-sm outline-none focus:border-[#173F4D]/30" placeholder="Saisissez le sujet tel qu’il vous a été attribué." />
@@ -4759,7 +4816,7 @@ export default function App() {
                   </div>
                   <button onClick={() => void analyzeProject()} disabled={loading} className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#173F4D] font-inter text-sm font-medium text-white disabled:opacity-50">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-white" />}
-                    Analyser le projet et estimer le coût
+                    {project.writingMode==="targeted_writing"?"Préparer les parties et estimer le coût":"Analyser le projet et estimer le coût"}
                   </button>
                 </aside>
               </div>
@@ -4777,7 +4834,7 @@ export default function App() {
                   <div className="text-xs uppercase tracking-[0.12em] text-[#5E6B73]">Aperçu du document académique</div>
                   <h2 className="mt-4 text-xl font-bold">{project.sujet || selectedPlan?.title || "Projet académique"}</h2>
                   <div className="mx-auto mt-4 max-w-[620px] border-t border-b border-[#173F4D]/20 py-3 text-left text-sm">
-                    <div><strong>Problématique :</strong> {preview.problematic.question}</div>
+                    <div><strong>{preview.plan.targetedWriting ? "Parties commandées :" : "Problématique :"}</strong> {preview.plan.targetedWriting ? preview.plan.parts.map(part=>part.title).join(" ; ") : preview.problematic.question}</div>
                     <div className="mt-2"><strong>Plan retenu :</strong> {preview.plan.title}</div>
                   </div>
                   <div className="mt-3 text-sm">{academicPreviewSegments().reduce((sum, segment) => sum + segment.words, 0).toLocaleString("fr-FR")} / {previewLimit.toLocaleString("fr-FR")} mots rédigés</div>
@@ -4785,8 +4842,8 @@ export default function App() {
                 <section className="mb-10 border-b border-[#173F4D]/20 pb-8">
                   <h3 className="mb-5 text-center text-base font-bold uppercase tracking-wide">Sommaire</h3>
                   <div className="space-y-3 text-sm">
-                    <div className="font-semibold">Introduction générale</div>
-                    {preview.plan.parts.map((part) => (
+                    {!preview.plan.targetedWriting && <div className="font-semibold">Introduction générale</div>}
+                    {preview.plan.targetedWriting ? preview.plan.parts.map(part=><div key={part.id}><div className="font-bold">{part.title}</div><div className="pl-4">{part.chapters.flatMap(chapter=>chapter.sections).filter(section=>section.title!==part.title).map(section=><div key={section.id}>{section.title}</div>)}</div></div>) : preview.plan.parts.map((part) => (
                       <div key={part.id}>
                         <div className="font-bold uppercase">PARTIE {part.number}. {part.title}</div>
                         <div className="mt-2 space-y-2 pl-4">
@@ -4806,7 +4863,7 @@ export default function App() {
                         </div>
                       </div>
                     ))}
-                    <div className="font-semibold">Conclusion générale</div>
+                    {!preview.plan.targetedWriting && <div className="font-semibold">Conclusion générale</div>}
                   </div>
                 </section>
                 {academicPreviewSegments().map((segment, index) => (
@@ -5007,8 +5064,8 @@ export default function App() {
                   <aside className="h-fit rounded-2xl border border-[#173F4D]/10 bg-white p-4 lg:sticky lg:top-5">
                     <div className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#173F4D]">Navigation du projet</div>
                     <nav className="mt-4 space-y-2">
-                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); setWritingTab("problematic"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">1. Problématique</button>
-                      <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); setWritingTab("plan"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">2. Plan validé</button>
+                      {!selectedPlan.targetedWriting && <button type="button" onClick={() => { setView("premium"); setPremiumSection("problematic"); setPremiumNav("problematic-0"); setWritingTab("problematic"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">1. Problématique</button>}
+                      {!selectedPlan.targetedWriting && <button type="button" onClick={() => { setView("premium"); setPremiumSection("plan"); setPremiumNav("plan-0"); setWritingTab("plan"); }} className="w-full rounded-xl px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">2. Plan validé</button>}
                       <button type="button" onClick={() => { setView("writing"); setWritingTab("writing"); }} className="w-full rounded-xl bg-[#173F4D] px-4 py-3 text-left font-inter text-sm font-semibold text-white">3. Rédaction</button>
                       {ownerRoute || window.sessionStorage.getItem("trimemo_premium_token") ? (
                         <button type="button" onClick={() => { void exportDocument(); }} className="w-full rounded-xl border border-[#173F4D]/15 px-4 py-3 text-left font-inter text-sm text-[#173F4D] hover:bg-[#173F4D]/20">Exporter le document</button>
@@ -5030,7 +5087,7 @@ export default function App() {
                   <div>
                                         <h1 className="font-playfair text-2xl text-[#173F4D] sm:text-3xl">{selectedPlan.title}</h1>
                     <p className="mt-2 font-inter text-sm text-[#5E6B73]">
-                      Le mémoire est rédigé dans l'ordre exact du plan sélectionné.
+                      {selectedPlan.targetedWriting ? "Rédigez uniquement les parties demandées, dans leur ordre." : "Le mémoire est rédigé dans l’ordre exact du plan sélectionné."}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
